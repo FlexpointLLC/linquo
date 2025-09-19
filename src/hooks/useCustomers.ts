@@ -14,10 +14,8 @@ export function useCustomers() {
     async function load() {
       try {
         if (!client) {
-          setData([
-            { id: "c1", name: "Acme Inc.", email: "support@acme.com", status: "active" },
-            { id: "c2", name: "John Doe", email: "john@example.com", status: "trial" },
-          ]);
+          console.error("Supabase client not available");
+          setError("Supabase client not available");
           return;
         }
         const { data, error } = await client.from("customers").select("id,name,email,status").order("name");

@@ -20,10 +20,8 @@ export function useConversations() {
     async function load() {
       try {
         if (!client) {
-          setData([
-            { id: "1", title: "Acme Inc.", last_message_at: null },
-            { id: "2", title: "John Doe", last_message_at: null },
-          ]);
+          console.error("Supabase client not available");
+          setError("Supabase client not available");
           return;
         }
         const { data, error } = await client

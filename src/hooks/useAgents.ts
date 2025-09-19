@@ -14,10 +14,8 @@ export function useAgents() {
     async function load() {
       try {
         if (!client) {
-          setData([
-            { id: "a1", name: "Alice Johnson", email: "alice@example.com", role: "Admin" },
-            { id: "a2", name: "Bob Smith", email: "bob@example.com", role: "Agent" },
-          ]);
+          console.error("Supabase client not available");
+          setError("Supabase client not available");
           return;
         }
         const { data, error } = await client.from("agents").select("id,name,email,role").order("name");

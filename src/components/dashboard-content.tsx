@@ -25,11 +25,11 @@ export function DashboardContent() {
     setActiveId(cid);
   }, [searchParams]);
 
-  const { data: conversationRows } = useConversations();
-  const { data: messageRows } = useMessages(currentTab === "chats" ? activeId : null);
+  const { data: conversationRows, error: conversationError } = useConversations();
+  const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
 
-  const { data: agents } = useAgents();
-  const { data: customers } = useCustomers();
+  const { data: agents, error: agentsError } = useAgents();
+  const { data: customers, error: customersError } = useCustomers();
 
   // Auto-select first conversation if none is selected
   useEffect(() => {
@@ -50,11 +50,30 @@ export function DashboardContent() {
       messageRows: messageRows?.length,
       conversationData: conversationRows,
       messageData: messageRows,
+      errors: {
+        conversationError,
+        messageError,
+        agentsError,
+        customersError,
+      },
     });
-  }, [currentTab, activeId, conversationRows, messageRows]);
+  }, [currentTab, activeId, conversationRows, messageRows, conversationError, messageError, agentsError, customersError]);
 
   return (
     <div className="p-0">
+      {/* Error Display */}
+      {(conversationError || messageError || agentsError || customersError) && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <h4 className="text-sm font-medium text-red-800">Connection Issues:</h4>
+          <ul className="text-xs text-red-600 mt-1">
+            {conversationError && <li>Conversations: {conversationError}</li>}
+            {messageError && <li>Messages: {messageError}</li>}
+            {agentsError && <li>Agents: {agentsError}</li>}
+            {customersError && <li>Customers: {customersError}</li>}
+          </ul>
+        </div>
+      )}
+      
       {currentTab === "chats" && (
         <div className="rounded-md border grid grid-cols-[320px_1fr] min-h-[60vh]">
           <ConversationList
