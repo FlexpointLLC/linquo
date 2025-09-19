@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
+console.log("🔧 supabase-browser.ts loaded");
+
 export function getSupabaseBrowser() {
+  console.log("🔧 getSupabaseBrowser() called");
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
@@ -23,11 +26,16 @@ export function getSupabaseBrowser() {
   }
   
   try {
+    console.log("🔧 Attempting to create Supabase client...");
     const client = createClient(url, key, { auth: { persistSession: true } });
-    console.log("✅ Supabase client created successfully");
+    console.log("✅ Supabase client created successfully:", client);
     return client;
   } catch (error) {
     console.error("❌ Failed to create Supabase client:", error);
+    console.error("❌ Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return null;
   }
 }
