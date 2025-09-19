@@ -15,8 +15,8 @@
     container.style.right = '16px';
     container.style.bottom = '16px';
     container.style.zIndex = '2147483647';
-    container.style.width = '360px';
-    container.style.height = '520px';
+    container.style.width = '400px';
+    container.style.height = '700px';
     container.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
     container.style.borderRadius = '12px';
     container.style.overflow = 'hidden';
