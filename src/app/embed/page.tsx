@@ -67,10 +67,10 @@ function EmbedContent() {
         // Fallback: create a temporary customer and conversation for testing
         const tempCustomer = {
           id: `temp-${Date.now()}`,
-          name: data.name,
+          display_name: data.name,
           email: data.email,
           website: site,
-          status: "active" as const,
+          status: "ACTIVE" as const,
           created_at: new Date().toISOString(),
         };
         const tempConversationId = `temp-conv-${Date.now()}`;
@@ -83,10 +83,10 @@ function EmbedContent() {
       // Fallback: create temporary data for testing
       const tempCustomer = {
         id: `temp-${Date.now()}`,
-        name: data.name,
+        display_name: data.name,
         email: data.email,
         website: site,
-        status: "active" as const,
+        status: "ACTIVE" as const,
         created_at: new Date().toISOString(),
       };
       const tempConversationId = `temp-conv-${Date.now()}`;
@@ -128,7 +128,7 @@ function EmbedContent() {
           <div className="font-medium text-sm">Support</div>
           {customer && (
             <div className="text-xs text-muted-foreground">
-              • {customer.name}
+              • {customer.display_name}
             </div>
           )}
         </div>
@@ -152,13 +152,17 @@ function EmbedContent() {
         onSend={async (text) => {
           const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
           if (!client || !cid || !customer) return;
+          
           await client.from("messages").insert({ 
             conversation_id: cid, 
-            author: "customer", 
-            name: customer.name, 
-            text 
+            sender_type: "CUSTOMER",
+            customer_id: customer.id,
+            body_text: text
           });
-          await client.from("conversations").update({ last_message_at: new Date().toISOString() }).eq("id", cid);
+          
+          await client.from("conversations").update({ 
+            last_message_at: new Date().toISOString() 
+          }).eq("id", cid);
         }}
       />
     </div>

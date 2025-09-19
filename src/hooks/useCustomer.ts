@@ -4,10 +4,10 @@ import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 export type Customer = {
   id: string;
-  name: string;
+  display_name: string;
   email: string;
-  website: string;
-  status: "active" | "solved" | "churned" | "trial";
+  website?: string;
+  status: "ACTIVE" | "BLOCKED";
   created_at: string;
 };
 
@@ -40,7 +40,7 @@ export function useCustomer() {
         throw new Error("Supabase client not available");
       }
 
-      // First, try to find existing customer by email (website column might not exist yet)
+      // First, try to find existing customer by email
       const { data: existingCustomer, error: findError } = await client
         .from("customers")
         .select("*")
@@ -48,23 +48,23 @@ export function useCustomer() {
         .maybeSingle();
 
       if (findError) {
-        // Error finding customer
+        console.error("Error finding customer:", findError);
       }
 
       let customerData: Customer;
 
       if (existingCustomer) {
         // Update existing customer with new name if different
-        if (existingCustomer.name !== name) {
+        if (existingCustomer.display_name !== name) {
           const { data: updatedCustomer, error: updateError } = await client
             .from("customers")
-            .update({ name })
+            .update({ display_name: name })
             .eq("id", existingCustomer.id)
             .select()
             .single();
 
           if (updateError) {
-            // Error updating customer
+            console.error("Error updating customer:", updateError);
             customerData = existingCustomer;
           } else {
             customerData = updatedCustomer;
@@ -77,14 +77,15 @@ export function useCustomer() {
         const { data: newCustomer, error: createError } = await client
           .from("customers")
           .insert({
-            name,
+            display_name: name,
             email,
-            status: "active",
+            status: "ACTIVE",
           })
           .select()
           .single();
 
         if (createError) {
+          console.error("Error creating customer:", createError);
           throw createError;
         }
 
@@ -95,7 +96,7 @@ export function useCustomer() {
       const customerWithWebsite = {
         ...customerData,
         website: website,
-        status: customerData.status || "active",
+        status: customerData.status || "ACTIVE",
       };
 
       // Save to localStorage
@@ -117,42 +118,41 @@ export function useCustomer() {
     try {
       const client = getSupabaseBrowser();
       if (!client) {
-        // Supabase client not available for conversation creation
+        console.error("Supabase client not available for conversation creation");
         return null;
       }
 
-      // Create conversation title with customer name and website
-      const conversationTitle = `${customer.name} (${customer.website})`;
-
-      // Check if conversation already exists
+      // Check if conversation already exists for this customer
       const { data: existingConv } = await client
         .from("conversations")
         .select("id")
-        .eq("title", conversationTitle)
+        .eq("customer_id", customer.id)
         .maybeSingle();
 
       if (existingConv) {
+        console.log("Found existing conversation:", existingConv.id);
         return existingConv.id;
       }
 
-      // Create new conversation
+      // Create new conversation (without title column)
       const { data: newConversation, error } = await client
         .from("conversations")
         .insert({
-          title: conversationTitle,
+          customer_id: customer.id,
           last_message_at: new Date().toISOString(),
         })
         .select("id")
         .single();
 
       if (error) {
-        // Error creating conversation
+        console.error("Error creating conversation:", error);
         return null;
       }
 
+      console.log("Created new conversation:", newConversation.id);
       return newConversation.id;
     } catch (e: unknown) {
-      // Error creating conversation
+      console.error("Error creating conversation:", e);
       return null;
     }
   };
