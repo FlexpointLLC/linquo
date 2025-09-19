@@ -45,11 +45,17 @@ export default function TestConversationPage() {
       if (existingOrg) {
         orgId = existingOrg.id;
       } else {
-        const { data: newOrg } = await client
+        const { data: newOrg, error: orgError } = await client
           .from("organizations")
           .insert({ name: orgName, slug: orgSlug })
           .select("id")
           .single();
+        
+        if (orgError || !newOrg) {
+          addResult(`❌ Error creating organization: ${orgError?.message || 'Unknown error'}`);
+          return;
+        }
+        
         orgId = newOrg.id;
       }
 
