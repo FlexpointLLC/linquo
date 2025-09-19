@@ -9,7 +9,9 @@
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
     "start": "node server/index.js",
-    "install-deps": "npm install && cd client && npm install"
+    "install-deps": "npm install && cd client && npm install",
+    "test": "./test.sh",
+    "setup": "./start.sh"
   },
   "keywords": ["customer-support", "real-time", "chat", "websocket"],
   "author": "FlexpointLLC",
