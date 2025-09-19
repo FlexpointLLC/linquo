@@ -79,21 +79,33 @@ export function useAuth() {
           name,
           email,
           role,
-          organization_id,
-          organizations (
-            id,
-            name,
-            slug
-          )
+          organization_id
         `)
         .eq("user_id", user.id)
         .single();
 
       if (agentError) {
-        console.error("Error loading agent data:", agentError);
+        throw agentError;
+      }
+
+      // Get organization data separately
+      const { data: orgData, error: orgError } = await supabase
+        .from("organizations")
+        .select("id, name, slug")
+        .eq("id", agentData.organization_id)
+        .single();
+
+      if (orgError) {
+        console.error("Error loading organization data:", orgError);
         setAuthUser({
           user,
-          agent: null,
+          agent: {
+            id: agentData.id,
+            name: agentData.name,
+            email: agentData.email,
+            role: agentData.role,
+            organization_id: agentData.organization_id,
+          },
           organization: null,
         });
       } else {
@@ -106,7 +118,7 @@ export function useAuth() {
             role: agentData.role,
             organization_id: agentData.organization_id,
           },
-          organization: agentData.organizations,
+          organization: orgData,
         });
       }
     } catch (error) {
