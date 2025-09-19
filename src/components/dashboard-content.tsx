@@ -57,7 +57,7 @@ export function DashboardContent() {
         <div className="rounded-md border grid grid-cols-[320px_1fr] min-h-[60vh]">
           <ConversationList
             conversations={(conversationRows ?? []).map((c) => ({ id: c.id, name: c.title, lastMessage: "" }))}
-            activeId={activeId}
+            activeId={activeId ?? undefined}
             onSelect={(id) => {
               const url = new URL(window.location.href);
               url.searchParams.set("cid", id);
