@@ -12,6 +12,9 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
