@@ -33,6 +33,7 @@ export function useMessages(conversationId: string | null) {
           .eq("conversation_id", conversationId)
           .order("created_at", { ascending: true });
         if (error) throw error;
+        console.log("Messages loaded for conversation", conversationId, ":", data);
         setData(data as DbMessage[]);
 
         const channel = client

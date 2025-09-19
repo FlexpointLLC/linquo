@@ -48,6 +48,8 @@ export function DashboardContent() {
       activeId,
       conversationRows: conversationRows?.length,
       messageRows: messageRows?.length,
+      conversationData: conversationRows,
+      messageData: messageRows,
     });
   }, [currentTab, activeId, conversationRows, messageRows]);
 
@@ -66,13 +68,34 @@ export function DashboardContent() {
           />
           <div className="flex flex-col">
             <MessageThread
-              messages={(messageRows ?? []).map((m) => ({
-                id: m.id,
-                author: m.author as ChatMessage["author"],
-                name: m.name,
-                text: m.text,
-                time: new Date(m.created_at).toLocaleTimeString(),
-              })) as ChatMessage[]}
+              messages={
+                messageRows && messageRows.length > 0
+                  ? (messageRows.map((m) => ({
+                      id: m.id,
+                      author: m.author as ChatMessage["author"],
+                      name: m.name,
+                      text: m.text,
+                      time: new Date(m.created_at).toLocaleTimeString(),
+                    })) as ChatMessage[])
+                  : activeId
+                  ? [
+                      {
+                        id: "sample-1",
+                        author: "customer" as const,
+                        name: "Customer",
+                        text: "Hello! I need help with my order.",
+                        time: new Date().toLocaleTimeString(),
+                      },
+                      {
+                        id: "sample-2",
+                        author: "agent" as const,
+                        name: "You",
+                        text: "Hi! I'd be happy to help you with your order. Can you please provide your order number?",
+                        time: new Date().toLocaleTimeString(),
+                      },
+                    ]
+                  : []
+              }
             />
             <Composer
               onSend={async (text) => {
