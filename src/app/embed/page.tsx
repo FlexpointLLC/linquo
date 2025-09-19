@@ -1,47 +1,54 @@
 "use client";
 import { useEffect, useMemo, useState, Suspense } from "react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Composer } from "@/components/chat/composer";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
+import { CustomerForm } from "@/components/widget/customer-form";
+import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { useMessages } from "@/hooks/useMessages";
+import { useCustomer } from "@/hooks/useCustomer";
 
 function EmbedContent() {
   const params = useSearchParams();
-  const initialCid = params.get("cid");
-  const site = params.get("site");
-  const [cid, setCid] = useState<string | null>(initialCid);
+  const site = params.get("site") || window.location.hostname;
+  const [cid, setCid] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
+  const { customer, loading, createOrGetCustomer, createConversation, clearCustomer } = useCustomer();
+  const { data: messageRows } = useMessages(cid);
+
+  // Check if customer exists and create conversation
   useEffect(() => {
-    async function ensureConversation() {
-      if (cid || !site) return;
-      const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-      if (!client) return;
-      // Find existing conversation by title=site or create one
-      const { data: existing } = await client
-        .from("conversations")
-        .select("id")
-        .eq("title", site)
-        .limit(1)
-        .maybeSingle();
-      if (existing?.id) {
-        setCid(existing.id as string);
+    async function initializeCustomer() {
+      if (!customer) {
+        setShowForm(true);
         return;
       }
-      const { data: created, error } = await client
-        .from("conversations")
-        .insert({ title: site, last_message_at: new Date().toISOString() })
-        .select("id")
-        .single();
-      if (!error && created?.id) {
-        setCid(created.id as string);
+
+      // Create or get conversation for this customer
+      const conversationId = await createConversation(customer);
+      if (conversationId) {
+        setCid(conversationId);
+        setShowForm(false);
       }
     }
-    ensureConversation();
-  }, [cid, site]);
 
-  const { data: messageRows } = useMessages(cid);
+    initializeCustomer();
+  }, [customer, createConversation]);
+
+  const handleCustomerSubmit = async (data: { name: string; email: string }) => {
+    const customerData = await createOrGetCustomer(data.name, data.email, site);
+    if (customerData) {
+      const conversationId = await createConversation(customerData);
+      if (conversationId) {
+        setCid(conversationId);
+        setShowForm(false);
+      }
+    }
+  };
+
   const messages = useMemo<ChatMessage[]>(() => {
     return (messageRows ?? []).map((m) => ({
       id: m.id,
@@ -52,11 +59,44 @@ function EmbedContent() {
     }));
   }, [messageRows]);
 
+  if (showForm) {
+    return (
+      <div className="h-full w-full bg-background text-foreground p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <div className="font-medium text-sm">Support</div>
+          </div>
+        </div>
+        <CustomerForm onSubmit={handleCustomerSubmit} loading={loading} />
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full bg-background text-foreground">
-      <div className="border-b p-3 flex items-center gap-2">
-        <MessageSquare className="h-4 w-4" />
-        <div className="font-medium text-sm">Support</div>
+      <div className="border-b p-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-4 w-4" />
+          <div className="font-medium text-sm">Support</div>
+          {customer && (
+            <div className="text-xs text-muted-foreground">
+              • {customer.name}
+            </div>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            clearCustomer();
+            setShowForm(true);
+            setCid(null);
+          }}
+          className="h-6 w-6 p-0"
+        >
+          <X className="h-3 w-3" />
+        </Button>
       </div>
       <ScrollArea className="h-[calc(100vh-120px)]">
         <MessageThread messages={messages} />
@@ -64,8 +104,13 @@ function EmbedContent() {
       <Composer
         onSend={async (text) => {
           const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-          if (!client || !cid) return;
-          await client.from("messages").insert({ conversation_id: cid, author: "customer", name: "You", text });
+          if (!client || !cid || !customer) return;
+          await client.from("messages").insert({ 
+            conversation_id: cid, 
+            author: "customer", 
+            name: customer.name, 
+            text 
+          });
           await client.from("conversations").update({ last_message_at: new Date().toISOString() }).eq("id", cid);
         }}
       />
