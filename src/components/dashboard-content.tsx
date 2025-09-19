@@ -127,26 +127,13 @@ export function DashboardContent() {
                 return customer?.email;
               })()}
               onSend={async (text) => {
-                console.log("Send button clicked with text:", text);
-                console.log("Agent data:", agent);
-                console.log("Active ID:", activeId);
+                if (!agent || !activeId) return;
                 
                 const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                if (!client) {
-                  console.error("No Supabase client");
-                  return;
-                }
-                if (!agent) {
-                  console.error("No agent data");
-                  return;
-                }
-                if (!activeId) {
-                  console.error("No active conversation ID");
-                  return;
-                }
+                if (!client) return;
                 
                 try {
-                  const { error: messageError } = await client.from("messages").insert({
+                  await client.from("messages").insert({
                     conversation_id: activeId,
                     sender_type: "AGENT",
                     agent_id: agent.id,
@@ -154,23 +141,12 @@ export function DashboardContent() {
                     body_text: text,
                   });
                   
-                  if (messageError) {
-                    console.error("Error inserting message:", messageError);
-                    return;
-                  }
-                  
-                  const { error: conversationError } = await client
+                  await client
                     .from("conversations")
                     .update({ last_message_at: new Date().toISOString() })
                     .eq("id", activeId);
-                    
-                  if (conversationError) {
-                    console.error("Error updating conversation:", conversationError);
-                  }
-                  
-                  console.log("Message sent successfully");
                 } catch (error) {
-                  console.error("Unexpected error:", error);
+                  console.error("Error sending message:", error);
                 }
               }}
             />
