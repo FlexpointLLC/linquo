@@ -12,7 +12,7 @@ export type ChatMessage = {
 
 export function MessageThread({ messages }: { messages: ChatMessage[] }) {
   return (
-    <div className="p-6">
+    <div className="p-4">
       <div className="flex flex-col gap-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-gray-500">

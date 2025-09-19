@@ -5,7 +5,7 @@ import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
 import { Composer } from "@/components/chat/composer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import { AgentsTable } from "@/components/tables/agents-table";
 import { CustomersTable } from "@/components/tables/customers-table";
 import { SettingsPanel } from "@/components/settings/settings-panel";
@@ -62,7 +62,7 @@ export function DashboardContent() {
       )}
       
       {currentTab === "chats" && (
-        <div className="grid grid-cols-[320px_1fr] h-full">
+        <div className="grid grid-cols-[320px_1fr] h-screen">
           <ConversationList
             conversations={(conversationRows ?? []).map((c) => {
               const customer = customers?.find(cust => cust.id === c.customer_id);
@@ -83,10 +83,10 @@ export function DashboardContent() {
               router.push(url.pathname + "?" + url.searchParams.toString());
             }}
           />
-          <div className="flex flex-col h-full bg-white">
+          <div className="flex flex-col h-screen bg-white">
             {/* Conversation Header with Actions */}
             {activeId && (
-              <div className="border-b p-4 bg-white flex-shrink-0">
+              <div className="border-b p-3 bg-white flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div>
@@ -98,17 +98,6 @@ export function DashboardContent() {
                         })()}
                       </h3>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="text-gray-600">
-                      Call
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-gray-600">
-                      Snooze
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-gray-600">
-                      Close
-                    </Button>
                   </div>
                 </div>
               </div>

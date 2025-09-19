@@ -24,9 +24,9 @@ export function ConversationList({
   const openCount = conversations.filter(c => c.status === "ACTIVE").length;
 
   return (
-    <div className="border-r w-80 shrink-0 bg-white">
+    <div className="border-r w-80 shrink-0 bg-white h-screen flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-3 border-b">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
         </div>
@@ -37,7 +37,7 @@ export function ConversationList({
       </div>
 
       {/* Conversation List */}
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-gray-100 flex-1 overflow-y-auto">
         {conversations.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
             <div className="text-sm">No conversations yet</div>
@@ -49,7 +49,7 @@ export function ConversationList({
               key={c.id}
               onClick={() => onSelect?.(c.id)}
               className={
-                "w-full text-left p-4 hover:bg-gray-50 transition-colors " +
+                "w-full text-left p-3 hover:bg-gray-50 transition-colors " +
                 (activeId === c.id ? "bg-blue-50 border-r-2 border-blue-500" : "")
               }
             >

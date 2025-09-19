@@ -21,7 +21,7 @@ export function Composer({
   }
   
   return (
-    <div className="p-4 bg-white border-t">
+    <div className="p-3 bg-white border-t">
       <div className="flex items-end gap-3">
         <div className="flex-1">
           <div className="text-xs text-gray-500 mb-1">
