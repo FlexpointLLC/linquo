@@ -51,8 +51,8 @@ export function useConversations() {
         unsub = () => {
           client.removeChannel(channel);
         };
-      } catch (e: any) {
-        setError(e.message ?? "Failed to load conversations");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load conversations");
       } finally {
         setLoading(false);
       }

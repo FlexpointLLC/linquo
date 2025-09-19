@@ -23,8 +23,8 @@ export function useAgents() {
         const { data, error } = await client.from("agents").select("id,name,email,role").order("name");
         if (error) throw error;
         setData(data as Agent[]);
-      } catch (e: any) {
-        setError(e.message ?? "Failed to load agents");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load agents");
       } finally {
         setLoading(false);
       }

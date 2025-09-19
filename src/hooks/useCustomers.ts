@@ -23,8 +23,8 @@ export function useCustomers() {
         const { data, error } = await client.from("customers").select("id,name,email,status").order("name");
         if (error) throw error;
         setData(data as Customer[]);
-      } catch (e: any) {
-        setError(e.message ?? "Failed to load customers");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load customers");
       } finally {
         setLoading(false);
       }

@@ -49,8 +49,8 @@ export function useMessages(conversationId: string | null) {
           )
           .subscribe();
         unsub = () => client.removeChannel(channel);
-      } catch (e: any) {
-        setError(e.message ?? "Failed to load messages");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load messages");
       } finally {
         setLoading(false);
       }
