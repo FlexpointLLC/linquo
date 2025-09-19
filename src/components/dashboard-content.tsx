@@ -11,7 +11,7 @@ import { useAgents } from "@/hooks/useAgents";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
-import { useCurrentAgent } from "@/hooks/useCurrentAgent";
+import { useAuth } from "@/hooks/useAuth";
 
 export function DashboardContent() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export function DashboardContent() {
 
   const { data: agents, error: agentsError } = useAgents();
   const { data: customers, error: customersError } = useCustomers();
-  const { currentAgent } = useCurrentAgent();
+  const { agent } = useAuth();
 
   // Auto-select first conversation if none is selected
   useEffect(() => {
@@ -147,11 +147,11 @@ export function DashboardContent() {
             <Composer
               onSend={async (text) => {
                 const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                if (!client || !currentAgent) return;
+                if (!client || !agent) return;
                 await client.from("messages").insert({
                   conversation_id: activeId,
                   author: "agent",
-                  name: currentAgent.name,
+                  name: agent.name,
                   text,
                 });
                 await client

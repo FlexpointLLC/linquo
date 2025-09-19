@@ -1,21 +1,18 @@
 "use client";
 
-import { useCurrentAgent } from "@/hooks/useCurrentAgent";
-import { AgentLogin } from "./agent-login";
-import { useAgents } from "@/hooks/useAgents";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export function DashboardWrapper({ children }: { children: React.ReactNode }) {
-  const { currentAgent, loading, setAgent } = useCurrentAgent();
-  const { data: agents } = useAgents();
+  const { user, agent, organization, loading } = useAuth();
+  const router = useRouter();
 
-  // Auto-login with first agent if no agent is selected (for demo purposes)
   useEffect(() => {
-    if (!loading && !currentAgent && agents && agents.length > 0) {
-      console.log("Auto-logging in with first agent:", agents[0]);
-      setAgent(agents[0]);
+    if (!loading && !user) {
+      router.push("/login");
     }
-  }, [loading, currentAgent, agents, setAgent]);
+  }, [loading, user, router]);
 
   if (loading) {
     return (
@@ -28,8 +25,14 @@ export function DashboardWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!currentAgent) {
-    return <AgentLogin />;
+  if (!user || !agent || !organization) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
