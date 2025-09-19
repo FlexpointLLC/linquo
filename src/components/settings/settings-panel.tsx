@@ -109,7 +109,7 @@ export function SettingsPanel() {
             Paste this snippet into your site&apos;s &lt;head&gt; to show the chat widget.
           </div>
           <pre className="rounded-md bg-muted p-3 text-xs overflow-auto">
-            {`<script async src="${typeof window !== 'undefined' ? window.location.origin : ''}/widget.js"></script>`}
+{`<script async src="${typeof window !== 'undefined' ? window.location.origin : ''}/widget.js"></script>`}
           </pre>
           <div className="flex gap-2">
             <Button

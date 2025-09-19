@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Bell, Plus } from "lucide-react";
-import { AgentSelector } from "@/components/auth/agent-selector";
+import { DebugAuth } from "@/components/debug-auth";
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
   return (
@@ -21,12 +21,12 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
             <Button size="sm">
               <Plus className="h-4 w-4 mr-1" /> New
             </Button>
-            <AgentSelector />
           </div>
         </header>
         <Separator />
         <main className="p-6">{children}</main>
       </div>
+      <DebugAuth />
     </div>
   );
 }

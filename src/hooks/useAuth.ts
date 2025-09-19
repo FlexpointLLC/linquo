@@ -28,24 +28,36 @@ export function useAuth() {
   });
   const [loading, setLoading] = useState(true);
 
+  console.log("🔧 useAuth hook called, current state:", { authUser, loading });
+
   useEffect(() => {
     const supabase = getSupabaseBrowser();
     if (!supabase) {
+      console.log("❌ No Supabase client available");
       setLoading(false);
       return;
     }
 
     // Get initial session
     const getInitialSession = async () => {
+      console.log("🔍 Getting initial session...");
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("🔍 Session result:", { session: !!session, user: !!session?.user });
       if (session?.user) {
         await loadUserData(session.user);
       } else {
+        console.log("❌ No session found, setting loading to false");
         setLoading(false);
       }
     };
 
     getInitialSession();
+
+    // Fallback timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log("⏰ Auth timeout - setting loading to false");
+      setLoading(false);
+    }, 10000); // 10 second timeout
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -63,15 +75,21 @@ export function useAuth() {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const loadUserData = async (user: User) => {
     const supabase = getSupabaseBrowser();
     if (!supabase) return;
 
+    console.log("🔍 Loading user data for:", user.id);
+
     try {
       // Get agent data
+      console.log("👤 Fetching agent data...");
       const { data: agentData, error: agentError } = await supabase
         .from("agents")
         .select(`
@@ -84,19 +102,33 @@ export function useAuth() {
         .eq("user_id", user.id)
         .single();
 
+      console.log("🔍 Agent query result:", { agentData, agentError });
+
       if (agentError) {
-        throw agentError;
+        console.error("❌ Agent error:", agentError);
+        // If agent doesn't exist, this might be a Google OAuth user
+        // We'll set the user but no agent/organization for now
+        setAuthUser({
+          user,
+          agent: null,
+          organization: null,
+        });
+        setLoading(false);
+        return;
       }
 
       // Get organization data separately
+      console.log("🏢 Fetching organization data for:", agentData.organization_id);
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("id, name, slug")
         .eq("id", agentData.organization_id)
         .single();
 
+      console.log("🔍 Organization query result:", { orgData, orgError });
+
       if (orgError) {
-        console.error("Error loading organization data:", orgError);
+        console.error("❌ Organization error:", orgError);
         setAuthUser({
           user,
           agent: {
@@ -120,9 +152,10 @@ export function useAuth() {
           },
           organization: orgData,
         });
+        console.log("✅ User data loaded successfully");
       }
     } catch (error) {
-      console.error("Error loading user data:", error);
+      console.error("❌ Error loading user data:", error);
       setAuthUser({
         user,
         agent: null,
@@ -130,6 +163,7 @@ export function useAuth() {
       });
     } finally {
       setLoading(false);
+      console.log("🏁 Loading completed");
     }
   };
 

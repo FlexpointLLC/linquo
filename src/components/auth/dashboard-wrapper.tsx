@@ -3,13 +3,17 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 export function DashboardWrapper({ children }: { children: React.ReactNode }) {
   const { user, agent, organization, loading } = useAuth();
   const router = useRouter();
 
+  console.log("🔧 DashboardWrapper state:", { user: !!user, agent: !!agent, organization: !!organization, loading });
+
   useEffect(() => {
     if (!loading && !user) {
+      console.log("🔍 No user found, redirecting to login");
       router.push("/login");
     }
   }, [loading, user, router]);
@@ -25,11 +29,38 @@ export function DashboardWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || !agent || !organization) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-sm text-muted-foreground">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user exists but no agent/organization, show setup message
+  if (!agent || !organization) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <h2 className="text-xl font-semibold mb-4">Account Setup Required</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Your account needs to be set up with an organization. Please contact your administrator or create a new account.
+          </p>
+          <button
+            onClick={() => {
+              // Sign out and redirect to signup
+              const supabase = getSupabaseBrowser();
+              if (supabase) {
+                supabase.auth.signOut();
+              }
+              router.push("/signup");
+            }}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Create New Account
+          </button>
         </div>
       </div>
     );
