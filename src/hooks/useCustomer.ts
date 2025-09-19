@@ -30,15 +30,17 @@ export function useCustomer() {
   }, []);
 
   const createOrGetCustomer = async (name: string, email: string, website: string): Promise<Customer | null> => {
+    console.log("🚀 Starting createOrGetCustomer with:", { name, email, website });
     setLoading(true);
     setError(null);
 
     try {
       const client = getSupabaseBrowser();
       if (!client) {
-        // Supabase client not available
+        console.error("❌ Supabase client not available");
         throw new Error("Supabase client not available");
       }
+      console.log("✅ Supabase client available");
 
       // First, try to find existing customer by email
       const { data: existingCustomer, error: findError } = await client
@@ -48,7 +50,9 @@ export function useCustomer() {
         .maybeSingle();
 
       if (findError) {
-        console.error("Error finding customer:", findError);
+        console.error("❌ Error finding customer:", findError);
+      } else {
+        console.log("🔍 Customer search result:", existingCustomer ? "Found existing" : "No existing customer");
       }
 
       let customerData: Customer;
@@ -74,21 +78,62 @@ export function useCustomer() {
         }
       } else {
         // Create new customer
+        // Use the website domain as the organization identifier
+        let orgId = null;
+        
+        // Create a clean domain name for the organization
+        const domain = website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+        const orgSlug = `widget-${domain.replace(/[^a-zA-Z0-9-]/g, '-')}`;
+        const orgName = `${domain} (Widget)`;
+        
+        console.log("🌐 Creating organization for domain:", domain, "slug:", orgSlug);
+        
+        // Try to find existing organization for this domain
+        const { data: existingOrg } = await client
+          .from("organizations")
+          .select("id")
+          .eq("slug", orgSlug)
+          .maybeSingle();
+        
+        if (existingOrg) {
+          orgId = existingOrg.id;
+          console.log("✅ Found existing organization for domain:", orgId);
+        } else {
+          // Create new organization for this domain
+          const { data: newOrg, error: orgError } = await client
+            .from("organizations")
+            .insert({
+              name: orgName,
+              slug: orgSlug
+            })
+            .select("id")
+            .single();
+          
+          if (orgError) {
+            console.error("❌ Error creating organization for domain:", orgError);
+          } else {
+            orgId = newOrg.id;
+            console.log("✅ Created new organization for domain:", domain, "ID:", orgId);
+          }
+        }
+
         const { data: newCustomer, error: createError } = await client
           .from("customers")
           .insert({
             display_name: name,
             email,
             status: "ACTIVE",
+            org_id: orgId, // Include org_id
           })
           .select()
           .single();
 
         if (createError) {
-          console.error("Error creating customer:", createError);
+          console.error("❌ Error creating customer:", createError);
           throw createError;
         }
 
+        console.log("✅ New customer created:", newCustomer);
         customerData = newCustomer;
       }
 
@@ -102,6 +147,7 @@ export function useCustomer() {
       // Save to localStorage
       localStorage.setItem("linquo_customer", JSON.stringify(customerWithWebsite));
       setCustomer(customerWithWebsite);
+      console.log("✅ Customer saved to localStorage and state:", customerWithWebsite);
 
       return customerWithWebsite;
     } catch (e: unknown) {

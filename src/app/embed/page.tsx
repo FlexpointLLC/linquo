@@ -39,26 +39,23 @@ function EmbedContent() {
   }, [customer, createConversation]);
 
   const handleCustomerSubmit = async (data: { name: string; email: string }) => {
-    // Starting customer submit
+    console.log("🎯 Form submitted with data:", data, "for site:", site);
     try {
       const customerData = await createOrGetCustomer(data.name, data.email, site);
-      // Customer creation result
+      console.log("📝 Customer creation result:", customerData);
       
       if (customerData) {
-        // Customer created/found
+        console.log("✅ Customer created/found, creating conversation...");
         const conversationId = await createConversation(customerData);
-        // Conversation creation result
+        console.log("💬 Conversation creation result:", conversationId);
         
         if (conversationId) {
-          // Conversation created/found
+          console.log("✅ Conversation created/found, switching to chat view");
           setCid(conversationId);
           setShowForm(false);
-          // Form hidden, chat should be visible now
         } else {
-          // Failed to create conversation
-          // Fallback: create a temporary conversation ID for testing
+          console.log("⚠️ Failed to create conversation, using temporary ID");
           const tempConversationId = `temp-${Date.now()}`;
-          // Using temporary conversation ID
           setCid(tempConversationId);
           setShowForm(false);
         }
