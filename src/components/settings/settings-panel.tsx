@@ -37,7 +37,7 @@ export function SettingsPanel() {
   }
 
   return (
-    <div className="grid md:grid-cols-2">
+    <div className="grid md:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Company</CardTitle>
