@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { MessageSquare } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Composer } from "@/components/chat/composer";
@@ -7,7 +7,7 @@ import { MessageThread, type ChatMessage } from "@/components/chat/message-threa
 import { useSearchParams } from "next/navigation";
 import { useMessages } from "@/hooks/useMessages";
 
-export default function EmbedPage() {
+function EmbedContent() {
   const params = useSearchParams();
   const initialCid = params.get("cid");
   const site = params.get("site");
@@ -70,6 +70,14 @@ export default function EmbedPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function EmbedPage() {
+  return (
+    <Suspense fallback={<div className="h-full w-full bg-background flex items-center justify-center">Loading...</div>}>
+      <EmbedContent />
+    </Suspense>
   );
 }
 
