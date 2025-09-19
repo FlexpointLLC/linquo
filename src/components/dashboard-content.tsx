@@ -50,7 +50,7 @@ export function DashboardContent() {
     <div className="h-screen w-full">
       {/* Error Display - Only show for actual errors, not empty data */}
       {(conversationError || messageError || agentsError || customersError) && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+        <div className="p-3 bg-red-50 border border-red-200">
           <h4 className="text-sm font-medium text-red-800">Connection Issues:</h4>
           <ul className="text-xs text-red-600 mt-1">
             {conversationError && <li>Conversations: {conversationError}</li>}
@@ -148,19 +148,19 @@ export function DashboardContent() {
       )}
 
       {currentTab === "agents" && agents && (
-        <div className="h-full p-4">
+        <div className="h-full">
           <AgentsTable data={agents} />
         </div>
       )}
 
       {currentTab === "customers" && customers && (
-        <div className="h-full p-4">
+        <div className="h-full">
           <CustomersTable data={customers} />
         </div>
       )}
 
       {currentTab === "settings" && (
-        <div className="h-full p-4">
+        <div className="h-full">
           <SettingsPanel />
         </div>
       )}
