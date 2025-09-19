@@ -118,8 +118,8 @@ function EmbedContent() {
   }
 
   return (
-    <div className="h-full w-full bg-background text-foreground">
-      <div className="border-b p-3 flex items-center justify-between">
+    <div className="h-full w-full bg-background text-foreground flex flex-col">
+      <div className="border-b p-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4" />
           <div className="font-medium text-sm">Support</div>
@@ -142,10 +142,13 @@ function EmbedContent() {
           <X className="h-3 w-3" />
         </Button>
       </div>
-      <ScrollArea className="h-[calc(100vh-120px)]">
-        <MessageThread messages={messages} />
-      </ScrollArea>
-      <Composer
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
+          <MessageThread messages={messages} />
+        </ScrollArea>
+      </div>
+      <div className="flex-shrink-0">
+        <Composer
         onSend={async (text) => {
           console.log("💬 Sending message:", { text, cid, customer: customer?.id });
           const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
@@ -185,6 +188,7 @@ function EmbedContent() {
           }
         }}
       />
+      </div>
     </div>
   );
 }

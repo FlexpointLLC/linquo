@@ -1,4 +1,4 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
+// import { ScrollArea } from "@/components/ui/scroll-area";
 
 export type ChatMessage = {
   id: string;
@@ -10,7 +10,7 @@ export type ChatMessage = {
 
 export function MessageThread({ messages }: { messages: ChatMessage[] }) {
   return (
-    <ScrollArea className="h-[calc(100vh-200px)] p-4">
+    <div className="p-4">
       <div className="flex flex-col gap-3">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-muted-foreground">
@@ -39,7 +39,7 @@ export function MessageThread({ messages }: { messages: ChatMessage[] }) {
           ))
         )}
       </div>
-    </ScrollArea>
+    </div>
   );
 }
 
