@@ -117,7 +117,7 @@ export function DashboardContent() {
                             if (!client) return;
                             await client
                               .from("customers")
-                              .update({ status: e.target.value as any })
+                              .update({ status: e.target.value as "active" | "solved" | "churned" | "trial" })
                               .eq("id", customer.id);
                           }}
                           className="text-xs px-2 py-1 rounded border bg-background"
