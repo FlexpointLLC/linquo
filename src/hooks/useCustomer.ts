@@ -30,14 +30,17 @@ export function useCustomer() {
   }, []);
 
   const createOrGetCustomer = async (name: string, email: string, website: string): Promise<Customer | null> => {
+    console.log("createOrGetCustomer called with:", { name, email, website });
     setLoading(true);
     setError(null);
 
     try {
       const client = getSupabaseBrowser();
       if (!client) {
+        console.error("Supabase client not available");
         throw new Error("Supabase client not available");
       }
+      console.log("Supabase client available, proceeding with customer creation");
 
       // First, try to find existing customer by email (website column might not exist yet)
       const { data: existingCustomer, error: findError } = await client
@@ -113,9 +116,14 @@ export function useCustomer() {
   };
 
   const createConversation = async (customer: Customer): Promise<string | null> => {
+    console.log("createConversation called with customer:", customer);
     try {
       const client = getSupabaseBrowser();
-      if (!client) return null;
+      if (!client) {
+        console.error("Supabase client not available for conversation creation");
+        return null;
+      }
+      console.log("Supabase client available for conversation creation");
 
       // Create conversation title with customer name and website
       const conversationTitle = `${customer.name} (${customer.website})`;
