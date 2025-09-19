@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
 import { Composer } from "@/components/chat/composer";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AgentsTable } from "@/components/tables/agents-table";
 import { CustomersTable } from "@/components/tables/customers-table";
 import { SettingsPanel } from "@/components/settings/settings-panel";
@@ -80,10 +81,10 @@ export function DashboardContent() {
               router.push(url.pathname + "?" + url.searchParams.toString());
             }}
           />
-          <div className="flex flex-col">
+          <div className="flex flex-col h-full">
             {/* Conversation Header with Status */}
             {activeId && (
-              <div className="border-b p-3 bg-muted/50">
+              <div className="border-b p-3 bg-muted/50 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium">
                     {conversationRows?.find(c => c.id === activeId)?.title || `Conversation ${activeId?.slice(0, 8)}`}
@@ -101,16 +102,21 @@ export function DashboardContent() {
                 </div>
               </div>
             )}
-            <MessageThread
-              messages={(messageRows ?? []).map((m) => ({
-                id: m.id,
-                author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
-                name: m.sender_type === "AGENT" ? "Agent" : "Customer",
-                text: m.body_text,
-                time: new Date(m.created_at).toLocaleTimeString(),
-              })) as ChatMessage[]}
-            />
-            <Composer
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <MessageThread
+                  messages={(messageRows ?? []).map((m) => ({
+                    id: m.id,
+                    author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
+                    name: m.sender_type === "AGENT" ? "Agent" : "Customer",
+                    text: m.body_text,
+                    time: new Date(m.created_at).toLocaleTimeString(),
+                  })) as ChatMessage[]}
+                />
+              </ScrollArea>
+            </div>
+            <div className="flex-shrink-0 border-t">
+              <Composer
               onSend={async (text) => {
                 const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
                 if (!client || !agent) return;
@@ -127,6 +133,7 @@ export function DashboardContent() {
                   .eq("id", activeId);
               }}
             />
+            </div>
           </div>
         </div>
       )}

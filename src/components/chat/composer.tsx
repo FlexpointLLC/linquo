@@ -12,7 +12,7 @@ export function Composer({ onSend }: { onSend?: (text: string) => void }) {
     setText("");
   }
   return (
-    <div className="border-t p-3 flex items-end gap-2">
+    <div className="p-3 flex items-end gap-2">
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

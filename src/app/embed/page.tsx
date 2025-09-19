@@ -147,7 +147,7 @@ function EmbedContent() {
           <MessageThread messages={messages} />
         </ScrollArea>
       </div>
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 border-t">
         <Composer
         onSend={async (text) => {
           console.log("💬 Sending message:", { text, cid, customer: customer?.id });
