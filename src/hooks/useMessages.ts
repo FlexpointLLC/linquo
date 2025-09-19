@@ -32,8 +32,14 @@ export function useMessages(conversationId: string | null) {
           .select("id,conversation_id,author,name,text,created_at")
           .eq("conversation_id", conversationId)
           .order("created_at", { ascending: true });
-        if (error) throw error;
+        
+        if (error) {
+          console.error("Error loading messages:", error);
+          throw error;
+        }
+        
         console.log("Messages loaded for conversation", conversationId, ":", data);
+        console.log("Number of messages found:", data?.length || 0);
         setData(data as DbMessage[]);
 
         const channel = client

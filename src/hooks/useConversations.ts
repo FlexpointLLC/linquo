@@ -30,7 +30,14 @@ export function useConversations() {
           .from("conversations")
           .select("id,title,last_message_at")
           .order("last_message_at", { ascending: false, nullsFirst: false });
-        if (error) throw error;
+        
+        if (error) {
+          console.error("Error loading conversations:", error);
+          throw error;
+        }
+        
+        console.log("Conversations loaded:", data);
+        console.log("Number of conversations found:", data?.length || 0);
         setData(data as Conversation[]);
 
         const channel = client
