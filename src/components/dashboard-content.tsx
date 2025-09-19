@@ -5,6 +5,7 @@ import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
 import { Composer } from "@/components/chat/composer";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { AgentsTable } from "@/components/tables/agents-table";
 import { CustomersTable } from "@/components/tables/customers-table";
 import { SettingsPanel } from "@/components/settings/settings-panel";
@@ -64,14 +65,15 @@ export function DashboardContent() {
         <div className="rounded-md border grid grid-cols-[320px_1fr] min-h-[60vh]">
           <ConversationList
             conversations={(conversationRows ?? []).map((c) => {
-              // Since conversations don't have titles, create a generic name
-              const conversationName = c.title || `Conversation ${c.id.slice(0, 8)}`;
-              
-              return { 
+              const customer = customers?.find(cust => cust.id === c.customer_id);
+              const lastMessage = messageRows?.find(m => m.conversation_id === c.id);
+              return {
                 id: c.id, 
-                name: conversationName, 
-                lastMessage: "",
-                status: "ACTIVE" as const
+                name: customer?.display_name || "Unknown Customer",
+                email: customer?.email,
+                lastMessage: lastMessage?.body_text || "No messages yet",
+                status: "ACTIVE" as const,
+                timestamp: c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : undefined
               };
             })}
             activeId={activeId ?? undefined}
@@ -81,23 +83,32 @@ export function DashboardContent() {
               router.push(url.pathname + "?" + url.searchParams.toString());
             }}
           />
-          <div className="flex flex-col h-full">
-            {/* Conversation Header with Status */}
+          <div className="flex flex-col h-full bg-white">
+            {/* Conversation Header with Actions */}
             {activeId && (
-              <div className="border-b p-3 bg-muted/50 flex-shrink-0">
+              <div className="border-b p-4 bg-white flex-shrink-0">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">
-                    {conversationRows?.find(c => c.id === activeId)?.title || `Conversation ${activeId?.slice(0, 8)}`}
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {(() => {
+                          const conversation = conversationRows?.find(c => c.id === activeId);
+                          const customer = customers?.find(c => c.id === conversation?.customer_id);
+                          return customer?.email || `Conversation ${activeId?.slice(0, 8)}`;
+                        })()}
+                      </h3>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {(() => {
-                      // Since conversations don't have titles, we'll just show a generic status
-                      return (
-                        <span className="text-xs px-2 py-1 rounded border bg-background text-muted-foreground">
-                          Active
-                        </span>
-                      );
-                    })()}
+                    <Button variant="outline" size="sm" className="text-gray-600">
+                      Call
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-gray-600">
+                      Snooze
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-gray-600">
+                      Close
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -105,18 +116,27 @@ export function DashboardContent() {
             <div className="flex-1 overflow-hidden">
               <ScrollArea className="h-full">
                 <MessageThread
-                  messages={(messageRows ?? []).map((m) => ({
-                    id: m.id,
-                    author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
-                    name: m.sender_type === "AGENT" ? "Agent" : "Customer",
-                    text: m.body_text,
-                    time: new Date(m.created_at).toLocaleTimeString(),
-                  })) as ChatMessage[]}
+                  messages={(messageRows ?? []).map((m) => {
+                    const customer = customers?.find(c => c.id === m.customer_id);
+                    return {
+                      id: m.id,
+                      author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
+                      name: m.sender_type === "AGENT" ? "Agent" : customer?.display_name || "Customer",
+                      email: m.sender_type === "CUSTOMER" ? customer?.email : undefined,
+                      text: m.body_text,
+                      time: new Date(m.created_at).toLocaleTimeString(),
+                    };
+                  }) as ChatMessage[]}
                 />
               </ScrollArea>
             </div>
-            <div className="flex-shrink-0 border-t">
+            <div className="flex-shrink-0">
               <Composer
+              customerEmail={(() => {
+                const conversation = conversationRows?.find(c => c.id === activeId);
+                const customer = customers?.find(c => c.id === conversation?.customer_id);
+                return customer?.email;
+              })()}
               onSend={async (text) => {
                 const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
                 if (!client || !agent) return;

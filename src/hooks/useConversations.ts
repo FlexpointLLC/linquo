@@ -5,6 +5,7 @@ import { getSupabaseBrowser } from "@/lib/supabase-browser";
 export type Conversation = {
   id: string;
   title?: string;
+  customer_id: string;
   last_message_at: string | null;
 };
 
@@ -26,7 +27,7 @@ export function useConversations() {
         }
         const { data, error } = await client
           .from("conversations")
-          .select("id,last_message_at")
+          .select("id,customer_id,last_message_at")
           .order("last_message_at", { ascending: false, nullsFirst: false })
           .limit(100);
         
