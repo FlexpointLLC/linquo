@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-type Customer = { id: string; name: string; email: string; status: "active" | "churned" | "trial" };
+type Customer = { id: string; name: string; email: string; status: "active" | "solved" | "churned" | "trial" };
 
 export function CustomersTable({ data }: { data: Customer[] }) {
   return (
