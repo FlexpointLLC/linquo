@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
-export type Customer = { id: string; name: string; email: string; status: "active" | "churned" | "trial"; website?: string };
+export type Customer = { id: string; name: string; email: string; status: "active" | "solved" | "churned" | "trial"; website?: string };
 
 export function useCustomers() {
   const [data, setData] = useState<Customer[] | null>(null);

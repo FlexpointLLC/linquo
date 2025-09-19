@@ -7,6 +7,7 @@ export type Customer = {
   name: string;
   email: string;
   website: string;
+  status: "active" | "solved" | "churned" | "trial";
   created_at: string;
 };
 
@@ -71,7 +72,7 @@ export function useCustomer() {
           customerData = existingCustomer;
         }
       } else {
-        // Create new customer (without website column for now)
+        // Create new customer
         const { data: newCustomer, error: createError } = await client
           .from("customers")
           .insert({
@@ -89,10 +90,11 @@ export function useCustomer() {
         customerData = newCustomer;
       }
 
-      // Add website to customer data for local use
+      // Add website and ensure status is set for local use
       const customerWithWebsite = {
         ...customerData,
         website: website,
+        status: customerData.status || "active",
       };
 
       // Save to localStorage

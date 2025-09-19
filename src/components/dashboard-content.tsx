@@ -77,7 +77,18 @@ export function DashboardContent() {
       {currentTab === "chats" && (
         <div className="rounded-md border grid grid-cols-[320px_1fr] min-h-[60vh]">
           <ConversationList
-            conversations={(conversationRows ?? []).map((c) => ({ id: c.id, name: c.title, lastMessage: "" }))}
+            conversations={(conversationRows ?? []).map((c) => {
+              // Extract customer name from conversation title (format: "Name (website)")
+              const customerName = c.title.split(" (")[0];
+              const customer = customers?.find(cust => cust.name === customerName);
+              
+              return { 
+                id: c.id, 
+                name: c.title, 
+                lastMessage: "",
+                status: customer?.status
+              };
+            })}
             activeId={activeId ?? undefined}
             onSelect={(id) => {
               const url = new URL(window.location.href);
@@ -86,6 +97,42 @@ export function DashboardContent() {
             }}
           />
           <div className="flex flex-col">
+            {/* Conversation Header with Status */}
+            {activeId && (
+              <div className="border-b p-3 bg-muted/50">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium">
+                    {conversationRows?.find(c => c.id === activeId)?.title}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const conversation = conversationRows?.find(c => c.id === activeId);
+                      const customerName = conversation?.title.split(" (")[0];
+                      const customer = customers?.find(cust => cust.name === customerName);
+                      return customer ? (
+                        <select
+                          value={customer.status}
+                          onChange={async (e) => {
+                            const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                            if (!client) return;
+                            await client
+                              .from("customers")
+                              .update({ status: e.target.value as any })
+                              .eq("id", customer.id);
+                          }}
+                          className="text-xs px-2 py-1 rounded border bg-background"
+                        >
+                          <option value="active">Active</option>
+                          <option value="solved">Solved</option>
+                          <option value="trial">Trial</option>
+                          <option value="churned">Churned</option>
+                        </select>
+                      ) : null;
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
             <MessageThread
               messages={(messageRows ?? []).map((m) => ({
                 id: m.id,

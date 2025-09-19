@@ -39,13 +39,23 @@ function EmbedContent() {
   }, [customer, createConversation]);
 
   const handleCustomerSubmit = async (data: { name: string; email: string }) => {
-    const customerData = await createOrGetCustomer(data.name, data.email, site);
-    if (customerData) {
-      const conversationId = await createConversation(customerData);
-      if (conversationId) {
-        setCid(conversationId);
-        setShowForm(false);
+    try {
+      const customerData = await createOrGetCustomer(data.name, data.email, site);
+      if (customerData) {
+        console.log("Customer created/found:", customerData);
+        const conversationId = await createConversation(customerData);
+        if (conversationId) {
+          console.log("Conversation created/found:", conversationId);
+          setCid(conversationId);
+          setShowForm(false);
+        } else {
+          console.error("Failed to create conversation");
+        }
+      } else {
+        console.error("Failed to create/find customer");
       }
+    } catch (error) {
+      console.error("Error in customer submit:", error);
     }
   };
 
