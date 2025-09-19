@@ -36,7 +36,7 @@ export function useConversations() {
         const channel = client
           .channel("conv_changes")
           .on(
-            "postgres_changes" as any,
+            "postgres_changes" as never,
             { event: "*", schema: "public", table: "conversations" },
             () => {
               // Reload list on any change
