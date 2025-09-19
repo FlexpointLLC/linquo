@@ -16,11 +16,11 @@ export function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentTab, setCurrentTab] = useState("chats");
-  const [activeId, setActiveId] = useState("1");
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     const tab = searchParams.get("tab") ?? "chats";
-    const cid = searchParams.get("cid") ?? "1";
+    const cid = searchParams.get("cid");
     setCurrentTab(tab);
     setActiveId(cid);
   }, [searchParams]);
@@ -30,6 +30,26 @@ export function DashboardContent() {
 
   const { data: agents } = useAgents();
   const { data: customers } = useCustomers();
+
+  // Auto-select first conversation if none is selected
+  useEffect(() => {
+    if (currentTab === "chats" && !activeId && conversationRows && conversationRows.length > 0) {
+      const firstConversationId = conversationRows[0].id;
+      const url = new URL(window.location.href);
+      url.searchParams.set("cid", firstConversationId);
+      router.push(url.pathname + "?" + url.searchParams.toString());
+    }
+  }, [currentTab, activeId, conversationRows, router]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log("Dashboard Debug:", {
+      currentTab,
+      activeId,
+      conversationRows: conversationRows?.length,
+      messageRows: messageRows?.length,
+    });
+  }, [currentTab, activeId, conversationRows, messageRows]);
 
   return (
     <div className="p-0">
