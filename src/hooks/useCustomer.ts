@@ -9,6 +9,7 @@ export type Customer = {
   website?: string;
   status: "ACTIVE" | "BLOCKED";
   created_at: string;
+  org_id: string;
 };
 
 export function useCustomer() {
@@ -22,7 +23,7 @@ export function useCustomer() {
     if (savedCustomer) {
       try {
         setCustomer(JSON.parse(savedCustomer));
-      } catch (e) {
+      } catch {
         // Failed to parse saved customer
         localStorage.removeItem("linquo_customer");
       }

@@ -118,7 +118,7 @@ export function useAuth() {
             organization: orgData,
           });
         }
-      } catch (error) {
+      } catch {
         // Keep the user logged in even if there's an error
         setAuthUser({
           user,
@@ -164,7 +164,7 @@ export function useAuth() {
 
         return subscription;
 
-      } catch (error) {
+      } catch {
         setLoading(false);
         return null;
       }

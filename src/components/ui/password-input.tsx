@@ -59,7 +59,7 @@ export function PasswordInput({
     setShowPassword(!showPassword);
   };
 
-  const isPasswordValid = showValidation && validationRules.every(rule => rule.test(value));
+  // const isPasswordValid = showValidation && validationRules.every(rule => rule.test(value));
 
   return (
     <div className="space-y-2">

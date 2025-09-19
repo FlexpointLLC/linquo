@@ -11,7 +11,7 @@ export function getSupabaseBrowser() {
   try {
     const client = createClient(url, key, { auth: { persistSession: true } });
     return client;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

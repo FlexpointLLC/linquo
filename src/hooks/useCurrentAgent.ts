@@ -24,7 +24,7 @@ export function useCurrentAgent() {
           const agent = JSON.parse(stored) as Agent;
           setCurrentAgent(agent);
         }
-      } catch (e) {
+      } catch {
         // Error loading current agent
         setError("Failed to load current agent");
       } finally {
@@ -35,7 +35,7 @@ export function useCurrentAgent() {
     loadCurrentAgent();
   }, []);
 
-  const loginAgent = async (email: string, _password: string): Promise<Agent | null> => {
+  const loginAgent = async (email: string): Promise<Agent | null> => {
     setLoading(true);
     setError(null);
 
