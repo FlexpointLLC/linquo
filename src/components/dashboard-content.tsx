@@ -127,19 +127,51 @@ export function DashboardContent() {
                 return customer?.email;
               })()}
               onSend={async (text) => {
+                console.log("Send button clicked with text:", text);
+                console.log("Agent data:", agent);
+                console.log("Active ID:", activeId);
+                
                 const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                if (!client || !agent) return;
-                await client.from("messages").insert({
-                  conversation_id: activeId,
-                  sender_type: "AGENT",
-                  agent_id: agent.id,
-                  org_id: agent.org_id, // Include org_id for agent messages
-                  body_text: text,
-                });
-                await client
-                  .from("conversations")
-                  .update({ last_message_at: new Date().toISOString() })
-                  .eq("id", activeId);
+                if (!client) {
+                  console.error("No Supabase client");
+                  return;
+                }
+                if (!agent) {
+                  console.error("No agent data");
+                  return;
+                }
+                if (!activeId) {
+                  console.error("No active conversation ID");
+                  return;
+                }
+                
+                try {
+                  const { error: messageError } = await client.from("messages").insert({
+                    conversation_id: activeId,
+                    sender_type: "AGENT",
+                    agent_id: agent.id,
+                    org_id: agent.org_id,
+                    body_text: text,
+                  });
+                  
+                  if (messageError) {
+                    console.error("Error inserting message:", messageError);
+                    return;
+                  }
+                  
+                  const { error: conversationError } = await client
+                    .from("conversations")
+                    .update({ last_message_at: new Date().toISOString() })
+                    .eq("id", activeId);
+                    
+                  if (conversationError) {
+                    console.error("Error updating conversation:", conversationError);
+                  }
+                  
+                  console.log("Message sent successfully");
+                } catch (error) {
+                  console.error("Unexpected error:", error);
+                }
               }}
             />
             </div>
