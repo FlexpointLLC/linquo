@@ -11,7 +11,7 @@ export function AgentLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loginAgent, error } = useCurrentAgent();
+  const { loginAgent } = useCurrentAgent();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +22,7 @@ export function AgentLogin() {
       if (!agent) {
         alert("Invalid credentials. Please try again.");
       }
-    } catch (error) {
+    } catch {
       // Login error
       alert("Login failed. Please try again.");
     } finally {

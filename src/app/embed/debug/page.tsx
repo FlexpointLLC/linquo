@@ -20,7 +20,7 @@ export default function DebugPage() {
         setSupabaseStatus("✅ Supabase client available");
 
         // Test database connection
-        const { data, error } = await client
+        const { error } = await client
           .from("customers")
           .select("count")
           .limit(1);

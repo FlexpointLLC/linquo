@@ -245,7 +245,7 @@ export default function TestConversationPage() {
           <CardContent>
             <div className="h-96 overflow-y-auto bg-gray-50 p-4 rounded">
               {results.length === 0 ? (
-                <p className="text-gray-500">No test results yet. Click "Test Same Email Flow" to start.</p>
+                <p className="text-gray-500">No test results yet. Click &quot;Test Same Email Flow&quot; to start.</p>
               ) : (
                 <div className="space-y-1">
                   {results.map((result, index) => (

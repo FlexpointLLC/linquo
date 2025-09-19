@@ -62,30 +62,30 @@ function EmbedContent() {
       } else {
         // Failed to create/find customer
         // Fallback: create a temporary customer and conversation for testing
-        const tempCustomer = {
-          id: `temp-${Date.now()}`,
-          display_name: data.name,
-          email: data.email,
-          website: site,
-          status: "ACTIVE" as const,
-          created_at: new Date().toISOString(),
-        };
+        // const tempCustomer = {
+        //   id: `temp-${Date.now()}`,
+        //   display_name: data.name,
+        //   email: data.email,
+        //   website: site,
+        //   status: "ACTIVE" as const,
+        //   created_at: new Date().toISOString(),
+        // };
         const tempConversationId = `temp-conv-${Date.now()}`;
         // Using temporary customer and conversation
         setCid(tempConversationId);
         setShowForm(false);
       }
-    } catch (error) {
+    } catch {
       // Error in customer submit
       // Fallback: create temporary data for testing
-      const tempCustomer = {
-        id: `temp-${Date.now()}`,
-        display_name: data.name,
-        email: data.email,
-        website: site,
-        status: "ACTIVE" as const,
-        created_at: new Date().toISOString(),
-      };
+      // const tempCustomer = {
+      //   id: `temp-${Date.now()}`,
+      //   display_name: data.name,
+      //   email: data.email,
+      //   website: site,
+      //   status: "ACTIVE" as const,
+      //   created_at: new Date().toISOString(),
+      // };
       const tempConversationId = `temp-conv-${Date.now()}`;
       // Error occurred, using temporary data
       setCid(tempConversationId);

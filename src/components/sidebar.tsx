@@ -29,7 +29,7 @@ export function Sidebar() {
       await signOut();
       // Force redirect to login page
       window.location.href = "/login";
-        } catch (error) {
+        } catch {
           // Force redirect even if there's an error
           window.location.href = "/login";
         }

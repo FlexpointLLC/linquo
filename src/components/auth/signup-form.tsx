@@ -148,7 +148,7 @@ export function SignupForm() {
       }
 
       // 3. Create agent record (owner)
-      const { data: agentData, error: agentError } = await supabase
+      const { error: agentError } = await supabase
         .from("agents")
         .insert({
           display_name: formData.name,

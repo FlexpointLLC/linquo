@@ -176,7 +176,7 @@ export default function TestPage() {
           <CardContent>
             <div className="h-96 overflow-y-auto bg-gray-50 p-4 rounded">
               {results.length === 0 ? (
-                <p className="text-gray-500">No test results yet. Click "Run Complete Test" to start.</p>
+                <p className="text-gray-500">No test results yet. Click &quot;Run Complete Test&quot; to start.</p>
               ) : (
                 <div className="space-y-1">
                   {results.map((result, index) => (

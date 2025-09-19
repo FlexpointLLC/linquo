@@ -4,7 +4,7 @@
     var base = (function () {
       try {
         return new URL(current.src).origin;
-      } catch (e) {
+      } catch {
         return window.location.origin;
       }
     })();
