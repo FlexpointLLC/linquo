@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
 import { Composer } from "@/components/chat/composer";
@@ -12,14 +12,22 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 
-// Force dynamic rendering
+// Force dynamic rendering and disable static optimization
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") ?? "chats";
-  const activeId = searchParams.get("cid") ?? "1";
+  const [currentTab, setCurrentTab] = useState("chats");
+  const [activeId, setActiveId] = useState("1");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab") ?? "chats";
+    const cid = searchParams.get("cid") ?? "1";
+    setCurrentTab(tab);
+    setActiveId(cid);
+  }, [searchParams]);
 
   const { data: conversationRows } = useConversations();
   const { data: messageRows } = useMessages(currentTab === "chats" ? activeId : null);
