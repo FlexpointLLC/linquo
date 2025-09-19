@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/ui/password-input";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
 
@@ -159,11 +160,10 @@ export function LoginForm() {
                   Forgot password?
                 </button>
               </div>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                onChange={(value) => setFormData(prev => ({ ...prev, password: value }))}
                 placeholder="Enter your password"
                 required
               />
