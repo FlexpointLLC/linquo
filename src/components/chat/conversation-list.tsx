@@ -24,7 +24,7 @@ export function ConversationList({
   const openCount = conversations.filter(c => c.status === "ACTIVE").length;
 
   return (
-    <div className="border-r w-80 shrink-0 bg-white h-screen flex flex-col">
+    <div className="border-r w-80 shrink-0 bg-white h-[calc(100vh-80px)] flex flex-col">
       {/* Header */}
       <div className="p-3 border-b">
         <div className="flex items-center justify-between mb-3">

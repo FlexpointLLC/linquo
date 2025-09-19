@@ -23,7 +23,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
           </div>
         </header>
         <Separator />
-        <main className="p-0">{children}</main>
+        <main className="p-6">{children}</main>
       </div>
     </div>
   );

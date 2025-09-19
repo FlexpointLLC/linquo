@@ -47,7 +47,7 @@ export function DashboardContent() {
 
 
   return (
-    <div className="h-screen w-full">
+    <div className="h-[calc(100vh-80px)] w-full">
       {/* Error Display - Only show for actual errors, not empty data */}
       {(conversationError || messageError || agentsError || customersError) && (
         <div className="p-3 bg-red-50 border border-red-200">
@@ -62,7 +62,7 @@ export function DashboardContent() {
       )}
       
       {currentTab === "chats" && (
-        <div className="grid grid-cols-[320px_1fr] h-screen -m-6">
+        <div className="grid grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6">
           <ConversationList
             conversations={(conversationRows ?? []).map((c) => {
               const customer = customers?.find(cust => cust.id === c.customer_id);
@@ -83,7 +83,7 @@ export function DashboardContent() {
               router.push(url.pathname + "?" + url.searchParams.toString());
             }}
           />
-          <div className="flex flex-col h-screen bg-white">
+          <div className="flex flex-col h-[calc(100vh-80px)] bg-white">
             {/* Conversation Header with Actions */}
             {activeId && (
               <div className="border-b p-3 bg-white flex-shrink-0">
