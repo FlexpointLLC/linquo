@@ -23,11 +23,8 @@ export function useMessages(conversationId: string | null) {
 
     async function load() {
       try {
-        if (!client) {
-          setData([
-            { id: "m1", conversation_id: conversationId, author: "customer", name: "John Doe", text: "Hi", created_at: new Date().toISOString() },
-            { id: "m2", conversation_id: conversationId, author: "agent", name: "You", text: "Hello", created_at: new Date().toISOString() },
-          ]);
+        if (!client || !conversationId) {
+          setData([]);
           return;
         }
         const { data, error } = await client
