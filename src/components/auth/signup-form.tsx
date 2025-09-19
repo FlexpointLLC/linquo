@@ -180,7 +180,7 @@ export function SignupForm() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                This will be your organization's unique URL
+                This will be your organization&apos;s unique URL
               </p>
             </div>
 

@@ -36,7 +36,7 @@ export function useCurrentAgent() {
     loadCurrentAgent();
   }, []);
 
-  const loginAgent = async (email: string, password: string): Promise<Agent | null> => {
+  const loginAgent = async (email: string, _password: string): Promise<Agent | null> => {
     setLoading(true);
     setError(null);
 
