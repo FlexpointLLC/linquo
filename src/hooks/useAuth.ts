@@ -53,8 +53,8 @@ export function useAuth() {
 
     const loadUserData = async (user: User, retryCount = 0) => {
       try {
-        // Get agent data
-        const { data: agentData, error: agentError } = await supabase
+        // Get agent data with timeout
+        const agentPromise = supabase
           .from("agents")
           .select(`
             id,
@@ -65,6 +65,15 @@ export function useAuth() {
           `)
           .eq("user_id", user.id)
           .single();
+        
+        const result = await Promise.race([
+          agentPromise,
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Agent query timeout')), 5000)
+          )
+        ]);
+        
+        const { data: agentData, error: agentError } = result;
 
         if (agentError) {
           // If this is a "not found" error and we haven't retried, wait a bit and try again
@@ -85,12 +94,21 @@ export function useAuth() {
           return;
         }
 
-        // Get organization data separately
-        const { data: orgData, error: orgError } = await supabase
+        // Get organization data separately with timeout
+        const orgPromise = supabase
           .from("organizations")
           .select("id, name, slug")
           .eq("id", agentData.org_id)
           .single();
+        
+        const orgResult = await Promise.race([
+          orgPromise,
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Organization query timeout')), 5000)
+          )
+        ]);
+        
+        const { data: orgData, error: orgError } = orgResult;
 
         if (orgError) {
           // Keep the user and agent, but set organization to null
@@ -132,8 +150,16 @@ export function useAuth() {
 
     const initializeAuth = async () => {
       try {
-        // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Get initial session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const sessionResult = await Promise.race([
+          sessionPromise,
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Session query timeout')), 5000)
+          )
+        ]);
+        
+        const { data: { session }, error } = sessionResult;
         
         if (error) {
           setLoading(false);
