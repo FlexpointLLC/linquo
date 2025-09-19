@@ -38,9 +38,9 @@ export function useMessages(conversationId: string | null) {
         const channel = client
           .channel(`msg_changes_${conversationId}`)
           .on(
-            "postgres_changes",
+            "postgres_changes" as any,
             { event: "insert", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-            (payload) => {
+            (payload: any) => {
               setData((prev) => (prev ? [...prev, payload.new as DbMessage] : [payload.new as DbMessage]));
             }
           )
