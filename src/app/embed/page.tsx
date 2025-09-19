@@ -12,7 +12,7 @@ import { useCustomer } from "@/hooks/useCustomer";
 
 function EmbedContent() {
   const params = useSearchParams();
-  const site = params.get("site") || window.location.hostname;
+  const site = params.get("site") || (typeof window !== 'undefined' ? window.location.hostname : 'localhost');
   const [cid, setCid] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
