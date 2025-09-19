@@ -44,7 +44,7 @@ export function Composer({
         <div className="absolute bottom-2 right-2">
           <Button 
             onClick={handleSend}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 h-7 text-xs"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 h-7 text-xs disabled:bg-gray-400 disabled:hover:bg-gray-400"
             disabled={!text.trim()}
           >
             Send
