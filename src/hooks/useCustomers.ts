@@ -18,7 +18,7 @@ export function useCustomers() {
           setError("Supabase client not available");
           return;
         }
-        const { data, error } = await client.from("customers").select("id,name,email,status,website").order("name");
+        const { data, error } = await client.from("customers").select("id,name,email,status").order("name");
         if (error) throw error;
         setData(data as Customer[]);
       } catch (e: unknown) {

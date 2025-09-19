@@ -38,12 +38,11 @@ export function useCustomer() {
         throw new Error("Supabase client not available");
       }
 
-      // First, try to find existing customer by email and website
+      // First, try to find existing customer by email (website column might not exist yet)
       const { data: existingCustomer, error: findError } = await client
         .from("customers")
         .select("*")
         .eq("email", email)
-        .eq("website", website)
         .maybeSingle();
 
       if (findError) {
@@ -72,13 +71,13 @@ export function useCustomer() {
           customerData = existingCustomer;
         }
       } else {
-        // Create new customer
+        // Create new customer (without website column for now)
         const { data: newCustomer, error: createError } = await client
           .from("customers")
           .insert({
             name,
             email,
-            website,
+            status: "active",
           })
           .select()
           .single();
@@ -90,11 +89,17 @@ export function useCustomer() {
         customerData = newCustomer;
       }
 
-      // Save to localStorage
-      localStorage.setItem("linquo_customer", JSON.stringify(customerData));
-      setCustomer(customerData);
+      // Add website to customer data for local use
+      const customerWithWebsite = {
+        ...customerData,
+        website: website,
+      };
 
-      return customerData;
+      // Save to localStorage
+      localStorage.setItem("linquo_customer", JSON.stringify(customerWithWebsite));
+      setCustomer(customerWithWebsite);
+
+      return customerWithWebsite;
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to create customer";
       setError(errorMessage);
