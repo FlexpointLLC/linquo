@@ -5,9 +5,10 @@ import { getSupabaseBrowser } from "@/lib/supabase-browser";
 export type DbMessage = {
   id: string;
   conversation_id: string;
-  author: "agent" | "customer";
-  name: string;
-  text: string;
+  sender_type: "AGENT" | "CUSTOMER" | "SYSTEM" | "BOT";
+  agent_id: string | null;
+  customer_id: string | null;
+  body_text: string;
   created_at: string;
 };
 
@@ -29,17 +30,14 @@ export function useMessages(conversationId: string | null) {
         }
         const { data, error } = await client
           .from("messages")
-          .select("id,conversation_id,author,name,text,created_at")
+          .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at")
           .eq("conversation_id", conversationId)
           .order("created_at", { ascending: true });
         
         if (error) {
-          console.error("Error loading messages:", error);
           throw error;
         }
         
-        console.log("Messages loaded for conversation", conversationId, ":", data);
-        console.log("Number of messages found:", data?.length || 0);
         setData(data as DbMessage[]);
 
         const channel = client

@@ -25,7 +25,14 @@ export function Sidebar() {
   const { agent, organization, signOut } = useAuth();
 
   const handleLogout = async () => {
-    await signOut();
+    try {
+      await signOut();
+      // Force redirect to login page
+      window.location.href = "/login";
+        } catch (error) {
+          // Force redirect even if there's an error
+          window.location.href = "/login";
+        }
   };
 
   return (
@@ -60,16 +67,16 @@ export function Sidebar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center justify-center rounded-md p-2 hover:bg-muted transition-colors">
-              <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-xs">
-                  {agent?.name?.slice(0, 2).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
+                <Avatar className="h-6 w-6">
+                  <AvatarFallback className="text-xs">
+                    {agent?.display_name?.slice(0, 2).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <div className="px-2 py-1.5">
-              <p className="text-sm font-medium">{agent?.name || "User"}</p>
+              <p className="text-sm font-medium">{agent?.display_name || "User"}</p>
               <p className="text-xs text-muted-foreground">{agent?.email || ""}</p>
             </div>
             <DropdownMenuItem onClick={handleLogout} className="text-red-600">

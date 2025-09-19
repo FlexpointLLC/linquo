@@ -23,10 +23,9 @@ export function useCurrentAgent() {
         if (stored) {
           const agent = JSON.parse(stored) as Agent;
           setCurrentAgent(agent);
-          console.log("Loaded current agent from storage:", agent);
         }
       } catch (e) {
-        console.error("Error loading current agent:", e);
+        // Error loading current agent
         setError("Failed to load current agent");
       } finally {
         setLoading(false);
@@ -62,7 +61,6 @@ export function useCurrentAgent() {
         const agent = agents as Agent;
         setCurrentAgent(agent);
         localStorage.setItem("linquo_current_agent", JSON.stringify(agent));
-        console.log("Agent logged in:", agent);
         return agent;
       }
 
@@ -70,7 +68,7 @@ export function useCurrentAgent() {
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "Login failed";
       setError(errorMessage);
-      console.error("Login error:", e);
+      // Login error
       return null;
     } finally {
       setLoading(false);
@@ -80,13 +78,11 @@ export function useCurrentAgent() {
   const logoutAgent = () => {
     setCurrentAgent(null);
     localStorage.removeItem("linquo_current_agent");
-    console.log("Agent logged out");
   };
 
   const setAgent = (agent: Agent) => {
     setCurrentAgent(agent);
     localStorage.setItem("linquo_current_agent", JSON.stringify(agent));
-    console.log("Agent set:", agent);
   };
 
   return {

@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Bell, Plus } from "lucide-react";
-import { DebugAuth } from "@/components/debug-auth";
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
   return (
@@ -26,7 +25,6 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
         <Separator />
         <main className="p-6">{children}</main>
       </div>
-      <DebugAuth />
     </div>
   );
 }

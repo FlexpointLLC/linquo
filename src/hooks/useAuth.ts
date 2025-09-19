@@ -8,10 +8,10 @@ export type AuthUser = {
   user: User | null;
   agent: {
     id: string;
-    name: string;
+    display_name: string;
     email: string;
-    role: "owner" | "admin" | "agent";
-    organization_id: string;
+    online_status: "ONLINE" | "AWAY" | "OFFLINE";
+    org_id: string;
   } | null;
   organization: {
     id: string;
@@ -28,156 +28,244 @@ export function useAuth() {
   });
   const [loading, setLoading] = useState(true);
 
-  console.log("🔧 useAuth hook called, current state:", { authUser, loading });
+
+  // Global fallback to prevent infinite loading
+  useEffect(() => {
+    const globalTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 10000); // 10 second global timeout
+
+    return () => clearTimeout(globalTimeout);
+  }, []);
 
   useEffect(() => {
+    // Immediate timeout fallback
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 3000); // 3 second timeout
+
     const supabase = getSupabaseBrowser();
+    
     if (!supabase) {
-      console.log("❌ No Supabase client available");
       setLoading(false);
       return;
     }
 
-    // Get initial session
-    const getInitialSession = async () => {
-      console.log("🔍 Getting initial session...");
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("🔍 Session result:", { session: !!session, user: !!session?.user });
-      if (session?.user) {
-        await loadUserData(session.user);
-      } else {
-        console.log("❌ No session found, setting loading to false");
-        setLoading(false);
-      }
-    };
+    const loadUserData = async (user: User, retryCount = 0) => {
+      try {
+        // Get agent data
+        const { data: agentData, error: agentError } = await supabase
+          .from("agents")
+          .select(`
+            id,
+            display_name,
+            email,
+            online_status,
+            org_id
+          `)
+          .eq("user_id", user.id)
+          .single();
 
-    getInitialSession();
-
-    // Fallback timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      console.log("⏰ Auth timeout - setting loading to false");
-      setLoading(false);
-    }, 10000); // 10 second timeout
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          await loadUserData(session.user);
-        } else {
+        if (agentError) {
+          // If this is a "not found" error and we haven't retried, wait a bit and try again
+          if (agentError.code === 'PGRST116' && retryCount < 3) {
+            setTimeout(() => {
+              loadUserData(user, retryCount + 1);
+            }, 1000);
+            return;
+          }
+          
+          // If agent doesn't exist after retries, keep the user but set agent/organization to null
           setAuthUser({
-            user: null,
+            user,
             agent: null,
             organization: null,
           });
           setLoading(false);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
-  }, []);
-
-  const loadUserData = async (user: User, retryCount = 0) => {
-    const supabase = getSupabaseBrowser();
-    if (!supabase) return;
-
-    console.log("🔍 Loading user data for:", user.id, retryCount > 0 ? `(retry ${retryCount})` : "");
-
-    try {
-      // Get agent data
-      console.log("👤 Fetching agent data...");
-      const { data: agentData, error: agentError } = await supabase
-        .from("agents")
-        .select(`
-          id,
-          name,
-          email,
-          role,
-          organization_id
-        `)
-        .eq("user_id", user.id)
-        .single();
-
-      console.log("🔍 Agent query result:", { agentData, agentError });
-
-      if (agentError) {
-        console.error("❌ Agent error:", agentError);
-        
-        // If this is a "not found" error and we haven't retried, wait a bit and try again
-        // This handles the case where the agent record was just created but not yet available
-        if (agentError.code === 'PGRST116' && retryCount < 3) {
-          console.log("⏳ Agent not found, retrying in 1 second...");
-          setTimeout(() => {
-            loadUserData(user, retryCount + 1);
-          }, 1000);
           return;
         }
-        
-        // If agent doesn't exist after retries, keep the user but set agent/organization to null
-        // This allows the user to stay logged in and see the setup message
+
+        // Get organization data separately
+        const { data: orgData, error: orgError } = await supabase
+          .from("organizations")
+          .select("id, name, slug")
+          .eq("id", agentData.org_id)
+          .single();
+
+        if (orgError) {
+          // Keep the user and agent, but set organization to null
+          setAuthUser({
+            user,
+            agent: {
+              id: agentData.id,
+              display_name: agentData.display_name,
+              email: agentData.email,
+              online_status: agentData.online_status,
+              org_id: agentData.org_id,
+            },
+            organization: null,
+          });
+        } else {
+          setAuthUser({
+            user,
+            agent: {
+              id: agentData.id,
+              display_name: agentData.display_name,
+              email: agentData.email,
+              online_status: agentData.online_status,
+              org_id: agentData.org_id,
+            },
+            organization: orgData,
+          });
+        }
+      } catch (error) {
+        // Keep the user logged in even if there's an error
         setAuthUser({
           user,
           agent: null,
           organization: null,
         });
+      } finally {
         setLoading(false);
-        return;
       }
+    };
 
-      // Get organization data separately
-      console.log("🏢 Fetching organization data for:", agentData.organization_id);
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .select("id, name, slug")
-        .eq("id", agentData.organization_id)
-        .single();
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          setLoading(false);
+          return;
+        }
+        
+        if (session?.user) {
+          await loadUserData(session.user);
+        } else {
+          setLoading(false);
+        }
 
-      console.log("🔍 Organization query result:", { orgData, orgError });
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (session?.user) {
+              await loadUserData(session.user);
+            } else {
+              setAuthUser({
+                user: null,
+                agent: null,
+                organization: null,
+              });
+              setLoading(false);
+            }
+          }
+        );
 
-      if (orgError) {
-        console.error("❌ Organization error:", orgError);
-        // Keep the user and agent, but set organization to null
-        setAuthUser({
-          user,
-          agent: {
-            id: agentData.id,
-            name: agentData.name,
-            email: agentData.email,
-            role: agentData.role,
-            organization_id: agentData.organization_id,
-          },
-          organization: null,
-        });
-      } else {
-        setAuthUser({
-          user,
-          agent: {
-            id: agentData.id,
-            name: agentData.name,
-            email: agentData.email,
-            role: agentData.role,
-            organization_id: agentData.organization_id,
-          },
-          organization: orgData,
-        });
-        console.log("✅ User data loaded successfully");
+        return subscription;
+
+      } catch (error) {
+        setLoading(false);
+        return null;
       }
-    } catch (error) {
-      console.error("❌ Error loading user data:", error);
-      // Keep the user logged in even if there's an error
-      setAuthUser({
-        user,
-        agent: null,
-        organization: null,
-      });
-    } finally {
-      setLoading(false);
-      console.log("🏁 Loading completed");
+    };
+
+    // Initialize auth
+    initializeAuth().then((subscription) => {
+      // Store subscription for cleanup if needed
+      if (subscription) {
+        // We could store this in a ref if we need to clean it up
+        // For now, we'll let it run
+      }
+    });
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    const supabase = getSupabaseBrowser();
+    if (!supabase) throw new Error("Supabase client not available");
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  };
+
+  const signUp = async (
+    name: string,
+    email: string,
+    password: string,
+    organizationName: string,
+    organizationSlug: string
+  ) => {
+    const supabase = getSupabaseBrowser();
+    if (!supabase) throw new Error("Supabase client not available");
+
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name },
+      },
+    });
+
+    if (authError) throw authError;
+    if (!data.user) throw new Error("User not created");
+
+    // Create organization
+    const { data: orgData, error: orgError } = await supabase
+      .from("organizations")
+      .insert({ name: organizationName, slug: organizationSlug })
+      .select()
+      .single();
+
+    if (orgError) {
+      await supabase.auth.admin.deleteUser(data.user.id);
+      throw orgError;
     }
+
+        // Create agent (owner role)
+        const { data: agentData, error: agentError } = await supabase.from("agents").insert({
+          user_id: data.user.id,
+          display_name: name,
+          email,
+          online_status: "OFFLINE",
+          org_id: orgData.id,
+        }).select().single();
+
+        if (agentError) {
+          await supabase.auth.admin.deleteUser(data.user.id);
+          await supabase.from("organizations").delete().eq("id", orgData.id);
+          throw agentError;
+        }
+
+        // Create default OWNER role for the new organization
+        const { data: ownerRoleData, error: roleError } = await supabase.from("roles").insert({
+          org_id: orgData.id,
+          role_key: "OWNER",
+          permissions: {
+            "agents:read": true, "agents:write": true, "agents:delete": true,
+            "customers:read": true, "customers:write": true, "customers:delete": true,
+            "conversations:read": true, "conversations:write": true, "conversations:delete": true,
+            "messages:read": true, "messages:write": true, "messages:delete": true,
+            "settings:read": true, "settings:write": true
+          }
+        }).select().single();
+
+        if (roleError) {
+          await supabase.auth.admin.deleteUser(data.user.id);
+          await supabase.from("organizations").delete().eq("id", orgData.id);
+          await supabase.from("agents").delete().eq("id", agentData.id);
+          throw roleError;
+        }
+
+        // Assign owner role to the agent
+        await supabase.from("agent_role_assignments").insert({
+          org_id: orgData.id,
+          agent_id: agentData.id,
+          role_id: ownerRoleData.id,
+        });
   };
 
   const signOut = async () => {
@@ -190,6 +278,8 @@ export function useAuth() {
   return {
     ...authUser,
     loading,
+    signIn,
+    signUp,
     signOut,
   };
 }

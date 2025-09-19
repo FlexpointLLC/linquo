@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
-export type Customer = { id: string; name: string; email: string; status: "active" | "solved" | "churned" | "trial"; website?: string };
+export type Customer = { id: string; display_name: string; email: string; status: "ACTIVE" | "BLOCKED"; country?: string };
 
 export function useCustomers() {
   const [data, setData] = useState<Customer[] | null>(null);
@@ -14,11 +14,11 @@ export function useCustomers() {
     async function load() {
       try {
         if (!client) {
-          console.error("Supabase client not available");
-          setError("Supabase client not available");
+          setData([]);
+          setLoading(false);
           return;
         }
-        const { data, error } = await client.from("customers").select("id,name,email,status").order("name");
+        const { data, error } = await client.from("customers").select("id,display_name,email,status,country").order("display_name");
         if (error) throw error;
         setData(data as Customer[]);
       } catch (e: unknown) {

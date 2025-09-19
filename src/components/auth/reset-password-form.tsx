@@ -68,7 +68,7 @@ export function ResetPasswordForm() {
       }, 2000);
 
     } catch (error) {
-      console.error("Password reset error:", error);
+      // Password reset error
       setError(error instanceof Error ? error.message : "Failed to update password");
     } finally {
       setIsLoading(false);

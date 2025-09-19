@@ -43,27 +43,10 @@ export function DashboardContent() {
     }
   }, [currentTab, activeId, conversationRows, router]);
 
-  // Debug logging
-  useEffect(() => {
-    console.log("Dashboard Debug:", {
-      currentTab,
-      activeId,
-      conversationRows: conversationRows?.length,
-      messageRows: messageRows?.length,
-      conversationData: conversationRows,
-      messageData: messageRows,
-      errors: {
-        conversationError,
-        messageError,
-        agentsError,
-        customersError,
-      },
-    });
-  }, [currentTab, activeId, conversationRows, messageRows, conversationError, messageError, agentsError, customersError]);
 
   return (
     <div className="p-0">
-      {/* Error Display */}
+      {/* Error Display - Only show for actual errors, not empty data */}
       {(conversationError || messageError || agentsError || customersError) && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <h4 className="text-sm font-medium text-red-800">Connection Issues:</h4>
@@ -80,15 +63,14 @@ export function DashboardContent() {
         <div className="rounded-md border grid grid-cols-[320px_1fr] min-h-[60vh]">
           <ConversationList
             conversations={(conversationRows ?? []).map((c) => {
-              // Extract customer name from conversation title (format: "Name (website)")
-              const customerName = c.title.split(" (")[0];
-              const customer = customers?.find(cust => cust.name === customerName);
+              // Since conversations don't have titles, create a generic name
+              const conversationName = c.title || `Conversation ${c.id.slice(0, 8)}`;
               
               return { 
                 id: c.id, 
-                name: c.title, 
+                name: conversationName, 
                 lastMessage: "",
-                status: customer?.status
+                status: "ACTIVE" as const
               };
             })}
             activeId={activeId ?? undefined}
@@ -104,32 +86,16 @@ export function DashboardContent() {
               <div className="border-b p-3 bg-muted/50">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium">
-                    {conversationRows?.find(c => c.id === activeId)?.title}
+                    {conversationRows?.find(c => c.id === activeId)?.title || `Conversation ${activeId?.slice(0, 8)}`}
                   </div>
                   <div className="flex items-center gap-2">
                     {(() => {
-                      const conversation = conversationRows?.find(c => c.id === activeId);
-                      const customerName = conversation?.title.split(" (")[0];
-                      const customer = customers?.find(cust => cust.name === customerName);
-                      return customer ? (
-                        <select
-                          value={customer.status}
-                          onChange={async (e) => {
-                            const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                            if (!client) return;
-                            await client
-                              .from("customers")
-                              .update({ status: e.target.value as "active" | "solved" | "churned" | "trial" })
-                              .eq("id", customer.id);
-                          }}
-                          className="text-xs px-2 py-1 rounded border bg-background"
-                        >
-                          <option value="active">Active</option>
-                          <option value="solved">Solved</option>
-                          <option value="trial">Trial</option>
-                          <option value="churned">Churned</option>
-                        </select>
-                      ) : null;
+                      // Since conversations don't have titles, we'll just show a generic status
+                      return (
+                        <span className="text-xs px-2 py-1 rounded border bg-background text-muted-foreground">
+                          Active
+                        </span>
+                      );
                     })()}
                   </div>
                 </div>
@@ -138,9 +104,9 @@ export function DashboardContent() {
             <MessageThread
               messages={(messageRows ?? []).map((m) => ({
                 id: m.id,
-                author: m.author as ChatMessage["author"],
-                name: m.name,
-                text: m.text,
+                author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
+                name: m.sender_type === "AGENT" ? "Agent" : "Customer",
+                text: m.body_text,
                 time: new Date(m.created_at).toLocaleTimeString(),
               })) as ChatMessage[]}
             />
@@ -150,9 +116,9 @@ export function DashboardContent() {
                 if (!client || !agent) return;
                 await client.from("messages").insert({
                   conversation_id: activeId,
-                  author: "agent",
-                  name: agent.name,
-                  text,
+                  sender_type: "AGENT",
+                  agent_id: agent.id,
+                  body_text: text,
                 });
                 await client
                   .from("conversations")

@@ -34,12 +34,12 @@ export function AgentSelector() {
         <Button variant="ghost" className="flex items-center gap-2 h-8 px-2">
           <Avatar className="h-6 w-6">
             <AvatarFallback className="text-xs">
-              {agent.name.slice(0, 2).toUpperCase()}
+              {agent.display_name.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col items-start">
-            <span className="text-sm font-medium">{agent.name}</span>
-            <span className="text-xs text-muted-foreground">{agent.role}</span>
+            <span className="text-sm font-medium">{agent.display_name}</span>
+            <span className="text-xs text-muted-foreground">{agent.online_status}</span>
           </div>
         </Button>
       </DropdownMenuTrigger>
@@ -55,9 +55,9 @@ export function AgentSelector() {
         </div>
         <DropdownMenuSeparator />
         <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{agent.name}</p>
+          <p className="text-sm font-medium">{agent.display_name}</p>
           <p className="text-xs text-muted-foreground">{agent.email}</p>
-          <p className="text-xs text-muted-foreground capitalize">{agent.role}</p>
+          <p className="text-xs text-muted-foreground capitalize">{agent.online_status}</p>
         </div>
         <DropdownMenuSeparator />
         {agents && agents.length > 1 && (
@@ -73,12 +73,12 @@ export function AgentSelector() {
               >
                 <Avatar className="h-5 w-5">
                   <AvatarFallback className="text-xs">
-                    {otherAgent.name.slice(0, 2).toUpperCase()}
+                    {otherAgent.display_name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="text-sm">{otherAgent.name}</span>
-                  <span className="text-xs text-muted-foreground">{otherAgent.role}</span>
+                  <span className="text-sm">{otherAgent.display_name}</span>
+                  <span className="text-xs text-muted-foreground">{otherAgent.online_status}</span>
                 </div>
               </DropdownMenuItem>
             ))}

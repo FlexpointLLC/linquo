@@ -4,7 +4,7 @@ import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 export type Conversation = {
   id: string;
-  title: string;
+  title?: string;
   last_message_at: string | null;
 };
 
@@ -20,23 +20,21 @@ export function useConversations() {
     async function load() {
       try {
         if (!client) {
-          console.error("Supabase client not available");
-          setError("Supabase client not available");
+          setData([]);
+          setLoading(false);
           return;
         }
         const { data, error } = await client
           .from("conversations")
-          .select("id,title,last_message_at")
-          .order("last_message_at", { ascending: false, nullsFirst: false });
+          .select("id,last_message_at")
+          .order("last_message_at", { ascending: false, nullsFirst: false })
+          .limit(100);
         
         if (error) {
-          console.error("Error loading conversations:", error);
           throw error;
         }
-        
-        console.log("Conversations loaded:", data);
-        console.log("Number of conversations found:", data?.length || 0);
-        setData(data as Conversation[]);
+        // Set data even if it's an empty array (no conversations)
+        setData(data as Conversation[] || []);
 
         const channel = client
           .channel("conv_changes")
@@ -47,9 +45,10 @@ export function useConversations() {
               // Reload list on any change
               client
                 .from("conversations")
-                .select("id,title,last_message_at")
+                .select("id,last_message_at")
                 .order("last_message_at", { ascending: false, nullsFirst: false })
-                .then(({ data }) => setData(data as Conversation[]));
+                .limit(100)
+                .then(({ data }) => setData(data as Conversation[] || []));
             }
           )
           .subscribe();

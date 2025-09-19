@@ -9,11 +9,8 @@ export function DashboardWrapper({ children }: { children: React.ReactNode }) {
   const { user, agent, organization, loading } = useAuth();
   const router = useRouter();
 
-  console.log("🔧 DashboardWrapper state:", { user: !!user, agent: !!agent, organization: !!organization, loading });
-
   useEffect(() => {
     if (!loading && !user) {
-      console.log("🔍 No user found, redirecting to login");
       router.push("/login");
     }
   }, [loading, user, router]);

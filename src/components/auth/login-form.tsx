@@ -28,36 +28,27 @@ export function LoginForm() {
 
     try {
       const supabase = getSupabaseBrowser();
-      console.log("🔧 Login form - Supabase client:", supabase ? "✅ Available" : "❌ Not available");
       if (!supabase) {
-        console.error("❌ Supabase client not available in login form");
         throw new Error("Supabase client not available");
       }
 
-      console.log("🔍 Attempting login with:", { email: formData.email });
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
-      console.log("🔍 Login result:", { data: !!data, user: !!data?.user, error: authError });
-
       if (authError) {
-        console.error("❌ Login error:", authError);
         throw authError;
       }
 
       if (data.user) {
-        console.log("✅ Login successful, redirecting to dashboard");
         // Redirect to dashboard
         router.push("/dashboard");
       } else {
-        console.error("❌ No user returned from login");
         throw new Error("Login failed - no user returned");
       }
 
     } catch (error) {
-      console.error("Login error:", error);
       setError(error instanceof Error ? error.message : "Login failed");
     } finally {
       setIsLoading(false);
@@ -90,7 +81,6 @@ export function LoginForm() {
 
       setSuccess("Password reset email sent! Check your inbox.");
     } catch (error) {
-      console.error("Forgot password error:", error);
       setError(error instanceof Error ? error.message : "Failed to send reset email");
     } finally {
       setIsLoading(false);
@@ -119,7 +109,6 @@ export function LoginForm() {
         throw error;
       }
     } catch (error) {
-      console.error("Google login error:", error);
       setError(error instanceof Error ? error.message : "Google login failed");
       setIsLoading(false);
     }

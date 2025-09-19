@@ -68,7 +68,6 @@ export function SignupForm() {
         throw error;
       }
     } catch (error) {
-      console.error("Google signup error:", error);
       setError(error instanceof Error ? error.message : "Google signup failed");
       setIsLoading(false);
     }
@@ -95,15 +94,12 @@ export function SignupForm() {
     }
 
     try {
-      console.log("🚀 Starting signup process...");
       const supabase = getSupabaseBrowser();
       if (!supabase) {
         throw new Error("Supabase client not available");
       }
-      console.log("✅ Supabase client available");
 
       // 1. Sign up the user
-      console.log("📧 Creating user account...", { email: formData.email });
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -115,23 +111,17 @@ export function SignupForm() {
         }
       });
 
-      console.log("🔍 Auth result:", { authData, authError });
 
       if (authError) {
-        console.error("❌ Auth error:", authError);
         throw authError;
       }
 
       if (!authData.user) {
-        console.error("❌ No user created");
         throw new Error("Failed to create user account");
       }
 
-      console.log("✅ User created successfully:", authData.user.id);
-      console.log("📧 Email confirmation required:", !authData.user.email_confirmed_at);
 
       // 1.5. Update user profile with display name
-      console.log("👤 Updating user profile...");
       const { error: profileError } = await supabase.auth.updateUser({
         data: {
           full_name: formData.name,
@@ -140,16 +130,10 @@ export function SignupForm() {
       });
 
       if (profileError) {
-        console.warn("⚠️ Profile update failed (non-critical):", profileError);
-      } else {
-        console.log("✅ User profile updated successfully");
+        // Profile update failed, but continue with signup
       }
 
       // 2. Create organization
-      console.log("🏢 Creating organization...", { 
-        name: formData.organizationName, 
-        slug: formData.organizationSlug 
-      });
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .insert({
@@ -159,40 +143,28 @@ export function SignupForm() {
         .select()
         .single();
 
-      console.log("🔍 Organization result:", { orgData, orgError });
-
       if (orgError) {
-        console.error("❌ Organization creation failed:", orgError);
         throw orgError;
       }
 
-      console.log("✅ Organization created successfully:", orgData.id);
-
       // 3. Create agent record (owner)
-      console.log("👤 Creating agent record...", { 
-        name: formData.name, 
-        email: formData.email,
-        organization_id: orgData.id,
-        user_id: authData.user.id
-      });
-      const { error: agentError } = await supabase
+      const { data: agentData, error: agentError } = await supabase
         .from("agents")
         .insert({
-          name: formData.name,
+          display_name: formData.name,
           email: formData.email,
-          role: "owner",
-          organization_id: orgData.id,
+          online_status: "OFFLINE",
+          org_id: orgData.id,
           user_id: authData.user.id,
-        });
+        })
+        .select()
+        .single();
 
-      console.log("🔍 Agent result:", { agentError });
 
       if (agentError) {
-        console.error("❌ Agent creation failed:", agentError);
         throw agentError;
       }
 
-      console.log("✅ Agent created successfully");
 
       // 4. Show success message and redirect
       if (!authData.user.email_confirmed_at) {
@@ -201,7 +173,6 @@ export function SignupForm() {
       router.push("/dashboard");
 
     } catch (error) {
-      console.error("❌ Signup error:", error);
       if (error instanceof Error) {
         setError(error.message);
       } else if (typeof error === 'object' && error !== null && 'message' in error) {

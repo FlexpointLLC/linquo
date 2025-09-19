@@ -23,7 +23,7 @@ export function AgentLogin() {
         alert("Invalid credentials. Please try again.");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      // Login error
       alert("Login failed. Please try again.");
     } finally {
       setIsLoading(false);

@@ -39,31 +39,31 @@ function EmbedContent() {
   }, [customer, createConversation]);
 
   const handleCustomerSubmit = async (data: { name: string; email: string }) => {
-    console.log("Starting customer submit with:", { name: data.name, email: data.email, site });
+    // Starting customer submit
     try {
       const customerData = await createOrGetCustomer(data.name, data.email, site);
-      console.log("Customer creation result:", customerData);
+      // Customer creation result
       
       if (customerData) {
-        console.log("Customer created/found:", customerData);
+        // Customer created/found
         const conversationId = await createConversation(customerData);
-        console.log("Conversation creation result:", conversationId);
+        // Conversation creation result
         
         if (conversationId) {
-          console.log("Conversation created/found:", conversationId);
+          // Conversation created/found
           setCid(conversationId);
           setShowForm(false);
-          console.log("Form hidden, chat should be visible now");
+          // Form hidden, chat should be visible now
         } else {
-          console.error("Failed to create conversation");
+          // Failed to create conversation
           // Fallback: create a temporary conversation ID for testing
           const tempConversationId = `temp-${Date.now()}`;
-          console.log("Using temporary conversation ID:", tempConversationId);
+          // Using temporary conversation ID
           setCid(tempConversationId);
           setShowForm(false);
         }
       } else {
-        console.error("Failed to create/find customer");
+        // Failed to create/find customer
         // Fallback: create a temporary customer and conversation for testing
         const tempCustomer = {
           id: `temp-${Date.now()}`,
@@ -74,12 +74,12 @@ function EmbedContent() {
           created_at: new Date().toISOString(),
         };
         const tempConversationId = `temp-conv-${Date.now()}`;
-        console.log("Using temporary customer and conversation:", tempCustomer, tempConversationId);
+        // Using temporary customer and conversation
         setCid(tempConversationId);
         setShowForm(false);
       }
     } catch (error) {
-      console.error("Error in customer submit:", error);
+      // Error in customer submit
       // Fallback: create temporary data for testing
       const tempCustomer = {
         id: `temp-${Date.now()}`,
@@ -90,7 +90,7 @@ function EmbedContent() {
         created_at: new Date().toISOString(),
       };
       const tempConversationId = `temp-conv-${Date.now()}`;
-      console.log("Error occurred, using temporary data:", tempCustomer, tempConversationId);
+      // Error occurred, using temporary data
       setCid(tempConversationId);
       setShowForm(false);
     }
@@ -99,9 +99,9 @@ function EmbedContent() {
   const messages = useMemo<ChatMessage[]>(() => {
     return (messageRows ?? []).map((m) => ({
       id: m.id,
-      author: m.author as ChatMessage["author"],
-      name: m.name,
-      text: m.text,
+      author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
+      name: m.sender_type === "AGENT" ? "Agent" : "Customer",
+      text: m.body_text,
       time: new Date(m.created_at).toLocaleTimeString(),
     }));
   }, [messageRows]);

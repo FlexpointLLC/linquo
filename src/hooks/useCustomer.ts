@@ -23,24 +23,22 @@ export function useCustomer() {
       try {
         setCustomer(JSON.parse(savedCustomer));
       } catch (e) {
-        console.error("Failed to parse saved customer:", e);
+        // Failed to parse saved customer
         localStorage.removeItem("linquo_customer");
       }
     }
   }, []);
 
   const createOrGetCustomer = async (name: string, email: string, website: string): Promise<Customer | null> => {
-    console.log("createOrGetCustomer called with:", { name, email, website });
     setLoading(true);
     setError(null);
 
     try {
       const client = getSupabaseBrowser();
       if (!client) {
-        console.error("Supabase client not available");
+        // Supabase client not available
         throw new Error("Supabase client not available");
       }
-      console.log("Supabase client available, proceeding with customer creation");
 
       // First, try to find existing customer by email (website column might not exist yet)
       const { data: existingCustomer, error: findError } = await client
@@ -50,7 +48,7 @@ export function useCustomer() {
         .maybeSingle();
 
       if (findError) {
-        console.error("Error finding customer:", findError);
+        // Error finding customer
       }
 
       let customerData: Customer;
@@ -66,7 +64,7 @@ export function useCustomer() {
             .single();
 
           if (updateError) {
-            console.error("Error updating customer:", updateError);
+            // Error updating customer
             customerData = existingCustomer;
           } else {
             customerData = updatedCustomer;
@@ -108,7 +106,7 @@ export function useCustomer() {
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to create customer";
       setError(errorMessage);
-      console.error("Error creating/getting customer:", e);
+      // Error creating/getting customer
       return null;
     } finally {
       setLoading(false);
@@ -116,14 +114,12 @@ export function useCustomer() {
   };
 
   const createConversation = async (customer: Customer): Promise<string | null> => {
-    console.log("createConversation called with customer:", customer);
     try {
       const client = getSupabaseBrowser();
       if (!client) {
-        console.error("Supabase client not available for conversation creation");
+        // Supabase client not available for conversation creation
         return null;
       }
-      console.log("Supabase client available for conversation creation");
 
       // Create conversation title with customer name and website
       const conversationTitle = `${customer.name} (${customer.website})`;
@@ -150,13 +146,13 @@ export function useCustomer() {
         .single();
 
       if (error) {
-        console.error("Error creating conversation:", error);
+        // Error creating conversation
         return null;
       }
 
       return newConversation.id;
     } catch (e: unknown) {
-      console.error("Error creating conversation:", e);
+      // Error creating conversation
       return null;
     }
   };
