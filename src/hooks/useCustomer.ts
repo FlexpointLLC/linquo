@@ -119,11 +119,14 @@ export function useCustomer() {
 
         const { data: newCustomer, error: createError } = await client
           .from("customers")
-          .insert({
+          .upsert({
             display_name: name,
             email,
             status: "ACTIVE",
             org_id: orgId, // Include org_id
+          }, {
+            onConflict: 'email',
+            ignoreDuplicates: false
           })
           .select()
           .single();
@@ -161,44 +164,90 @@ export function useCustomer() {
   };
 
   const createConversation = async (customer: Customer): Promise<string | null> => {
+    console.log("🔄 Starting createConversation for customer:", customer);
     try {
       const client = getSupabaseBrowser();
       if (!client) {
-        console.error("Supabase client not available for conversation creation");
+        console.error("❌ Supabase client not available for conversation creation");
         return null;
       }
+      console.log("✅ Supabase client available for conversation creation");
 
       // Check if conversation already exists for this customer
-      const { data: existingConv } = await client
+      console.log("🔍 Checking for existing conversation for customer ID:", customer.id);
+      const { data: existingConv, error: findError } = await client
         .from("conversations")
         .select("id")
         .eq("customer_id", customer.id)
         .maybeSingle();
 
+      if (findError) {
+        console.error("❌ Error finding existing conversation:", findError);
+      }
+
       if (existingConv) {
-        console.log("Found existing conversation:", existingConv.id);
+        console.log("✅ Found existing conversation:", existingConv.id);
         return existingConv.id;
       }
 
-      // Create new conversation (without title column)
-      const { data: newConversation, error } = await client
-        .from("conversations")
-        .insert({
-          customer_id: customer.id,
-          last_message_at: new Date().toISOString(),
-        })
-        .select("id")
-        .single();
+      console.log("📝 No existing conversation found, creating new one...");
+      
+      // Try different conversation creation approaches
+      let newConversation = null;
+      let error = null;
+      
+      // Approach 1: Try with org_id included
+      try {
+        console.log("🔄 Trying conversation creation with org_id...");
+        const result = await client
+          .from("conversations")
+          .insert({
+            customer_id: customer.id,
+            org_id: customer.org_id, // Include org_id from customer
+            last_message_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+        
+        newConversation = result.data;
+        error = result.error;
+        console.log("✅ With org_id approach result:", { data: newConversation, error });
+      } catch (e) {
+        console.log("❌ With org_id approach failed:", e);
+        error = e;
+      }
+      
+      // Approach 2: If first approach fails, try with just customer_id and org_id
+      if (error && !newConversation) {
+        try {
+          console.log("🔄 Trying with customer_id and org_id only...");
+          const result = await client
+            .from("conversations")
+            .insert({
+              customer_id: customer.id,
+              org_id: customer.org_id,
+            })
+            .select("id")
+            .single();
+          
+          newConversation = result.data;
+          error = result.error;
+          console.log("✅ Customer_id + org_id approach result:", { data: newConversation, error });
+        } catch (e) {
+          console.log("❌ Customer_id + org_id approach failed:", e);
+          error = e;
+        }
+      }
 
-      if (error) {
-        console.error("Error creating conversation:", error);
+      if (error || !newConversation) {
+        console.error("❌ Error creating conversation:", error);
         return null;
       }
 
-      console.log("Created new conversation:", newConversation.id);
+      console.log("✅ Created new conversation:", newConversation.id);
       return newConversation.id;
     } catch (e: unknown) {
-      console.error("Error creating conversation:", e);
+      console.error("❌ Error creating conversation:", e);
       return null;
     }
   };

@@ -118,6 +118,7 @@ export function DashboardContent() {
                   conversation_id: activeId,
                   sender_type: "AGENT",
                   agent_id: agent.id,
+                  org_id: agent.org_id, // Include org_id for agent messages
                   body_text: text,
                 });
                 await client

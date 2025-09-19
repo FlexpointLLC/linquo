@@ -147,19 +147,42 @@ function EmbedContent() {
       </ScrollArea>
       <Composer
         onSend={async (text) => {
+          console.log("💬 Sending message:", { text, cid, customer: customer?.id });
           const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-          if (!client || !cid || !customer) return;
+          if (!client || !cid || !customer) {
+            console.error("❌ Missing required data for message sending:", { client: !!client, cid, customer: !!customer });
+            return;
+          }
           
-          await client.from("messages").insert({ 
-            conversation_id: cid, 
-            sender_type: "CUSTOMER",
-            customer_id: customer.id,
-            body_text: text
-          });
-          
-          await client.from("conversations").update({ 
-            last_message_at: new Date().toISOString() 
-          }).eq("id", cid);
+          try {
+            console.log("📝 Inserting message into database...");
+            const { data: messageData, error: messageError } = await client.from("messages").insert({ 
+              conversation_id: cid, 
+              sender_type: "CUSTOMER",
+              customer_id: customer.id,
+              org_id: customer.org_id, // Include org_id
+              body_text: text
+            }).select().single();
+            
+            if (messageError) {
+              console.error("❌ Error inserting message:", messageError);
+            } else {
+              console.log("✅ Message inserted successfully:", messageData);
+            }
+            
+            console.log("🔄 Updating conversation last_message_at...");
+            const { error: updateError } = await client.from("conversations").update({ 
+              last_message_at: new Date().toISOString() 
+            }).eq("id", cid);
+            
+            if (updateError) {
+              console.error("❌ Error updating conversation:", updateError);
+            } else {
+              console.log("✅ Conversation updated successfully");
+            }
+          } catch (error) {
+            console.error("❌ Error in message sending:", error);
+          }
         }}
       />
     </div>
