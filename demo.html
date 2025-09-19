@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linquo Chat Widget Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .widget-demo {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .widget-demo h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .widget-demo p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .widget-instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .widget-instructions h4 {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        
+        .widget-instructions ul {
+            text-align: left;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .widget-instructions li {
+            margin: 8px 0;
+            color: #555;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 60px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>🚀 Linquo Chat Widget</h1>
+            <p>Experience real-time customer support with our beautiful, responsive chat widget. Try it out by looking for the widget in the bottom-right corner!</p>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3>Real-time Chat</h3>
+                <p>Connect with your customers instantly through our fast, reliable chat system powered by Supabase real-time technology.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3>Beautiful Design</h3>
+                <p>Modern, clean interface that matches your brand. Customizable colors, fonts, and styling options available.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Mobile Responsive</h3>
+                <p>Works perfectly on all devices - desktop, tablet, and mobile. Your customers can chat from anywhere.</p>
+            </div>
+        </div>
+        
+        <div class="widget-demo">
+            <h2>🎯 Try the Widget Now!</h2>
+            <p>The Linquo chat widget should appear in the bottom-right corner of this page. Click on it to start chatting!</p>
+            
+            <div class="widget-instructions">
+                <h4>📋 How to Test:</h4>
+                <ul>
+                    <li>Look for the widget in the bottom-right corner</li>
+                    <li>Click to open the chat interface</li>
+                    <li>Fill out your name and email</li>
+                    <li>Start chatting with Pearl!</li>
+                </ul>
+            </div>
+            
+            <p><strong>Widget Features:</strong> Pearl's avatar, welcome message, emoji/GIF/attachment icons, and "Powered by Linquo" branding.</p>
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 Linquo. Built with Next.js, Supabase, and lots of ❤️</p>
+        </div>
+    </div>
+
+    <!-- Linquo Widget Script -->
+    <script async src="http://localhost:3000/widget.js"></script>
+</body>
+</html>
