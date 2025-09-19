@@ -81,11 +81,11 @@ export function useAuth() {
     };
   }, []);
 
-  const loadUserData = async (user: User) => {
+  const loadUserData = async (user: User, retryCount = 0) => {
     const supabase = getSupabaseBrowser();
     if (!supabase) return;
 
-    console.log("🔍 Loading user data for:", user.id);
+    console.log("🔍 Loading user data for:", user.id, retryCount > 0 ? `(retry ${retryCount})` : "");
 
     try {
       // Get agent data
@@ -106,8 +106,19 @@ export function useAuth() {
 
       if (agentError) {
         console.error("❌ Agent error:", agentError);
-        // If agent doesn't exist, this might be a Google OAuth user
-        // We'll set the user but no agent/organization for now
+        
+        // If this is a "not found" error and we haven't retried, wait a bit and try again
+        // This handles the case where the agent record was just created but not yet available
+        if (agentError.code === 'PGRST116' && retryCount < 3) {
+          console.log("⏳ Agent not found, retrying in 1 second...");
+          setTimeout(() => {
+            loadUserData(user, retryCount + 1);
+          }, 1000);
+          return;
+        }
+        
+        // If agent doesn't exist after retries, keep the user but set agent/organization to null
+        // This allows the user to stay logged in and see the setup message
         setAuthUser({
           user,
           agent: null,
@@ -129,6 +140,7 @@ export function useAuth() {
 
       if (orgError) {
         console.error("❌ Organization error:", orgError);
+        // Keep the user and agent, but set organization to null
         setAuthUser({
           user,
           agent: {
@@ -156,6 +168,7 @@ export function useAuth() {
       }
     } catch (error) {
       console.error("❌ Error loading user data:", error);
+      // Keep the user logged in even if there's an error
       setAuthUser({
         user,
         agent: null,
