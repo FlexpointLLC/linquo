@@ -156,7 +156,9 @@ function EmbedContent() {
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-hidden bg-white">
+      
+      {/* Messages area - takes remaining space */}
+      <div className="flex-1 overflow-hidden bg-white min-h-0">
         <ScrollArea className="h-full">
           <div className="p-4 space-y-4">
             {/* Initial prompt */}
@@ -205,8 +207,9 @@ function EmbedContent() {
           </div>
         </ScrollArea>
       </div>
-      {/* Custom composer matching screenshot */}
-      <div className="flex-shrink-0 border-t border-gray-200 bg-white p-3">
+      
+      {/* Message input box - ALWAYS STICKY TO BOTTOM */}
+      <div className="flex-shrink-0 border-t border-gray-200 bg-white p-3 sticky bottom-0">
         <div className="relative">
           <input
             type="text"
@@ -283,7 +286,58 @@ function EmbedContent() {
           </div>
           
           {/* Send button on the right */}
-          <button className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300">
+          <button 
+            onClick={(e) => {
+              const input = e.currentTarget.parentElement?.querySelector('input');
+              if (input) {
+                const text = input.value.trim();
+                if (text) {
+                  // Send message logic
+                  console.log("💬 Sending message:", { text, cid, customer: customer?.id });
+                  const sendMessage = async () => {
+                    const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                    if (!client || !cid || !customer) {
+                      console.error("❌ Missing required data for message sending:", { client: !!client, cid, customer: !!customer });
+                      return;
+                    }
+                    
+                    try {
+                      console.log("📝 Inserting message into database...");
+                      const { data: messageData, error: messageError } = await client.from("messages").insert({ 
+                        conversation_id: cid, 
+                        sender_type: "CUSTOMER",
+                        customer_id: customer.id,
+                        org_id: customer.org_id,
+                        body_text: text
+                      }).select().single();
+                      
+                      if (messageError) {
+                        console.error("❌ Error inserting message:", messageError);
+                      } else {
+                        console.log("✅ Message inserted successfully:", messageData);
+                      }
+                      
+                      console.log("🔄 Updating conversation last_message_at...");
+                      const { error: updateError } = await client.from("conversations").update({ 
+                        last_message_at: new Date().toISOString() 
+                      }).eq("id", cid);
+                      
+                      if (updateError) {
+                        console.error("❌ Error updating conversation:", updateError);
+                      } else {
+                        console.log("✅ Conversation updated successfully");
+                      }
+                    } catch (error) {
+                      console.error("❌ Error in message sending:", error);
+                    }
+                  };
+                  sendMessage();
+                  input.value = "";
+                }
+              }
+            }}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+          >
             <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
