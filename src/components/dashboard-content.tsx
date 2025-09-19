@@ -62,7 +62,7 @@ export function DashboardContent() {
       )}
       
       {currentTab === "chats" && (
-        <div className="grid grid-cols-[320px_1fr] h-screen">
+        <div className="grid grid-cols-[320px_1fr] h-screen -m-6">
           <ConversationList
             conversations={(conversationRows ?? []).map((c) => {
               const customer = customers?.find(cust => cust.id === c.customer_id);
