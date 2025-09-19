@@ -27,7 +27,9 @@ export function LoginForm() {
 
     try {
       const supabase = getSupabaseBrowser();
+      console.log("🔧 Login form - Supabase client:", supabase ? "✅ Available" : "❌ Not available");
       if (!supabase) {
+        console.error("❌ Supabase client not available in login form");
         throw new Error("Supabase client not available");
       }
 

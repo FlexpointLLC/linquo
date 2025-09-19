@@ -4,11 +4,13 @@ export function getSupabaseBrowser() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
-  console.log("Supabase config:", {
+  console.log("🔧 Supabase config check:", {
     url: url ? "✅ URL present" : "❌ URL missing",
     key: key ? "✅ Key present" : "❌ Key missing",
     urlValue: url?.substring(0, 20) + "...",
     allEnvVars: Object.keys(process.env).filter(k => k.includes('SUPABASE')),
+    nodeEnv: process.env.NODE_ENV,
+    isClient: typeof window !== 'undefined',
   });
   
   if (!url || !key) {
