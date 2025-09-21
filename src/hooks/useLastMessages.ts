@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 export type LastMessage = {
@@ -10,11 +10,14 @@ export type LastMessage = {
 
 export function useLastMessages(conversationIds: string[]) {
   const [data, setData] = useState<LastMessage[] | null>(null);
-  const [loading, setLoading] = useState(Boolean(conversationIds.length));
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Memoize the conversationIds to prevent infinite loops
+  const memoizedConversationIds = useMemo(() => conversationIds, [conversationIds.join(',')]);
+
   useEffect(() => {
-    if (!conversationIds.length) {
+    if (!memoizedConversationIds.length) {
       setData([]);
       setLoading(false);
       return;
@@ -32,20 +35,15 @@ export function useLastMessages(conversationIds: string[]) {
         setLoading(true);
         setError(null);
 
-        if (!client) {
-          setError("Supabase client not available");
-          return;
-        }
-
         // Get the last message for each conversation
         const { data: messages, error } = await client
           .from("messages")
           .select("conversation_id, body_text, created_at")
-          .in("conversation_id", conversationIds)
+          .in("conversation_id", memoizedConversationIds)
           .order("created_at", { ascending: false });
 
         if (error) {
-          console.error("Error loading last messages:", error);
+          // Error loading last messages
           setError(error.message);
           return;
         }
@@ -68,7 +66,7 @@ export function useLastMessages(conversationIds: string[]) {
     }
 
     loadLastMessages();
-  }, [conversationIds]);
+  }, [memoizedConversationIds]);
 
   return { data, loading, error };
 }

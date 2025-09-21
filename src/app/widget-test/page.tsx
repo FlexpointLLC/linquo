@@ -10,79 +10,66 @@ export default function WidgetTestPage() {
     script.async = true;
     document.head.appendChild(script);
 
-    // Add debugging
-    console.log('🔧 Widget test page loaded');
-    console.log('📡 Widget script should load from: /widget.js');
-    
-    // Check if widget container is created
-    setTimeout(() => {
-      const widget = document.getElementById('ic-widget-root');
-      if (widget) {
-        console.log('✅ Widget container found:', widget);
-        console.log('📏 Widget size:', widget.style.width, 'x', widget.style.height);
-      } else {
-        console.log('❌ Widget container not found');
-      }
-    }, 2000);
-
     return () => {
-      // Cleanup: remove widget container if it exists
-      const widget = document.getElementById('ic-widget-root');
-      if (widget) {
-        widget.remove();
-      }
+      // Cleanup
+      document.head.removeChild(script);
     };
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">🚀 Linquo Widget Test Page</h1>
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Widget Test Page</h1>
         
-        <div className="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500 mb-8">
-          <h3 className="text-blue-600 font-semibold mb-4">📋 How to Test the Widget:</h3>
-          <ul className="space-y-2 text-gray-700">
-            <li><strong>Look for the widget</strong> in the bottom-right corner of this page</li>
-            <li><strong>Click on the widget</strong> to open the chat interface</li>
-            <li><strong>Fill out the form</strong> when it appears (name and email)</li>
-            <li><strong>Start chatting</strong> with the support agent</li>
-          </ul>
-        </div>
-
-        <p className="text-gray-600 mb-6">
-          This is a test page to demonstrate the Linquo chat widget. The widget should appear as a 
-          <strong> popup in the bottom-right corner</strong>, not as a full-screen page.
-        </p>
-        
-        <div className="mb-6">
-          <p className="font-semibold text-gray-800 mb-2">Expected Behavior:</p>
-          <ul className="space-y-1 text-gray-600">
-            <li>• Widget appears as a 400px × 700px popup</li>
-            <li>• Shows Pearl&apos;s avatar with online status</li>
-            <li>• Contains welcome message and info bubble</li>
-            <li>• Has input field with emoji and send icons</li>
-            <li>• Shows &quot;Powered by Linquo&quot; branding</li>
-          </ul>
-        </div>
-
-        <div className="space-y-4 text-gray-600">
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor 
-            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
-            exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Test the Linquo Widget</h2>
+          <p className="text-gray-600 mb-4">
+            This page loads the Linquo chat widget. You should see a chat button in the bottom-right corner.
           </p>
           
-          <p>
-            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
-            fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in 
-            culpa qui officia deserunt mollit anim id est laborum.
-          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-semibold text-blue-900 mb-2">Instructions:</h3>
+            <ol className="list-decimal list-inside text-blue-800 space-y-1">
+              <li>Look for the chat widget button in the bottom-right corner</li>
+              <li>Click the button to open the chat widget</li>
+              <li>Fill out the customer form with your details</li>
+              <li>Click "Start Chat" to begin a conversation</li>
+              <li>Test sending messages</li>
+            </ol>
+          </div>
         </div>
 
-        <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-800">
-            <strong>Debug Info:</strong> Check the browser console for widget loading messages and any errors.
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Widget Status</h2>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span>Widget script loaded</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+              <span>Waiting for widget initialization...</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Sample Content</h2>
+          <p className="text-gray-600 mb-4">
+            This is sample content to test the widget behavior on a real page. 
+            The widget should appear as a floating button and not interfere with the page content.
           </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">Feature 1</h3>
+              <p className="text-sm text-gray-600">Sample feature description</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">Feature 2</h3>
+              <p className="text-sm text-gray-600">Another sample feature</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

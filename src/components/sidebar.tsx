@@ -49,7 +49,7 @@ export function Sidebar() {
         {items.map(({ key, label, icon: Icon }) => (
           <Link
             key={key}
-            href={{ pathname: "/dashboard", query: { tab: key } }}
+            href={`/dashboard?tab=${key}`}
             className={cn(
               "flex items-center justify-center rounded-md p-2 hover:bg-muted transition-colors",
               active === key ? "bg-muted font-medium" : ""

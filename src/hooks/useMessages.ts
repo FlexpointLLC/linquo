@@ -18,10 +18,8 @@ export function useMessages(conversationId: string | null) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("🔄 useMessages hook triggered with conversationId:", conversationId);
     const client = getSupabaseBrowser();
     if (!conversationId) {
-      console.log("❌ No conversationId provided to useMessages");
       return;
     }
     let unsub: (() => void) | undefined;
@@ -29,11 +27,9 @@ export function useMessages(conversationId: string | null) {
     async function load() {
       try {
         if (!client || !conversationId) {
-          console.log("❌ Missing client or conversationId in useMessages");
           setData([]);
           return;
         }
-        console.log("🔍 Loading messages for conversation:", conversationId);
         const { data, error } = await client
           .from("messages")
           .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at")
@@ -41,26 +37,24 @@ export function useMessages(conversationId: string | null) {
           .order("created_at", { ascending: true });
         
         if (error) {
-          console.error("❌ Error loading messages:", error);
+          // Error loading messages
           throw error;
         }
         
-        console.log("✅ Messages loaded:", data?.length || 0, "messages");
         setData(data as DbMessage[]);
 
-        // Temporarily disable realtime to reduce connection usage
-        // const channel = client
-        //   .channel(`msg_changes_${conversationId}`)
-        //   .on(
-        //     "postgres_changes" as never,
-        //     { event: "insert", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-        //     (payload: { new: DbMessage }) => {
-        //       setData((prev) => (prev ? [...prev, payload.new] : [payload.new]));
-        //     }
-        //   )
-        //   .subscribe();
-        // unsub = () => client.removeChannel(channel);
-        console.log("🔄 Realtime disabled to reduce connection usage");
+        // Enable realtime subscription for message syncing
+        const channel = client
+          .channel(`msg_changes_${conversationId}`)
+          .on(
+            "postgres_changes" as never,
+            { event: "insert", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
+            (payload: { new: DbMessage }) => {
+              setData((prev) => (prev ? [...prev, payload.new] : [payload.new]));
+            }
+          )
+          .subscribe();
+        unsub = () => client.removeChannel(channel);
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to load messages");
       } finally {

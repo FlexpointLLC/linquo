@@ -17,7 +17,6 @@ export function Composer({
     if (!trimmed) return;
     
     // Test if function is being called
-    console.log("Send button clicked, text:", trimmed);
     
     onSend?.(trimmed);
     setText("");

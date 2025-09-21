@@ -32,9 +32,8 @@ export function useAuth() {
   // Global fallback to prevent infinite loading
   useEffect(() => {
     const globalTimeout = setTimeout(() => {
-      console.log("🔄 useAuth: Global timeout reached, stopping loading");
       setLoading(false);
-    }, 8000); // 8 second global timeout
+    }, 5000); // 5 second global timeout
 
     return () => clearTimeout(globalTimeout);
   }, []);
@@ -42,9 +41,8 @@ export function useAuth() {
   useEffect(() => {
     // Immediate timeout fallback
     const timeout = setTimeout(() => {
-      console.log("🔄 useAuth: Initial timeout reached, stopping loading");
       setLoading(false);
-    }, 5000); // 5 second timeout
+    }, 3000); // 3 second timeout
 
     const supabase = getSupabaseBrowser();
     
@@ -71,7 +69,7 @@ export function useAuth() {
         const result = await Promise.race([
           agentPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Agent query timeout')), 5000)
+            setTimeout(() => reject(new Error('Agent query timeout')), 3000)
           )
         ]);
         
@@ -106,7 +104,7 @@ export function useAuth() {
         const orgResult = await Promise.race([
           orgPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Organization query timeout')), 5000)
+            setTimeout(() => reject(new Error('Organization query timeout')), 3000)
           )
         ]);
         
@@ -140,7 +138,6 @@ export function useAuth() {
         }
       } catch (error) {
         // Keep the user logged in even if there's an error
-        console.log("⚠️ useAuth: Error loading agent/org data, but keeping user logged in:", error);
         setAuthUser({
           user,
           agent: null,

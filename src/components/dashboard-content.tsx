@@ -1,11 +1,9 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
 import { Composer } from "@/components/chat/composer";
-import { ScrollArea } from "@/components/ui/scroll-area";
-// import { Button } from "@/components/ui/button";
 import { AgentsTable } from "@/components/tables/agents-table";
 import { CustomersTable } from "@/components/tables/customers-table";
 import { SettingsPanel } from "@/components/settings/settings-panel";
@@ -31,7 +29,13 @@ export function DashboardContent() {
 
   const { data: conversationRows, error: conversationError } = useConversations();
   const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
-  const { data: lastMessages } = useLastMessages(conversationRows?.map(c => c.id) || []);
+  
+  // Memoize conversation IDs to prevent infinite loops
+  const conversationIds = useMemo(() => 
+    conversationRows?.map(c => c.id) || [], 
+    [conversationRows]
+  );
+  const { data: lastMessages } = useLastMessages(conversationIds);
 
   const { data: agents, error: agentsError } = useAgents();
   const { data: customers, error: customersError } = useCustomers();
@@ -47,7 +51,6 @@ export function DashboardContent() {
     }
   }, [currentTab, activeId, conversationRows, router]);
 
-
   return (
     <div className="h-[calc(100vh-80px)] w-full">
       {/* Error Display - Only show for actual errors, not empty data */}
@@ -62,7 +65,7 @@ export function DashboardContent() {
           </ul>
         </div>
       )}
-      
+
       {currentTab === "chats" && (
         <div className="grid grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6">
           <ConversationList
@@ -70,7 +73,7 @@ export function DashboardContent() {
               const customer = customers?.find(cust => cust.id === c.customer_id);
               const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
               return {
-                id: c.id, 
+                id: c.id,
                 name: customer?.display_name || "Unknown Customer",
                 email: customer?.email,
                 lastMessage: lastMessage?.body_text || "No messages yet",
@@ -104,8 +107,8 @@ export function DashboardContent() {
                 </div>
               </div>
             )}
-            <div className="flex-1 overflow-hidden">
-              <ScrollArea className="h-full">
+            <div className="flex-1 overflow-y-auto">
+              {activeId ? (
                 <MessageThread
                   messages={(messageRows ?? []).map((m) => {
                     const customer = customers?.find(c => c.id === m.customer_id);
@@ -119,40 +122,54 @@ export function DashboardContent() {
                     };
                   }) as ChatMessage[]}
                 />
-              </ScrollArea>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="text-gray-400 mb-4">
+                      <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
+                    <p className="text-gray-500">Choose a conversation from the list to start chatting</p>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex-shrink-0">
-              <Composer
-              customerEmail={(() => {
-                const conversation = conversationRows?.find(c => c.id === activeId);
-                const customer = customers?.find(c => c.id === conversation?.customer_id);
-                return customer?.email;
-              })()}
-              onSend={async (text) => {
-                if (!agent || !activeId) return;
-                
-                const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                if (!client) return;
-                
-                try {
-                  await client.from("messages").insert({
-                    conversation_id: activeId,
-                    sender_type: "AGENT",
-                    agent_id: agent.id,
-                    org_id: agent.org_id,
-                    body_text: text,
-                  });
-                  
-                  await client
-                    .from("conversations")
-                    .update({ last_message_at: new Date().toISOString() })
-                    .eq("id", activeId);
-                } catch (error) {
-                  console.error("Error sending message:", error);
-                }
-              }}
-            />
-            </div>
+            {activeId && (
+              <div className="flex-shrink-0">
+                <Composer
+                  customerEmail={(() => {
+                    const conversation = conversationRows?.find(c => c.id === activeId);
+                    const customer = customers?.find(c => c.id === conversation?.customer_id);
+                    return customer?.email;
+                  })()}
+                  onSend={async (text) => {
+                    if (!agent || !activeId) return;
+
+                    const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                    if (!client) return;
+
+                    try {
+                      await client.from("messages").insert({
+                        conversation_id: activeId,
+                        sender_type: "AGENT",
+                        agent_id: agent.id,
+                        org_id: agent.org_id,
+                        body_text: text,
+                      });
+
+                      await client
+                        .from("conversations")
+                        .update({ last_message_at: new Date().toISOString() })
+                        .eq("id", activeId);
+                    } catch (error) {
+                      // Error sending message
+                    }
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

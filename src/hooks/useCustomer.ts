@@ -38,7 +38,7 @@ export function useCustomer() {
     try {
       const client = getSupabaseBrowser();
       if (!client) {
-        console.error("❌ Supabase client not available");
+        console.log("❌ Supabase client not available");
         throw new Error("Supabase client not available");
       }
       console.log("✅ Supabase client available");
@@ -51,7 +51,7 @@ export function useCustomer() {
         .maybeSingle();
 
       if (findError) {
-        console.error("❌ Error finding customer:", findError);
+        console.log("❌ Error finding customer:", findError);
       } else {
         console.log("🔍 Customer search result:", existingCustomer ? "Found existing" : "No existing customer");
       }
@@ -69,7 +69,7 @@ export function useCustomer() {
             .single();
 
           if (updateError) {
-            console.error("Error updating customer:", updateError);
+            // Error updating customer
             customerData = existingCustomer;
           } else {
             customerData = updatedCustomer;
@@ -89,6 +89,7 @@ export function useCustomer() {
         
         console.log("🌐 Creating organization for domain:", domain, "slug:", orgSlug);
         
+        
         // Try to find existing organization for this domain
         const { data: existingOrg } = await client
           .from("organizations")
@@ -101,6 +102,7 @@ export function useCustomer() {
           console.log("✅ Found existing organization for domain:", orgId);
         } else {
           // Create new organization for this domain
+          console.log("📝 Creating new organization...");
           const { data: newOrg, error: orgError } = await client
             .from("organizations")
             .insert({
@@ -111,34 +113,54 @@ export function useCustomer() {
             .single();
           
           if (orgError) {
-            console.error("❌ Error creating organization for domain:", orgError);
+            console.log("❌ Error creating organization for domain:", orgError);
+            throw orgError;
           } else {
             orgId = newOrg.id;
             console.log("✅ Created new organization for domain:", domain, "ID:", orgId);
           }
         }
 
+        console.log("📝 Creating new customer with org_id:", orgId);
+        
+        // First try to insert the customer
         const { data: newCustomer, error: createError } = await client
           .from("customers")
-          .upsert({
+          .insert({
             display_name: name,
             email,
             status: "ACTIVE",
             org_id: orgId, // Include org_id
-          }, {
-            onConflict: 'email',
-            ignoreDuplicates: false
           })
           .select()
           .single();
 
         if (createError) {
-          console.error("❌ Error creating customer:", createError);
-          throw createError;
+          console.log("❌ Error creating customer:", createError);
+          
+          // If it's a duplicate email error, try to fetch the existing customer
+          if (createError.code === '23505' || createError.message.includes('duplicate')) {
+            console.log("🔄 Duplicate email detected, fetching existing customer...");
+            const { data: existingCustomer, error: fetchError } = await client
+              .from("customers")
+              .select("*")
+              .eq("email", email)
+              .single();
+            
+            if (fetchError) {
+              console.log("❌ Error fetching existing customer:", fetchError);
+              throw createError; // Throw original error
+            } else {
+              customerData = existingCustomer;
+              console.log("✅ Found existing customer:", existingCustomer);
+            }
+          } else {
+            throw createError;
+          }
+        } else {
+          customerData = newCustomer;
+          console.log("✅ New customer created:", newCustomer);
         }
-
-        console.log("✅ New customer created:", newCustomer);
-        customerData = newCustomer;
       }
 
       // Add website and ensure status is set for local use
@@ -156,8 +178,8 @@ export function useCustomer() {
       return customerWithWebsite;
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to create customer";
+      console.error("❌ Error in createOrGetCustomer:", e);
       setError(errorMessage);
-      // Error creating/getting customer
       return null;
     } finally {
       setLoading(false);
@@ -165,17 +187,15 @@ export function useCustomer() {
   };
 
   const createConversation = async (customer: Customer): Promise<string | null> => {
-    console.log("🔄 Starting createConversation for customer:", customer);
     try {
+      console.log("🔄 Starting createConversation for customer:", customer);
       const client = getSupabaseBrowser();
       if (!client) {
-        console.error("❌ Supabase client not available for conversation creation");
+        console.log("❌ Supabase client not available for conversation creation");
         return null;
       }
-      console.log("✅ Supabase client available for conversation creation");
 
       // Check if conversation already exists for this customer
-      console.log("🔍 Checking for existing conversation for customer ID:", customer.id);
       const { data: existingConv, error: findError } = await client
         .from("conversations")
         .select("id")
@@ -183,15 +203,16 @@ export function useCustomer() {
         .maybeSingle();
 
       if (findError) {
-        console.error("❌ Error finding existing conversation:", findError);
+        // Error finding existing conversation
       }
 
       if (existingConv) {
         console.log("✅ Found existing conversation:", existingConv.id);
         return existingConv.id;
       }
-
+      
       console.log("📝 No existing conversation found, creating new one...");
+
       
       // Try different conversation creation approaches
       let newConversation = null;
@@ -199,7 +220,6 @@ export function useCustomer() {
       
       // Approach 1: Try with org_id included
       try {
-        console.log("🔄 Trying conversation creation with org_id...");
         const result = await client
           .from("conversations")
           .insert({
@@ -214,14 +234,13 @@ export function useCustomer() {
         error = result.error;
         console.log("✅ With org_id approach result:", { data: newConversation, error });
       } catch (e) {
-        console.log("❌ With org_id approach failed:", e);
         error = e;
       }
       
       // Approach 2: If first approach fails, try with just customer_id and org_id
       if (error && !newConversation) {
+        console.log("🔄 Trying with customer_id and org_id only...");
         try {
-          console.log("🔄 Trying with customer_id and org_id only...");
           const result = await client
             .from("conversations")
             .insert({
@@ -235,20 +254,20 @@ export function useCustomer() {
           error = result.error;
           console.log("✅ Customer_id + org_id approach result:", { data: newConversation, error });
         } catch (e) {
-          console.log("❌ Customer_id + org_id approach failed:", e);
           error = e;
+          console.log("❌ Customer_id + org_id approach failed:", e);
         }
       }
 
       if (error || !newConversation) {
-        console.error("❌ Error creating conversation:", error);
+        console.log("❌ Error creating conversation:", error);
         return null;
       }
 
       console.log("✅ Created new conversation:", newConversation.id);
       return newConversation.id;
     } catch (e: unknown) {
-      console.error("❌ Error creating conversation:", e);
+      // Error creating conversation
       return null;
     }
   };

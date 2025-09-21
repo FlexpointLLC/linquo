@@ -57,7 +57,6 @@ export function useConversations() {
         // unsub = () => {
         //   client.removeChannel(channel);
         // };
-        console.log("🔄 Realtime disabled to reduce connection usage");
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to load conversations");
       } finally {
