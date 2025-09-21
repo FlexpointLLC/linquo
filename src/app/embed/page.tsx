@@ -7,6 +7,7 @@ import { CustomerForm } from "@/components/widget/customer-form";
 import { useSearchParams } from "next/navigation";
 import { useMessages } from "@/hooks/useMessages";
 import { useCustomer } from "@/hooks/useCustomer";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 function EmbedContent() {
   const params = useSearchParams();
@@ -342,9 +343,11 @@ function EmbedContent() {
 
 export default function EmbedPage() {
   return (
-    <Suspense fallback={<div className="h-full w-full bg-background flex items-center justify-center">Loading...</div>}>
-      <EmbedContent />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<div className="h-full w-full bg-background flex items-center justify-center">Loading...</div>}>
+        <EmbedContent />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
