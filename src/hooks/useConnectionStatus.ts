@@ -18,7 +18,10 @@ export function useConnectionStatus() {
     }
 
     try {
-      setStatus("checking");
+      // Only show checking if we don't already have a definitive status from auth
+      if (status === "connected" || status === "disconnected") {
+        setStatus("checking");
+      }
       const startTime = Date.now();
       
       // Try a lightweight query to check connectivity
@@ -43,25 +46,21 @@ export function useConnectionStatus() {
     }
   };
 
-  // React to auth changes immediately
+  // React to auth changes immediately - this takes priority
   useEffect(() => {
     if (!loading) {
-      if (agent) {
+      // Check if agent data is available and has display_name
+      if (agent && agent.display_name) {
         setStatus("connected");
       } else {
+        // If agent is null or display_name is missing, show disconnected
         setStatus("disconnected");
       }
     }
   }, [agent, loading]);
 
   useEffect(() => {
-    // Check connection immediately
-    checkConnection();
-
-    // Check connection every 30 seconds
-    const interval = setInterval(checkConnection, 30000);
-
-    // Monitor Supabase client for connection events
+    // Only do periodic checks if we don't have auth-based status
     const supabase = getSupabaseBrowser();
     if (supabase) {
       // Listen for auth state changes
@@ -73,13 +72,17 @@ export function useConnectionStatus() {
         }
       });
 
+      // Initial check
+      checkConnection();
+
+      // Check connection every 30 seconds
+      const interval = setInterval(checkConnection, 30000);
+
       return () => {
         clearInterval(interval);
         subscription.unsubscribe();
       };
     }
-
-    return () => clearInterval(interval);
   }, []);
 
   return {
