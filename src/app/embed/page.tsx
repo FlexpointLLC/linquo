@@ -2,10 +2,8 @@
 import { useEffect, useMemo, useState, Suspense } from "react";
 import { MessageSquare, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Composer } from "@/components/chat/composer";
-import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
+import { type ChatMessage } from "@/components/chat/message-thread";
 import { CustomerForm } from "@/components/widget/customer-form";
-import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { useMessages } from "@/hooks/useMessages";
 import { useCustomer } from "@/hooks/useCustomer";
@@ -169,7 +167,7 @@ function EmbedContent() {
               </div>
               <div className="flex items-center">
                 <span className="text-sm text-gray-700">
-                  Please share your email with us in case we can't get back to you right away.
+                  Please share your email with us in case we can&apos;t get back to you right away.
                 </span>
               </div>
             </div>
@@ -177,7 +175,7 @@ function EmbedContent() {
             {/* Agent message bubble */}
             <div className="bg-gray-100 rounded-lg p-3">
               <div className="text-sm text-gray-700">
-                Hi there! 👋 Need help with our services? Just ask here and we'll assist you!
+                Hi there! 👋 Need help with our services? Just ask here and we&apos;ll assist you!
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 Pearl · 3w ago

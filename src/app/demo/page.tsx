@@ -59,8 +59,8 @@ export default function DemoPage() {
           </div>
           
           <p className="text-gray-600">
-            <strong>Widget Features:</strong> Pearl's avatar, welcome message, emoji/GIF/attachment icons, 
-            and "Powered by Linquo" branding.
+            <strong>Widget Features:</strong> Pearl&apos;s avatar, welcome message, emoji/GIF/attachment icons, 
+            and &quot;Powered by Linquo&quot; branding.
           </p>
         </div>
         

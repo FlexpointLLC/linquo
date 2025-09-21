@@ -58,10 +58,10 @@ export default function WidgetTestPage() {
           <p className="font-semibold text-gray-800 mb-2">Expected Behavior:</p>
           <ul className="space-y-1 text-gray-600">
             <li>• Widget appears as a 400px × 700px popup</li>
-            <li>• Shows Pearl's avatar with online status</li>
+            <li>• Shows Pearl&apos;s avatar with online status</li>
             <li>• Contains welcome message and info bubble</li>
             <li>• Has input field with emoji and send icons</li>
-            <li>• Shows "Powered by Linquo" branding</li>
+            <li>• Shows &quot;Powered by Linquo&quot; branding</li>
           </ul>
         </div>
 

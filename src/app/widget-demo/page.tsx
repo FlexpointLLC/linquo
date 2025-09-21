@@ -77,8 +77,8 @@ export default function WidgetDemoPage() {
           </div>
           
           <p className="text-gray-600">
-            <strong>Widget Features:</strong> Pearl's avatar, welcome message, 
-            emoji and send icons, and "Powered by Linquo" branding.
+            <strong>Widget Features:</strong> Pearl&apos;s avatar, welcome message, 
+            emoji and send icons, and &quot;Powered by Linquo&quot; branding.
           </p>
         </div>
 
