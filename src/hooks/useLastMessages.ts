@@ -14,6 +14,8 @@ export function useLastMessages(conversationIds: string[]) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const conversationIdsString = conversationIds.join(",");
+    
     if (!conversationIds.length) {
       setData([]);
       setLoading(false);
@@ -31,6 +33,11 @@ export function useLastMessages(conversationIds: string[]) {
       try {
         setLoading(true);
         setError(null);
+
+        if (!client) {
+          setError("Supabase client not available");
+          return;
+        }
 
         // Get the last message for each conversation
         const { data: messages, error } = await client
@@ -63,7 +70,7 @@ export function useLastMessages(conversationIds: string[]) {
     }
 
     loadLastMessages();
-  }, [conversationIds.join(",")]);
+  }, [conversationIdsString]);
 
   return { data, loading, error };
 }

@@ -3,7 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+// import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 export function DashboardWrapper({ children }: { children: React.ReactNode }) {
   const { user, agent, organization, loading } = useAuth();
