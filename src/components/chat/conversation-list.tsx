@@ -63,7 +63,7 @@ export function ConversationList({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <div className="font-medium text-gray-900 truncate text-sm">
-                      {c.email || c.name}
+                      {c.name}
                     </div>
                     {c.timestamp && (
                       <span className="text-xs text-gray-500 flex-shrink-0">
