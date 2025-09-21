@@ -13,6 +13,7 @@ import { useAgents } from "@/hooks/useAgents";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
+import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
 
 export function DashboardContent() {
@@ -30,6 +31,7 @@ export function DashboardContent() {
 
   const { data: conversationRows, error: conversationError } = useConversations();
   const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
+  const { data: lastMessages } = useLastMessages(conversationRows?.map(c => c.id) || []);
 
   const { data: agents, error: agentsError } = useAgents();
   const { data: customers, error: customersError } = useCustomers();
@@ -66,7 +68,7 @@ export function DashboardContent() {
           <ConversationList
             conversations={(conversationRows ?? []).map((c) => {
               const customer = customers?.find(cust => cust.id === c.customer_id);
-              const lastMessage = messageRows?.find(m => m.conversation_id === c.id);
+              const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
               return {
                 id: c.id, 
                 name: customer?.display_name || "Unknown Customer",
