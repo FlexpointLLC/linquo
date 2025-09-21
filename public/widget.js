@@ -1,22 +1,16 @@
 (function() {
   'use strict';
   
-  // Get the script element to extract the org ID and brand color
+  // Get the script element to extract the org ID
   var script = document.currentScript || document.querySelector('script[id="linquo"]');
   var orgId = null;
-  var brandColor = '#3B82F6'; // Default blue color (same as widget)
+  var brandColor = '#3B82F6'; // Default blue color (will be overridden by backend)
   
   if (script) {
     var src = script.src;
     var match = src.match(/[?&]id=([^&]+)/);
     if (match) {
       orgId = match[1];
-    }
-    
-    // Check for brand color parameter
-    var colorMatch = src.match(/[?&]color=([^&]+)/);
-    if (colorMatch) {
-      brandColor = decodeURIComponent(colorMatch[1]);
     }
   }
   
@@ -25,11 +19,39 @@
     return;
   }
 
-  try {
-    // Create chat bubble
-    var bubble = document.createElement('div');
-    bubble.id = 'linquo-chat-bubble';
-    bubble.style.cssText = 'position:fixed;bottom:24px;right:24px;width:68px;height:68px;border-radius:50%;background-color:' + brandColor + ';box-shadow:0 4px 12px ' + brandColor + '40;cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;';
+  // Function to fetch brand color from backend
+  function fetchBrandColor(orgId, callback) {
+    // Use production URL for external platforms, localhost for development
+    var baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://linquochat.vercel.app';
+    var apiUrl = baseUrl + '/api/organization/' + encodeURIComponent(orgId);
+    
+    fetch(apiUrl)
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(function(data) {
+        if (data.brand_color) {
+          brandColor = data.brand_color;
+          console.log('[Linquo Widget] Brand color loaded from backend:', brandColor);
+        }
+        callback();
+      })
+      .catch(function(error) {
+        console.warn('[Linquo Widget] Failed to fetch brand color, using default:', error);
+        callback();
+      });
+  }
+
+  // Initialize widget with brand color from backend
+  fetchBrandColor(orgId, function() {
+    try {
+      // Create chat bubble
+      var bubble = document.createElement('div');
+      bubble.id = 'linquo-chat-bubble';
+      bubble.style.cssText = 'position:fixed;bottom:24px;right:24px;width:68px;height:68px;border-radius:50%;background-color:' + brandColor + ';box-shadow:0 4px 12px ' + brandColor + '40;cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;';
     
     // Add hover effects
     bubble.addEventListener('mouseenter', function() {
@@ -121,11 +143,12 @@
       }
     });
     
-    // Add to page
-    document.body.appendChild(bubble);
-    document.body.appendChild(container);
-    
-  } catch (err) {
-    console.error('[Linquo Widget] failed to load', err);
-  }
+      // Add to page
+      document.body.appendChild(bubble);
+      document.body.appendChild(container);
+      
+    } catch (err) {
+      console.error('[Linquo Widget] failed to load', err);
+    }
+  });
 })();

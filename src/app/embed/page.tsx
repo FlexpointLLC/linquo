@@ -6,6 +6,7 @@ import { CustomerForm } from "@/components/widget/customer-form";
 import { useSearchParams } from "next/navigation";
 import { useWidgetMessages } from "@/hooks/useWidgetMessages";
 import { useCustomer } from "@/hooks/useCustomer";
+import { useOrganization } from "@/hooks/useOrganization";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { WidgetSkeleton } from "@/components/skeletons/widget-skeleton";
 
@@ -17,7 +18,6 @@ function EmbedContent() {
   const [showForm, setShowForm] = useState(true);
   const [inputValue, setInputValue] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
-  const [brandColor, setBrandColor] = useState<string>("#3B82F6"); // Default blue color
 
   // Handle hydration
   useEffect(() => {
@@ -51,15 +51,14 @@ function EmbedContent() {
     }
   }, [inputValue]);
 
-  // Set site, orgId, and brandColor after hydration to avoid mismatch
+  // Set site and orgId after hydration to avoid mismatch
   useEffect(() => {
     if (!isHydrated) return;
     
     const siteParam = params.get("site");
     const orgParam = params.get("org");
-    const colorParam = params.get("color");
     
-    console.log("🔍 URL parameters:", { siteParam, orgParam, colorParam });
+    console.log("🔍 URL parameters:", { siteParam, orgParam });
     
     if (siteParam) {
       setSite(siteParam);
@@ -74,17 +73,14 @@ function EmbedContent() {
     } else {
       console.log("❌ No orgId found in URL parameters");
     }
-    
-    if (colorParam) {
-      console.log("✅ Setting brandColor from URL parameter:", colorParam);
-      setBrandColor(decodeURIComponent(colorParam));
-    } else {
-      console.log("ℹ️ Using default brand color:", brandColor);
-    }
-  }, [params, isHydrated, brandColor]);
+  }, [params, isHydrated]);
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows } = useWidgetMessages(cid);
+  const { organization } = useOrganization(orgId);
+  
+  // Get brand color from organization data, fallback to default
+  const brandColor = organization?.brand_color || "#3B82F6";
   
   // Debug conversation ID and messages
   console.log("🔍 Widget state:", { 
