@@ -219,7 +219,7 @@ function EmbedContent() {
             </div>
           ) : (
             <div className="text-center text-gray-500 text-sm py-4">
-              {cid ? "No messages yet. Start the conversation!" : "Conversation will start when you send a message."}
+              {cid ? "" : "Conversation will start when you send a message."}
             </div>
           )}
         </div>
@@ -283,6 +283,42 @@ function EmbedContent() {
           
           {/* Send button */}
           <button
+            onClick={() => {
+              const text = inputValue.trim();
+              if (text) {
+                // Send message logic
+                const sendMessage = async () => {
+                  const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                  if (!client || !customer || !cid) {
+                    return;
+                  }
+                  
+                  try {
+                    const { error: messageError } = await client.from("messages").insert({ 
+                      conversation_id: cid, 
+                      sender_type: "CUSTOMER",
+                      customer_id: customer.id,
+                      org_id: customer.org_id,
+                      body_text: text
+                    }).select().single();
+                    
+                    if (!messageError) {
+                      // Update conversation last_message_at
+                      await client.from("conversations").update({ 
+                        last_message_at: new Date().toISOString() 
+                      }).eq("id", cid);
+                      
+                      // Force refresh messages to ensure they appear immediately
+                      console.log("🔄 Message sent successfully, should appear in chat now");
+                    }
+                  } catch {
+                    // Error sending message
+                  }
+                };
+                sendMessage();
+                setInputValue("");
+              }
+            }}
             disabled={!inputValue.trim()}
             className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
               inputValue.trim() 
