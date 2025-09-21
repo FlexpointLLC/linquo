@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Bell, RefreshCw } from "lucide-react";
 import { useDataCache } from "@/hooks/useDataCache";
+import { ConnectionBadge } from "@/components/connection-badge";
 
 const tabTitles: Record<string, string> = {
   chats: "Conversations",
@@ -29,6 +30,7 @@ export function DashboardHeader() {
     <header className="flex items-center gap-3 p-4 border-b flex-shrink-0">
       <h1 className="text-xl font-semibold mr-auto">{title}</h1>
       <div className="hidden md:flex items-center gap-2">
+        <ConnectionBadge />
         <Input placeholder="Search..." className="w-64" />
         <Button size="sm" variant="outline">
           <Bell className="h-4 w-4" />
