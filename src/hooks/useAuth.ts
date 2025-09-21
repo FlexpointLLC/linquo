@@ -306,6 +306,14 @@ export function useAuth() {
     // Clear all auth data on logout
     setAuthUser({ user: null, agent: null, organization: null });
     setLoading(false);
+    
+    // Clear data cache on logout
+    try {
+      const { clearCache } = await import("./useDataCache");
+      clearCache();
+    } catch {
+      // Ignore import errors
+    }
   };
 
   return {

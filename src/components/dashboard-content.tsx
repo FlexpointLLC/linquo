@@ -8,8 +8,7 @@ import { AgentsTable } from "@/components/tables/agents-table";
 import { CustomersTable } from "@/components/tables/customers-table";
 import { SettingsPanel } from "@/components/settings/settings-panel";
 import { EmbedSettings } from "@/components/embed/embed-settings";
-import { useAgents } from "@/hooks/useAgents";
-import { useCustomers } from "@/hooks/useCustomers";
+import { useDataCache } from "@/hooks/useDataCache";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
@@ -38,8 +37,7 @@ export function DashboardContent() {
   );
   const { data: lastMessages } = useLastMessages(conversationIds);
 
-  const { data: agents, error: agentsError } = useAgents();
-  const { data: customers, error: customersError } = useCustomers();
+  const { agents, customers, refresh: refreshData } = useDataCache();
   const { agent } = useAuth();
 
   // Auto-select first conversation if none is selected
