@@ -2,6 +2,7 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { useBrandColor } from "@/contexts/brand-color-context";
 
 export function Composer({ 
   onSend, 
@@ -11,6 +12,7 @@ export function Composer({
   customerEmail?: string;
 }) {
   const [text, setText] = useState("");
+  const { brandColor } = useBrandColor();
 
   // Restore text from localStorage on mount
   useEffect(() => {
@@ -56,7 +58,8 @@ export function Composer({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Write a reply..."
-          className="min-h-[80px] resize-none border-gray-200 focus:border-blue-500 focus:ring-blue-500 pr-20"
+          className="min-h-[80px] resize-none border-gray-200 pr-20"
+          style={{ '--tw-ring-color': brandColor, '--tw-border-color': brandColor } as React.CSSProperties}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
@@ -67,7 +70,8 @@ export function Composer({
         <div className="absolute bottom-2 right-2">
           <Button 
             onClick={handleSend}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 h-7 text-xs disabled:bg-gray-400 disabled:hover:bg-gray-400"
+            className="text-white px-3 py-1 h-7 text-xs disabled:bg-gray-400 disabled:hover:bg-gray-400"
+            style={{ backgroundColor: brandColor }}
             disabled={!text.trim()}
           >
             Send

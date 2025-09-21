@@ -3,14 +3,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
+import { useBrandColor } from "@/contexts/brand-color-context";
 
 interface CustomerFormProps {
   onSubmit: (data: { name: string; email: string }) => Promise<void>;
   loading?: boolean;
-  brandColor?: string;
 }
 
-export function CustomerForm({ onSubmit, loading = false, brandColor = "#3B82F6" }: CustomerFormProps) {
+export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
+  const { brandColor } = useBrandColor();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -152,7 +153,8 @@ export function CustomerForm({ onSubmit, loading = false, brandColor = "#3B82F6"
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             required
             disabled={loading}
-            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:bg-white transition-all"
+            style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
           />
           
           <Input
@@ -163,7 +165,8 @@ export function CustomerForm({ onSubmit, loading = false, brandColor = "#3B82F6"
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             required
             disabled={loading}
-            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:bg-white transition-all"
+            style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
           />
         </div>
         
@@ -172,7 +175,8 @@ export function CustomerForm({ onSubmit, loading = false, brandColor = "#3B82F6"
           <form onSubmit={handleSubmit}>
             <Button 
               type="submit" 
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              className="w-full h-12 text-white font-medium rounded-lg transition-colors"
+              style={{ backgroundColor: brandColor }}
               disabled={loading || !formData.name.trim() || !formData.email.trim()}
             >
               {loading ? "Starting Chat..." : "Start Chat"}

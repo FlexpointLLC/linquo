@@ -1,10 +1,8 @@
 import { Skeleton } from "@/components/ui/skeleton"
+import { useBrandColor } from "@/contexts/brand-color-context";
 
-interface WidgetSkeletonProps {
-  brandColor?: string;
-}
-
-export function WidgetSkeleton({ brandColor = "#3B82F6" }: WidgetSkeletonProps) {
+export function WidgetSkeleton() {
+  const { brandColor } = useBrandColor();
   return (
     <div className="h-full w-full relative overflow-hidden text-gray-900 flex flex-col">
       {/* Gradient Background - same as widget */}

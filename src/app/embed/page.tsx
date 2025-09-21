@@ -6,7 +6,7 @@ import { CustomerForm } from "@/components/widget/customer-form";
 import { useSearchParams } from "next/navigation";
 import { useWidgetMessages } from "@/hooks/useWidgetMessages";
 import { useCustomer } from "@/hooks/useCustomer";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useBrandColor } from "@/contexts/brand-color-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { WidgetSkeleton } from "@/components/skeletons/widget-skeleton";
 
@@ -77,10 +77,7 @@ function EmbedContent() {
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows } = useWidgetMessages(cid);
-  const { organization } = useOrganization(orgId);
-  
-  // Get brand color from organization data, fallback to default
-  const brandColor = organization?.brand_color || "#3B82F6";
+  const { brandColor } = useBrandColor();
   
   // Debug conversation ID and messages
   console.log("🔍 Widget state:", { 
@@ -217,13 +214,13 @@ function EmbedContent() {
 
   // Show loading state during hydration
   if (!isHydrated) {
-    return <WidgetSkeleton brandColor={brandColor} />;
+    return <WidgetSkeleton />;
   }
 
   if (showForm) {
     return (
       <div className="h-full w-full">
-        <CustomerForm onSubmit={handleCustomerSubmit} loading={loading} brandColor={brandColor} />
+        <CustomerForm onSubmit={handleCustomerSubmit} loading={loading} />
       </div>
     );
   }
@@ -243,7 +240,10 @@ function EmbedContent() {
             </svg>
           </button>
           <div className="relative">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: brandColor }}
+            >
               <span className="text-white text-sm font-medium">S</span>
             </div>
             <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
@@ -283,7 +283,10 @@ function EmbedContent() {
         <div className="space-y-4">
           {/* Hardcoded welcome messages */}
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: brandColor }}
+            >
               <span className="text-white text-sm font-medium">P</span>
             </div>
             <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
@@ -295,7 +298,10 @@ function EmbedContent() {
           </div>
           
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: brandColor }}
+            >
               <span className="text-white text-sm font-medium">P</span>
             </div>
             <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
@@ -312,17 +318,23 @@ function EmbedContent() {
               {processedMessages.map((message, index) => (
                 <div key={`${message.id}-${index}`} className={`flex items-start gap-3 ${message.author === 'customer' ? 'justify-end' : ''}`}>
                   {message.author === 'agent' && (
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div 
+                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: brandColor }}
+                    >
                       <span className="text-white text-sm font-medium">P</span>
                     </div>
                   )}
-                  <div className={`rounded-lg p-3 max-w-xs ${
-                    message.author === 'agent' 
-                      ? 'bg-gray-100' 
-                      : 'bg-blue-600 text-white'
-                  }`}>
+                  <div 
+                    className={`rounded-lg p-3 max-w-xs ${
+                      message.author === 'agent' 
+                        ? 'bg-gray-100' 
+                        : 'text-white'
+                    }`}
+                    style={message.author === 'customer' ? { backgroundColor: brandColor } : {}}
+                  >
                     <div className="text-sm whitespace-pre-wrap">{message.text}</div>
-                    <div className={`text-xs mt-1 ${message.author === 'agent' ? 'text-gray-500' : 'text-blue-100'}`}>
+                    <div className={`text-xs mt-1 ${message.author === 'agent' ? 'text-gray-500' : 'text-white opacity-80'}`}>
                       {message.author === 'agent' ? 'Agent' : 'You'} · {message.time}
                     </div>
                   </div>
@@ -350,7 +362,8 @@ function EmbedContent() {
             placeholder="Message..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            className="w-full pl-10 pr-20 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-20 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+            style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const text = inputValue.trim();
@@ -466,9 +479,10 @@ function EmbedContent() {
             disabled={!inputValue.trim()}
             className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
               inputValue.trim() 
-                ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer' 
+                ? 'cursor-pointer' 
                 : 'bg-gray-200 cursor-not-allowed'
             }`}
+            style={inputValue.trim() ? { backgroundColor: brandColor } : {}}
           >
             <svg className={`w-4 h-4 ${inputValue.trim() ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />

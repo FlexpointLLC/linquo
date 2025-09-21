@@ -1,14 +1,15 @@
 import React from 'react';
 import { ChatIcon } from './chat-icon';
 import { X } from 'lucide-react';
+import { useBrandColor } from "@/contexts/brand-color-context";
 
 interface ChatBubbleProps {
   isOpen: boolean;
   onClick: () => void;
-  brandColor?: string;
 }
 
-export function ChatBubble({ isOpen, onClick, brandColor = '#3B82F6' }: ChatBubbleProps) {
+export function ChatBubble({ isOpen, onClick }: ChatBubbleProps) {
+  const { brandColor } = useBrandColor();
   return (
     <button
       onClick={onClick}
