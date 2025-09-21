@@ -14,9 +14,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
           <DashboardHeader />
           <Separator />
           <main className="p-6 flex-1 overflow-y-auto">
-            <Suspense fallback={<DashboardSkeleton />}>
-              {children}
-            </Suspense>
+            {children}
           </main>
         </div>
       </div>

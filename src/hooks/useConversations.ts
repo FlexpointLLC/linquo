@@ -16,6 +16,25 @@ export function useConversations() {
   const [error, setError] = useState<string | null>(null);
   const { agent } = useAuth();
 
+  // Load conversations from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('linquo-conversations-cache');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          // Only use cached data if it's less than 2 minutes old
+          if (parsed.lastLoaded && Date.now() - parsed.lastLoaded < 120000) {
+            setData(parsed.conversations);
+            setLoading(false);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load conversations from localStorage:', error);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const client = getSupabaseBrowser();
     let unsub: (() => void) | undefined;
@@ -45,7 +64,20 @@ export function useConversations() {
           throw error;
         }
         // Set data even if it's an empty array (no conversations)
-        setData(data as Conversation[] || []);
+        const conversations = data as Conversation[] || [];
+        setData(conversations);
+        
+        // Save to localStorage for persistence
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('linquo-conversations-cache', JSON.stringify({
+              conversations,
+              lastLoaded: Date.now()
+            }));
+          } catch (error) {
+            console.warn('Failed to save conversations to localStorage:', error);
+          }
+        }
 
         // Temporarily disable realtime to reduce connection usage
         // const channel = client

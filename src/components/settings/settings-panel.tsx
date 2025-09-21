@@ -37,7 +37,15 @@ export function SettingsPanel() {
   }
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+        <p className="text-gray-600">
+          Configure your workspace preferences and team settings
+        </p>
+      </div>
+      
+      <div className="grid md:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Company</CardTitle>
@@ -99,36 +107,7 @@ export function SettingsPanel() {
           </div>
         </CardContent>
       </Card>
-
-      <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle>Embed Code</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="text-sm text-muted-foreground">
-            Paste this snippet into your site&apos;s &lt;head&gt; to show the chat widget.
-          </div>
-          <pre className="rounded-md bg-muted p-3 text-xs overflow-auto">
-{`<script async src="${typeof window !== 'undefined' ? window.location.origin : ''}/widget.js"></script>`}
-          </pre>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const code = `<script async src="${window.location.origin}/widget.js"></script>`;
-                navigator.clipboard.writeText(code);
-                toast.success("Embed code copied");
-              }}
-            >
-              Copy code
-            </Button>
-          </div>
-          <Separator />
-          <div className="text-sm text-muted-foreground">
-            Works on HTML, React, Webflow, Framer—any platform where you can add a script in the head.
-          </div>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

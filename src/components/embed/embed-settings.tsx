@@ -5,7 +5,7 @@ import { Copy, Check, Palette, Code } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export function EmbedSettings() {
-  const { organization } = useAuth();
+  const { organization, loading } = useAuth();
   const [copied, setCopied] = useState(false);
   const [customization, setCustomization] = useState({
     primaryColor: "#3B82F6",
@@ -51,6 +51,45 @@ export function EmbedSettings() {
       [key]: value
     }));
   };
+
+  // Show skeleton loader while loading
+  if (loading) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="mb-8">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Embed Code Section Skeleton */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse"></div>
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="h-4 bg-gray-200 rounded w-full mb-2 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+              </div>
+              <div className="h-10 bg-gray-200 rounded w-full animate-pulse"></div>
+            </div>
+          </div>
+          
+          {/* Customization Section Skeleton */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
+              <div className="space-y-4">
+                <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
+                <div className="h-10 bg-gray-200 rounded w-full animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"></div>
+                <div className="h-10 bg-gray-200 rounded w-full animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!organization) {
     return (

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 export function getSupabaseBrowser() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const dbUrl = process.env.SUPABASE_DB_URL;
   
   if (!url || !key) {
     return null;
@@ -17,7 +18,9 @@ export function getSupabaseBrowser() {
         flowType: 'pkce'
       },
       db: {
-        schema: 'public'
+        schema: 'public',
+        // Use Transaction Pooler connection string if available
+        ...(dbUrl && { connectionString: dbUrl })
       },
       global: {
         headers: {

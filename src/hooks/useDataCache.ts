@@ -23,6 +23,44 @@ let globalCache: DataCache = {
   lastLoaded: null,
 };
 
+// Load cache from localStorage on initialization
+const loadCacheFromStorage = () => {
+  // Only run on client side
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const stored = localStorage.getItem('linquo-data-cache');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Only use cached data if it's less than 5 minutes old
+      if (parsed.lastLoaded && Date.now() - parsed.lastLoaded < 300000) {
+        globalCache = { ...globalCache, ...parsed };
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load cache from localStorage:', error);
+  }
+};
+
+// Save cache to localStorage
+const saveCacheToStorage = (cache: DataCache) => {
+  // Only run on client side
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem('linquo-data-cache', JSON.stringify({
+      agents: cache.agents,
+      customers: cache.customers,
+      lastLoaded: cache.lastLoaded
+    }));
+  } catch (error) {
+    console.warn('Failed to save cache to localStorage:', error);
+  }
+};
+
+// Initialize cache from storage
+loadCacheFromStorage();
+
 // Cache listeners for components that need updates
 const cacheListeners = new Set<() => void>();
 

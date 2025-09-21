@@ -39,15 +39,83 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
       {/* Close Button */}
       <div className="absolute top-4 right-4 z-10">
         <button 
-          className="text-white hover:text-gray-200 transition-colors cursor-pointer"
-          onClick={() => {
+          className="text-white hover:text-gray-200 transition-colors cursor-pointer p-1"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             console.log("🔴 Customer form close button clicked");
-            // Send message to parent window to close the widget
+            console.log("🔴 Window parent:", window.parent);
+            console.log("🔴 Window parent !== window:", window.parent !== window);
+            console.log("🔴 Window location:", window.location.href);
+            
+            // Multiple approaches to close the widget
+            let closed = false;
+            
+            // Approach 1: Send message to parent window
             if (window.parent && window.parent !== window) {
-              console.log("🔴 Sending close-widget message from customer form");
-              window.parent.postMessage({ type: 'close-widget' }, '*');
-            } else {
-              console.log("🔴 No parent window found from customer form");
+              console.log("🔴 Attempting to send close-widget message");
+              try {
+                window.parent.postMessage({ type: 'close-widget' }, '*');
+                console.log("🔴 Message sent successfully");
+                closed = true;
+              } catch (error) {
+                console.error("🔴 Error sending message:", error);
+              }
+            }
+            
+            // Approach 2: Try to access parent document and hide iframe
+            if (!closed) {
+              console.log("🔴 Attempting direct iframe manipulation");
+              try {
+                if (window.parent && window.parent.document) {
+                  const iframe = window.parent.document.querySelector('iframe[src*="/embed"]');
+                  if (iframe) {
+                    iframe.style.display = 'none';
+                    console.log("🔴 Fallback: Hidden iframe directly");
+                    closed = true;
+                  }
+                }
+              } catch (fallbackError) {
+                console.error("🔴 Direct iframe manipulation failed:", fallbackError);
+              }
+            }
+            
+            // Approach 3: Try to access the widget container
+            if (!closed) {
+              console.log("🔴 Attempting to access widget container");
+              try {
+                if (window.parent && window.parent.document) {
+                  const widget = window.parent.document.getElementById('linquo-widget');
+                  if (widget) {
+                    widget.style.display = 'none';
+                    console.log("🔴 Fallback: Hidden widget container directly");
+                    closed = true;
+                  }
+                }
+              } catch (containerError) {
+                console.error("🔴 Container manipulation failed:", containerError);
+              }
+            }
+            
+            // Approach 4: Try to trigger the bubble click
+            if (!closed) {
+              console.log("🔴 Attempting to trigger bubble click");
+              try {
+                if (window.parent && window.parent.document) {
+                  const bubble = window.parent.document.getElementById('linquo-chat-bubble');
+                  if (bubble) {
+                    bubble.click();
+                    console.log("🔴 Fallback: Triggered bubble click");
+                    closed = true;
+                  }
+                }
+              } catch (bubbleError) {
+                console.error("🔴 Bubble click failed:", bubbleError);
+              }
+            }
+            
+            if (!closed) {
+              console.error("🔴 All close attempts failed");
             }
           }}
           title="Close widget"

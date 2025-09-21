@@ -6,22 +6,22 @@ export type ConnectionStatus = "connected" | "disconnected";
 
 export function useConnectionStatus() {
   const [status, setStatus] = useState<ConnectionStatus>("connected");
-  const { agent, loading } = useAuth();
+  const { agent, loading, connectionStatus } = useAuth();
   const previousStatus = useRef<ConnectionStatus>("connected");
   const softReloadTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  // Pure frontend check - no backend calls
+  // Use connection status from useAuth and also check agent data
   useEffect(() => {
     if (!loading) {
-      // Check if agent has display_name and email (same logic as avatar menu)
-      if (agent && agent.display_name && agent.email) {
+      // Check both connection status and agent data
+      if (connectionStatus === 'connected' && agent && agent.display_name && agent.email) {
         setStatus("connected");
       } else {
-        // If agent is null, display_name is missing, or email is missing, show disconnected
+        // If connection is lost or agent data is missing, show disconnected
         setStatus("disconnected");
       }
     }
-  }, [agent, loading]);
+  }, [agent, loading, connectionStatus]);
 
   // Auto soft reload when status changes to disconnected
   useEffect(() => {
@@ -34,11 +34,11 @@ export function useConnectionStatus() {
         clearTimeout(softReloadTimeout.current);
       }
       
-      // Schedule soft reload after 5 minutes (300,000 ms)
+      // Schedule soft reload after 30 seconds for immediate recovery
       softReloadTimeout.current = setTimeout(() => {
         console.log("🔄 Executing soft reload...");
         window.location.reload();
-      }, 300000);
+      }, 30000);
     }
     
     // Update previous status

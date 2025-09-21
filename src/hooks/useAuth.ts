@@ -27,6 +27,7 @@ export function useAuth() {
     organization: null,
   });
   const [loading, setLoading] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
 
 
   // Global fallback to prevent infinite loading
@@ -36,6 +37,51 @@ export function useAuth() {
     }, 15000); // 15 second global timeout
 
     return () => clearTimeout(globalTimeout);
+  }, []);
+
+  // Connection monitoring and auto-reconnection
+  useEffect(() => {
+    const supabase = getSupabaseBrowser();
+    if (!supabase) return;
+
+    let reconnectTimeout: NodeJS.Timeout;
+    let healthCheckInterval: NodeJS.Timeout;
+
+    const checkConnection = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setConnectionStatus('connected');
+        } else {
+          setConnectionStatus('disconnected');
+        }
+      } catch (error) {
+        setConnectionStatus('disconnected');
+        // Attempt to reconnect
+        setConnectionStatus('reconnecting');
+        reconnectTimeout = setTimeout(() => {
+          window.location.reload();
+        }, 5000);
+      }
+    };
+
+    // Check connection every 30 seconds
+    healthCheckInterval = setInterval(checkConnection, 30000);
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        setConnectionStatus('disconnected');
+      } else if (event === 'SIGNED_IN') {
+        setConnectionStatus('connected');
+      }
+    });
+
+    return () => {
+      clearTimeout(reconnectTimeout);
+      clearInterval(healthCheckInterval);
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -306,6 +352,7 @@ export function useAuth() {
     // Clear all auth data on logout
     setAuthUser({ user: null, agent: null, organization: null });
     setLoading(false);
+    setConnectionStatus('disconnected');
     
     // Clear data cache on logout
     try {
@@ -319,6 +366,7 @@ export function useAuth() {
   return {
     ...authUser,
     loading,
+    connectionStatus,
     signIn,
     signUp,
     signOut,

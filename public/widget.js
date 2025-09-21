@@ -95,8 +95,17 @@
     // Handle messages from iframe (close widget)
     window.addEventListener('message', function (e) {
       console.log('🔴 Received message:', e.data);
-      if (!e || !e.data) return;
-      if (typeof e.data !== 'object') return;
+      console.log('🔴 Message origin:', e.origin);
+      console.log('🔴 Message source:', e.source);
+      
+      if (!e || !e.data) {
+        console.log('🔴 No message data');
+        return;
+      }
+      if (typeof e.data !== 'object') {
+        console.log('🔴 Message data is not an object:', typeof e.data);
+        return;
+      }
       
       // Handle close widget message
       if (e.data.type === 'close-widget') {
@@ -106,6 +115,9 @@
         // Change icon back to custom chat SVG
         bubble.innerHTML = '';
         bubble.appendChild(chatIcon);
+        console.log('🔴 Widget closed successfully');
+      } else {
+        console.log('🔴 Unknown message type:', e.data.type);
       }
     });
     

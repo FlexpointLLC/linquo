@@ -13,8 +13,6 @@ import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
-import { ConversationListSkeleton } from "@/components/skeletons/conversation-list-skeleton";
-import { ChatSkeleton } from "@/components/skeletons/chat-skeleton";
 
 export function DashboardContent() {
   const router = useRouter();
@@ -29,18 +27,18 @@ export function DashboardContent() {
     setActiveId(cid);
   }, [searchParams]);
 
-  const { data: conversationRows, error: conversationError } = useConversations();
-  const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
+  const { data: conversationRows, error: conversationError, loading: conversationsLoading } = useConversations();
+  const { data: messageRows, error: messageError, loading: messagesLoading } = useMessages(currentTab === "chats" ? activeId : null);
   
   // Memoize conversation IDs to prevent infinite loops
   const conversationIds = useMemo(() => 
     conversationRows?.map(c => c.id) || [], 
     [conversationRows]
   );
-  const { data: lastMessages } = useLastMessages(conversationIds);
+  const { data: lastMessages, loading: lastMessagesLoading } = useLastMessages(conversationIds);
 
-  const { agents, customers } = useDataCache();
-  const { agent } = useAuth();
+  const { agents, customers, loading: dataCacheLoading } = useDataCache();
+  const { agent, loading: authLoading } = useAuth();
 
   // Auto-select first conversation if none is selected
   useEffect(() => {
@@ -67,10 +65,7 @@ export function DashboardContent() {
 
       {currentTab === "chats" && (
         <div className="grid grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6">
-          {!conversationRows ? (
-            <ConversationListSkeleton />
-          ) : (
-            <ConversationList
+          <ConversationList
               conversations={(conversationRows ?? []).map((c) => {
                 const customer = customers?.find(cust => cust.id === c.customer_id);
                 const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
@@ -90,7 +85,6 @@ export function DashboardContent() {
                 router.push(url.pathname + "?" + url.searchParams.toString());
               }}
             />
-          )}
           <div className="flex flex-col h-[calc(100vh-80px)] bg-white">
             {/* Conversation Header with Actions */}
             {activeId && (
@@ -112,10 +106,7 @@ export function DashboardContent() {
             )}
             <div className="flex-1 overflow-y-auto">
               {activeId ? (
-                !messageRows ? (
-                  <ChatSkeleton />
-                ) : (
-                  <MessageThread
+                <MessageThread
                     messages={(messageRows ?? []).map((m) => {
                       const customer = customers?.find(c => c.id === m.customer_id);
                       const agent = agents?.find(a => a.id === m.agent_id);
@@ -129,7 +120,6 @@ export function DashboardContent() {
                       };
                     }) as ChatMessage[]}
                   />
-                )
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -145,18 +135,10 @@ export function DashboardContent() {
               )}
             </div>
             {activeId && (
-              <div className="flex-shrink-0">
+              <div className="border-t border-gray-200 p-4 bg-white">
                 <Composer
-                  customerEmail={(() => {
-                    const conversation = conversationRows?.find(c => c.id === activeId);
-                    const customer = customers?.find(c => c.id === conversation?.customer_id);
-                    return customer?.email;
-                  })()}
-                  onSend={async (text) => {
-                    console.log("🎯 Dashboard onSend called with:", text);
-                    console.log("👤 Agent available:", !!agent);
-                    console.log("💬 Active conversation ID:", activeId);
-                    
+                  conversationId={activeId}
+                  onMessageSent={async (text) => {
                     if (!agent || !activeId) {
                       console.log("❌ Missing agent or activeId");
                       return;
@@ -202,15 +184,15 @@ export function DashboardContent() {
         </div>
       )}
 
-      {currentTab === "agents" && agents && (
+      {currentTab === "agents" && (
         <div className="h-full">
-          <AgentsTable data={agents} />
+          {agents && <AgentsTable data={agents} />}
         </div>
       )}
 
-      {currentTab === "customers" && customers && (
+      {currentTab === "customers" && (
         <div className="h-full">
-          <CustomersTable data={customers} />
+          {customers && <CustomersTable data={customers} />}
         </div>
       )}
 

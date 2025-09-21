@@ -4,7 +4,16 @@ type Customer = { id: string; display_name: string; email: string; status: "ACTI
 
 export function CustomersTable({ data }: { data: Customer[] }) {
   return (
-    <Table>
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Customers</h1>
+        <p className="text-gray-600">
+          View and manage your customer base and their conversation history
+        </p>
+      </div>
+      
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>
@@ -32,7 +41,9 @@ export function CustomersTable({ data }: { data: Customer[] }) {
           ))
         )}
       </TableBody>
-    </Table>
+        </Table>
+      </div>
+    </div>
   );
 }
 

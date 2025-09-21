@@ -5,7 +5,16 @@ type Agent = { id: string; display_name: string; email: string; online_status: s
 
 export function AgentsTable({ data }: { data: Agent[] }) {
   return (
-    <Table>
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Agents</h1>
+        <p className="text-gray-600">
+          Manage your team members and their access to the dashboard
+        </p>
+      </div>
+      
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Agent</TableHead>
@@ -36,7 +45,9 @@ export function AgentsTable({ data }: { data: Agent[] }) {
           ))
         )}
       </TableBody>
-    </Table>
+        </Table>
+      </div>
+    </div>
   );
 }
 
