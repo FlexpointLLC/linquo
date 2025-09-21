@@ -4,7 +4,7 @@ import { MessageSquare, X } from "lucide-react";
 import { type ChatMessage } from "@/components/chat/message-thread";
 import { CustomerForm } from "@/components/widget/customer-form";
 import { useSearchParams } from "next/navigation";
-import { useMessages } from "@/hooks/useMessages";
+import { useWidgetMessages } from "@/hooks/useWidgetMessages";
 import { useCustomer } from "@/hooks/useCustomer";
 import { ErrorBoundary } from "@/components/error-boundary";
 
@@ -33,7 +33,7 @@ function EmbedContent() {
   }, [params]);
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
-  const { data: messageRows } = useMessages(cid);
+  const { data: messageRows } = useWidgetMessages(cid);
 
   // Check if customer exists and load existing conversation
   useEffect(() => {
@@ -100,7 +100,10 @@ function EmbedContent() {
 
   // Process messages for display
   const processedMessages = useMemo(() => {
+    console.log("🔍 Widget message processing:", { messageRows, cid, messageCount: messageRows?.length });
+    
     if (!messageRows || !cid) {
+      console.log("❌ No messages or cid:", { messageRows, cid });
       return [];
     }
     
@@ -111,6 +114,8 @@ function EmbedContent() {
       text: m.body_text,
       time: new Date(m.created_at).toLocaleTimeString(),
     }));
+    
+    console.log("✅ Processed messages:", processedMessages);
     return processedMessages;
   }, [messageRows, cid]);
 
