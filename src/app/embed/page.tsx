@@ -62,25 +62,15 @@ function EmbedContent() {
       console.log("📝 Customer creation result:", customerData);
       
       if (customerData) {
-        console.log("✅ Customer created/found, checking for existing conversation");
+        console.log("✅ Customer created/found, creating or finding conversation");
         
-        // Check for existing conversation
-        const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-        if (client) {
-          const { data: existingConv, error } = await client
-            .from("conversations")
-            .select("id")
-            .eq("customer_id", customerData.id)
-            .maybeSingle();
-          
-          if (error) {
-            console.error("❌ Error loading existing conversation:", error);
-          } else if (existingConv) {
-            console.log("✅ Found existing conversation:", existingConv.id);
-            setCid(existingConv.id);
-          } else {
-            console.log("📝 No existing conversation found, will create on first message");
-          }
+        // Create or find conversation immediately when "Start Chat" is clicked
+        const conversationId = await createConversation(customerData);
+        if (conversationId) {
+          console.log("✅ Conversation created/found:", conversationId);
+          setCid(conversationId);
+        } else {
+          console.log("⚠️ Failed to create conversation, but showing chat view");
         }
         
         setShowForm(false);
@@ -225,29 +215,15 @@ function EmbedContent() {
                   console.log("💬 Sending message:", { text, cid, customer: customer?.id });
                   const sendMessage = async () => {
                     const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                    if (!client || !customer) {
-                      console.error("❌ Missing required data for message sending:", { client: !!client, customer: !!customer });
+                    if (!client || !customer || !cid) {
+                      console.error("❌ Missing required data for message sending:", { client: !!client, customer: !!customer, cid });
                       return;
                     }
                     
                     try {
-                      // Create conversation if it doesn't exist
-                      let conversationId = cid;
-                      if (!conversationId) {
-                        console.log("💬 Creating new conversation...");
-                        conversationId = await createConversation(customer);
-                        if (conversationId) {
-                          setCid(conversationId);
-                          console.log("✅ Conversation created:", conversationId);
-                        } else {
-                          console.error("❌ Failed to create conversation");
-                          return;
-                        }
-                      }
-                      
                       console.log("📝 Inserting message into database...");
                       const { data: messageData, error: messageError } = await client.from("messages").insert({ 
-                        conversation_id: conversationId, 
+                        conversation_id: cid, 
                         sender_type: "CUSTOMER",
                         customer_id: customer.id,
                         org_id: customer.org_id,
@@ -263,7 +239,7 @@ function EmbedContent() {
                       console.log("🔄 Updating conversation last_message_at...");
                       const { error: updateError } = await client.from("conversations").update({ 
                         last_message_at: new Date().toISOString() 
-                      }).eq("id", conversationId);
+                      }).eq("id", cid);
                       
                       if (updateError) {
                         console.error("❌ Error updating conversation:", updateError);
@@ -299,29 +275,15 @@ function EmbedContent() {
                 console.log("💬 Sending message:", { text, cid, customer: customer?.id });
                 const sendMessage = async () => {
                   const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                  if (!client || !customer) {
-                    console.error("❌ Missing required data for message sending:", { client: !!client, customer: !!customer });
+                  if (!client || !customer || !cid) {
+                    console.error("❌ Missing required data for message sending:", { client: !!client, customer: !!customer, cid });
                     return;
                   }
                   
                   try {
-                    // Create conversation if it doesn't exist
-                    let conversationId = cid;
-                    if (!conversationId) {
-                      console.log("💬 Creating new conversation...");
-                      conversationId = await createConversation(customer);
-                      if (conversationId) {
-                        setCid(conversationId);
-                        console.log("✅ Conversation created:", conversationId);
-                      } else {
-                        console.error("❌ Failed to create conversation");
-                        return;
-                      }
-                    }
-                    
                     console.log("📝 Inserting message into database...");
                     const { data: messageData, error: messageError } = await client.from("messages").insert({ 
-                      conversation_id: conversationId, 
+                      conversation_id: cid, 
                       sender_type: "CUSTOMER",
                       customer_id: customer.id,
                       org_id: customer.org_id,
@@ -337,7 +299,7 @@ function EmbedContent() {
                     console.log("🔄 Updating conversation last_message_at...");
                     const { error: updateError } = await client.from("conversations").update({ 
                       last_message_at: new Date().toISOString() 
-                    }).eq("id", conversationId);
+                    }).eq("id", cid);
                     
                     if (updateError) {
                       console.error("❌ Error updating conversation:", updateError);
