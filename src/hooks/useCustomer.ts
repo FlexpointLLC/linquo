@@ -30,6 +30,103 @@ export function useCustomer() {
     }
   }, []);
 
+  const createOrGetCustomerWithOrgId = async (name: string, email: string, orgId: string): Promise<Customer | null> => {
+    console.log("🚀 Starting createOrGetCustomerWithOrgId with:", { name, email, orgId });
+    setLoading(true);
+    setError(null);
+
+    try {
+      const client = getSupabaseBrowser();
+      if (!client) {
+        console.log("❌ Supabase client not available");
+        throw new Error("Supabase client not available");
+      }
+      console.log("✅ Supabase client available");
+
+      // First, try to find existing customer by email and org_id
+      const { data: existingCustomer, error: findError } = await client
+        .from("customers")
+        .select("*")
+        .eq("email", email)
+        .eq("org_id", orgId)
+        .maybeSingle();
+
+      if (findError) {
+        console.log("❌ Error finding customer:", findError);
+      } else {
+        console.log("🔍 Customer search result:", existingCustomer ? "Found existing" : "No existing customer");
+      }
+
+      if (existingCustomer) {
+        console.log("✅ Found existing customer:", existingCustomer);
+        const customerWithWebsite = { ...existingCustomer, website: window.location.hostname };
+        setCustomer(customerWithWebsite);
+        localStorage.setItem("linquo_customer", JSON.stringify(customerWithWebsite));
+        console.log("✅ Customer saved to localStorage and state:", customerWithWebsite);
+        return customerWithWebsite;
+      }
+
+      // Create new customer with the provided org_id
+      console.log("📝 Creating new customer with org_id:", orgId);
+      const { data: newCustomer, error: createError } = await client
+        .from("customers")
+        .insert({
+          display_name: name,
+          email: email,
+          org_id: orgId,
+          status: "ACTIVE",
+        })
+        .select()
+        .single();
+
+      let customerData: Customer | null = null;
+
+      if (createError) {
+        console.log("❌ Error creating customer:", createError);
+        if (createError.code === '23505' || createError.message.includes('duplicate')) {
+          console.log("🔄 Duplicate email detected, fetching existing customer...");
+          // Try to fetch the existing customer
+          const { data: existingCustomer, error: fetchError } = await client
+            .from("customers")
+            .select("*")
+            .eq("email", email)
+            .eq("org_id", orgId)
+            .single();
+
+          if (fetchError) {
+            console.log("❌ Error fetching existing customer:", fetchError);
+            throw createError;
+          } else {
+            customerData = existingCustomer;
+            console.log("✅ Found existing customer:", existingCustomer);
+          }
+        } else {
+          throw createError;
+        }
+      } else {
+        customerData = newCustomer;
+        console.log("✅ New customer created:", newCustomer);
+      }
+
+      if (customerData) {
+        const customerWithWebsite = { ...customerData, website: window.location.hostname };
+        setCustomer(customerWithWebsite);
+        localStorage.setItem("linquo_customer", JSON.stringify(customerWithWebsite));
+        console.log("✅ Customer saved to localStorage and state:", customerWithWebsite);
+        return customerWithWebsite;
+      }
+
+      return null;
+    } catch (e: unknown) {
+      console.error("❌ Error in createOrGetCustomerWithOrgId:", e);
+      const errorMessage = e instanceof Error ? e.message : "Failed to create customer";
+      setError(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createOrGetCustomer = async (name: string, email: string, website: string): Promise<Customer | null> => {
     console.log("🚀 Starting createOrGetCustomer with:", { name, email, website });
     setLoading(true);
@@ -282,6 +379,7 @@ export function useCustomer() {
     loading,
     error,
     createOrGetCustomer,
+    createOrGetCustomerWithOrgId,
     createConversation,
     clearCustomer,
   };

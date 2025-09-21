@@ -26,6 +26,21 @@
     var params = new URLSearchParams();
     var site = window.location.host;
     params.set('site', site);
+    
+    // Get organization ID from URL parameter (Chatway style)
+    var orgId = null;
+    if (current && current.src) {
+      try {
+        var url = new URL(current.src);
+        orgId = url.searchParams.get('id');
+      } catch {
+        // Fallback: try to get from data-org-id attribute
+        orgId = current.getAttribute('data-org-id');
+      }
+    }
+    
+    if (orgId) params.set('org', orgId);
+    
     var conv = current && current.getAttribute('data-conversation');
     if (conv) params.set('cid', conv);
     iframe.src = base + '/embed' + '?' + params.toString();

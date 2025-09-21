@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { MessageSquare, Users2, Settings, UserCog, LogOut } from "lucide-react";
+import { MessageSquare, Users2, Settings, UserCog, LogOut, Code } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -16,6 +16,7 @@ const items = [
   { key: "chats", label: "Chats", icon: MessageSquare },
   { key: "agents", label: "Agents", icon: UserCog },
   { key: "customers", label: "Customers", icon: Users2 },
+  { key: "embed", label: "Embed", icon: Code },
   { key: "settings", label: "Settings", icon: Settings },
 ];
 

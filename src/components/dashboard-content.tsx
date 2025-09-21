@@ -7,6 +7,7 @@ import { Composer } from "@/components/chat/composer";
 import { AgentsTable } from "@/components/tables/agents-table";
 import { CustomersTable } from "@/components/tables/customers-table";
 import { SettingsPanel } from "@/components/settings/settings-panel";
+import { EmbedSettings } from "@/components/embed/embed-settings";
 import { useAgents } from "@/hooks/useAgents";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useConversations } from "@/hooks/useConversations";
@@ -183,6 +184,12 @@ export function DashboardContent() {
       {currentTab === "customers" && customers && (
         <div className="h-full">
           <CustomersTable data={customers} />
+        </div>
+      )}
+
+      {currentTab === "embed" && (
+        <div className="h-full">
+          <EmbedSettings />
         </div>
       )}
 

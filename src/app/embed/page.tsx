@@ -11,21 +11,28 @@ import { ErrorBoundary } from "@/components/error-boundary";
 function EmbedContent() {
   const params = useSearchParams();
   const [site, setSite] = useState<string>("localhost");
+  const [orgId, setOrgId] = useState<string | null>(null);
   const [cid, setCid] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
-  // Set site after hydration to avoid mismatch
+  // Set site and orgId after hydration to avoid mismatch
   useEffect(() => {
     const siteParam = params.get("site");
+    const orgParam = params.get("org");
+    
     if (siteParam) {
       setSite(siteParam);
     } else if (typeof window !== 'undefined') {
       setSite(window.location.hostname);
     }
+    
+    if (orgParam) {
+      setOrgId(orgParam);
+    }
   }, [params]);
 
-  const { customer, loading, createOrGetCustomer, createConversation } = useCustomer();
+  const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows } = useMessages(cid);
 
   // Check if customer exists and load existing conversation
@@ -65,8 +72,13 @@ function EmbedContent() {
 
   const handleCustomerSubmit = async (data: { name: string; email: string }) => {
     try {
-      console.log("🚀 Starting customer creation:", { name: data.name, email: data.email, site });
-      const newCustomer = await createOrGetCustomer(data.name, data.email, site);
+      console.log("🚀 Starting customer creation:", { name: data.name, email: data.email, site, orgId });
+      
+      // If we have an orgId from the widget, use it directly
+      // Otherwise fall back to the old method using site/website
+      const newCustomer = orgId 
+        ? await createOrGetCustomerWithOrgId(data.name, data.email, orgId)
+        : await createOrGetCustomer(data.name, data.email, site);
       console.log("✅ Customer created/found:", newCustomer);
       
       if (newCustomer) {
