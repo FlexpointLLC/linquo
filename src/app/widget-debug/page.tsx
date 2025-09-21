@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 export default function WidgetDebugPage() {
-  const [customer, setCustomer] = useState<any>(null);
+  const [customer, setCustomer] = useState<{ id: string; name: string; email: string; org_id: string } | null>(null);
   const [localStorageData, setLocalStorageData] = useState<string | null>(null);
 
   useEffect(() => {
@@ -13,7 +13,7 @@ export default function WidgetDebugPage() {
     if (savedCustomer) {
       try {
         setCustomer(JSON.parse(savedCustomer));
-      } catch (error) {
+      } catch {
         // Error parsing customer data
       }
     }
@@ -64,10 +64,10 @@ export default function WidgetDebugPage() {
         <div className="bg-yellow-100 p-4 rounded-lg">
           <h3 className="font-semibold mb-2">Instructions:</h3>
           <ol className="list-decimal list-inside space-y-1 text-sm">
-            <li>If you see customer data above, click "Clear Customer Data" to reset</li>
-            <li>Click "Test Widget" to open the widget</li>
+            <li>If you see customer data above, click &quot;Clear Customer Data&quot; to reset</li>
+            <li>Click &quot;Test Widget&quot; to open the widget</li>
             <li>You should see the customer form (Welcome screen)</li>
-            <li>Fill in name and email, then click "Start Chat"</li>
+            <li>Fill in name and email, then click &quot;Start Chat&quot;</li>
             <li>Check browser console for any errors</li>
           </ol>
         </div>

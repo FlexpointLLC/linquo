@@ -23,7 +23,7 @@ export default function SimpleTestPage() {
           </p>
           
           <div className="bg-gray-50 p-4 rounded-lg font-mono text-sm">
-            <code>&lt;script src="/widget.js" async&gt;&lt;/script&gt;</code>
+            <code>&lt;script src=&quot;/widget.js&quot; async&gt;&lt;/script&gt;</code>
           </div>
           
           <p className="text-gray-600 mt-4">

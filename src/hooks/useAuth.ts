@@ -136,7 +136,7 @@ export function useAuth() {
             organization: orgData,
           });
         }
-      } catch (error) {
+      } catch {
         // Keep the user logged in even if there's an error
         setAuthUser({
           user,

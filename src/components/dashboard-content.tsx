@@ -163,7 +163,7 @@ export function DashboardContent() {
                         .from("conversations")
                         .update({ last_message_at: new Date().toISOString() })
                         .eq("id", activeId);
-                    } catch (error) {
+                    } catch {
                       // Error sending message
                     }
                   }}

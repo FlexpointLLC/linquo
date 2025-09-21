@@ -266,7 +266,7 @@ export function useCustomer() {
 
       console.log("✅ Created new conversation:", newConversation.id);
       return newConversation.id;
-    } catch (e: unknown) {
+    } catch {
       // Error creating conversation
       return null;
     }

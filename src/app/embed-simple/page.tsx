@@ -45,7 +45,7 @@ export default function EmbedSimplePage() {
             <li>Look for the chat widget button in the bottom-right corner</li>
             <li>Click the button to open the chat widget</li>
             <li>Fill out the customer form</li>
-            <li>Click "Start Chat" to begin a conversation</li>
+            <li>Click &quot;Start Chat&quot; to begin a conversation</li>
             <li>Test sending messages</li>
           </ol>
         </div>

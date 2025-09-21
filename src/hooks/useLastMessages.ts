@@ -14,7 +14,7 @@ export function useLastMessages(conversationIds: string[]) {
   const [error, setError] = useState<string | null>(null);
 
   // Memoize the conversationIds to prevent infinite loops
-  const memoizedConversationIds = useMemo(() => conversationIds, [conversationIds.join(',')]);
+  const memoizedConversationIds = useMemo(() => conversationIds, [conversationIds]);
 
   useEffect(() => {
     if (!memoizedConversationIds.length) {
@@ -36,6 +36,10 @@ export function useLastMessages(conversationIds: string[]) {
         setError(null);
 
         // Get the last message for each conversation
+        if (!client) {
+          setError("Supabase client not available");
+          return;
+        }
         const { data: messages, error } = await client
           .from("messages")
           .select("conversation_id, body_text, created_at")

@@ -25,7 +25,7 @@ function EmbedContent() {
     }
   }, [params]);
 
-  const { customer, loading, createOrGetCustomer, createConversation, clearCustomer } = useCustomer();
+  const { customer, loading, createOrGetCustomer, createConversation } = useCustomer();
   const { data: messageRows } = useMessages(cid);
 
   // Check if customer exists and load existing conversation
@@ -55,7 +55,7 @@ function EmbedContent() {
         if (existingConv) {
           setCid(existingConv.id);
         }
-      } catch (error) {
+      } catch {
         // Error loading existing conversation
       }
     };
@@ -92,7 +92,7 @@ function EmbedContent() {
       return [];
     }
     
-    const processedMessages = messageRows.map((m: any) => ({
+    const processedMessages = messageRows.map((m: { id: string; sender_type: string; body_text: string; created_at: string }) => ({
       id: m.id,
       author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
       name: m.sender_type === "AGENT" ? "Agent" : "Customer",
@@ -234,7 +234,7 @@ function EmbedContent() {
                     }
                     
                     try {
-                      const { data: messageData, error: messageError } = await client.from("messages").insert({ 
+                      const { error: messageError } = await client.from("messages").insert({ 
                         conversation_id: cid, 
                         sender_type: "CUSTOMER",
                         customer_id: customer.id,
@@ -251,7 +251,7 @@ function EmbedContent() {
                         // Force refresh messages to ensure they appear immediately
                         console.log("🔄 Message sent successfully, should appear in chat now");
                       }
-                    } catch (error) {
+                    } catch {
                       // Error sending message
                     }
                   };
