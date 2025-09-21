@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function DemoPage() {
-  const { organization } = useAuth();
   const [orgId, setOrgId] = useState("");
   const [, setWidgetScript] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
@@ -14,22 +12,12 @@ export default function DemoPage() {
     setIsHydrated(true);
   }, []);
 
-  // Set organization ID from auth context and clear cached data
+  // Set default organization ID for demo
   useEffect(() => {
-    if (organization?.id) {
-      setOrgId(organization.id);
-      
-      // Clear any cached widget data when organization changes
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem('widget-input-value');
-          sessionStorage.clear();
-        } catch (error) {
-          console.log("❌ Error clearing cached data:", error);
-        }
-      }
+    if (isHydrated && !orgId) {
+      setOrgId("25750931-edcf-4860-8527-12616916b377"); // Default demo org
     }
-  }, [organization]);
+  }, [isHydrated, orgId]);
 
   // Update widget script when orgId changes
   useEffect(() => {
@@ -64,13 +52,11 @@ export default function DemoPage() {
     setOrgId(e.target.value);
   };
 
-  // Show loading state during hydration or when no organization
-  if (!isHydrated || !organization) {
+  // Show loading state during hydration
+  if (!isHydrated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-        <div className="text-white text-xl">
-          {!organization ? "Please log in to test the widget" : "Loading..."}
-        </div>
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
@@ -123,10 +109,10 @@ export default function DemoPage() {
             <h4 className="text-yellow-600 font-semibold mb-4">🔧 Test Different Organization IDs:</h4>
             <div className="bg-yellow-100 p-3 rounded mb-4">
               <p className="text-yellow-800 text-sm">
-                <strong>Current Organization:</strong> {organization.name} ({organization.id})
+                <strong>Demo Organization:</strong> Flexpoint (Default)
               </p>
               <p className="text-yellow-700 text-xs mt-1">
-                The widget automatically uses your current organization. You can test with different IDs below.
+                This is a public demo. You can test with different organization IDs below.
               </p>
             </div>
             <div className="max-w-md mx-auto">
@@ -144,10 +130,10 @@ export default function DemoPage() {
                 <p className="text-yellow-600 text-xs font-semibold mb-2">Example Organization IDs:</p>
                 <div className="space-y-1">
                   <button 
-                    onClick={() => setOrgId(organization.id)}
+                    onClick={() => setOrgId("25750931-edcf-4860-8527-12616916b377")}
                     className="block w-full text-left text-xs text-yellow-700 hover:text-yellow-900 hover:bg-yellow-100 px-2 py-1 rounded"
                   >
-                    • {organization.id} (Current: {organization.name})
+                    • 25750931-edcf-4860-8527-12616916b377 (Flexpoint - Default)
                   </button>
                   <button 
                     onClick={() => setOrgId("test-org-123")}
