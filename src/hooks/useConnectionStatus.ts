@@ -27,18 +27,18 @@ export function useConnectionStatus() {
   useEffect(() => {
     // Only trigger soft reload if status changed from connected to disconnected
     if (previousStatus.current === "connected" && status === "disconnected") {
-      console.log("🔄 Connection lost, scheduling soft reload in 2 seconds...");
+      console.log("🔄 Connection lost, scheduling soft reload in 5 minutes...");
       
       // Clear any existing timeout
       if (softReloadTimeout.current) {
         clearTimeout(softReloadTimeout.current);
       }
       
-      // Schedule soft reload after 2 seconds
+      // Schedule soft reload after 5 minutes (300,000 ms)
       softReloadTimeout.current = setTimeout(() => {
         console.log("🔄 Executing soft reload...");
         window.location.reload();
-      }, 2000);
+      }, 300000);
     }
     
     // Update previous status
