@@ -42,12 +42,12 @@
       this.style.boxShadow = '0 4px 12px ' + brandColor + '40';
     });
     
-    // Create chat icon (using your custom SVG)
-    var chatIcon = document.createElement('img');
-    chatIcon.src = '/icons/chat.svg';
+    // Create chat icon (inline SVG for cross-platform compatibility)
+    var chatIcon = document.createElement('div');
+    chatIcon.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     chatIcon.style.width = '32px';
     chatIcon.style.height = '32px';
-    chatIcon.style.filter = 'brightness(0) invert(1)'; // Makes the icon white
+    chatIcon.style.color = 'white';
     
     bubble.appendChild(chatIcon);
     
