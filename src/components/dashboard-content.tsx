@@ -13,6 +13,8 @@ import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
+import { ConversationListSkeleton } from "@/components/skeletons/conversation-list-skeleton";
+import { ChatSkeleton } from "@/components/skeletons/chat-skeleton";
 
 export function DashboardContent() {
   const router = useRouter();
@@ -65,26 +67,30 @@ export function DashboardContent() {
 
       {currentTab === "chats" && (
         <div className="grid grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6">
-          <ConversationList
-            conversations={(conversationRows ?? []).map((c) => {
-              const customer = customers?.find(cust => cust.id === c.customer_id);
-              const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
-              return {
-                id: c.id,
-                name: customer?.display_name || "Unknown Customer",
-                email: customer?.email,
-                lastMessage: lastMessage?.body_text || "No messages yet",
-                status: "ACTIVE" as const,
-                timestamp: c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : undefined
-              };
-            })}
-            activeId={activeId ?? undefined}
-            onSelect={(id) => {
-              const url = new URL(window.location.href);
-              url.searchParams.set("cid", id);
-              router.push(url.pathname + "?" + url.searchParams.toString());
-            }}
-          />
+          {!conversationRows ? (
+            <ConversationListSkeleton />
+          ) : (
+            <ConversationList
+              conversations={(conversationRows ?? []).map((c) => {
+                const customer = customers?.find(cust => cust.id === c.customer_id);
+                const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
+                return {
+                  id: c.id,
+                  name: customer?.display_name || "Unknown Customer",
+                  email: customer?.email,
+                  lastMessage: lastMessage?.body_text || "No messages yet",
+                  status: "ACTIVE" as const,
+                  timestamp: c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : undefined
+                };
+              })}
+              activeId={activeId ?? undefined}
+              onSelect={(id) => {
+                const url = new URL(window.location.href);
+                url.searchParams.set("cid", id);
+                router.push(url.pathname + "?" + url.searchParams.toString());
+              }}
+            />
+          )}
           <div className="flex flex-col h-[calc(100vh-80px)] bg-white">
             {/* Conversation Header with Actions */}
             {activeId && (
@@ -106,20 +112,24 @@ export function DashboardContent() {
             )}
             <div className="flex-1 overflow-y-auto">
               {activeId ? (
-                <MessageThread
-                  messages={(messageRows ?? []).map((m) => {
-                    const customer = customers?.find(c => c.id === m.customer_id);
-                    const agent = agents?.find(a => a.id === m.agent_id);
-                    return {
-                      id: m.id,
-                      author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
-                      name: m.sender_type === "AGENT" ? (agent?.display_name || "Agent") : (customer?.display_name || "Customer"),
-                      email: m.sender_type === "CUSTOMER" ? customer?.email : undefined,
-                      text: m.body_text,
-                      time: new Date(m.created_at).toLocaleTimeString(),
-                    };
-                  }) as ChatMessage[]}
-                />
+                !messageRows ? (
+                  <ChatSkeleton />
+                ) : (
+                  <MessageThread
+                    messages={(messageRows ?? []).map((m) => {
+                      const customer = customers?.find(c => c.id === m.customer_id);
+                      const agent = agents?.find(a => a.id === m.agent_id);
+                      return {
+                        id: m.id,
+                        author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
+                        name: m.sender_type === "AGENT" ? (agent?.display_name || "Agent") : (customer?.display_name || "Customer"),
+                        email: m.sender_type === "CUSTOMER" ? customer?.email : undefined,
+                        text: m.body_text,
+                        time: new Date(m.created_at).toLocaleTimeString(),
+                      };
+                    }) as ChatMessage[]}
+                  />
+                )
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">

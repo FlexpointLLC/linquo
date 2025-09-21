@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 
 export default function DemoPage() {
   const [orgId, setOrgId] = useState("25750931-edcf-4860-8527-12616916b377");
-  const [widgetScript, setWidgetScript] = useState("");
+  const [, setWidgetScript] = useState("");
 
   // Update widget script when orgId changes
   useEffect(() => {
-    const script = `http://localhost:3000/widget.js?id=${encodeURIComponent(orgId)}`;
+    // Use production URL for external platforms, localhost for development
+    const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://linquochat.vercel.app';
+    const script = `${baseUrl}/widget.js?id=${encodeURIComponent(orgId)}`;
     setWidgetScript(script);
     
     // Remove existing widget

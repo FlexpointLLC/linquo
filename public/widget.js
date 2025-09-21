@@ -58,7 +58,9 @@
     
     // Create iframe
     var iframe = document.createElement('iframe');
-    iframe.src = '/embed?org=' + encodeURIComponent(orgId) + '&site=' + encodeURIComponent(window.location.origin);
+    // Use production URL for external platforms, localhost for development
+    var baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://linquochat.vercel.app';
+    iframe.src = baseUrl + '/embed?org=' + encodeURIComponent(orgId) + '&site=' + encodeURIComponent(window.location.origin);
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = '0';

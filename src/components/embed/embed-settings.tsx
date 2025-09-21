@@ -20,7 +20,8 @@ export function EmbedSettings() {
   const generateEmbedCode = () => {
     if (!orgId) return "";
     
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com';
+    // Always use production URL for embed codes
+    const baseUrl = 'https://linquochat.vercel.app';
     
     return `<script id="linquo" async="true" src="${baseUrl}/widget.js?id=${orgId}"></script>`;
   };

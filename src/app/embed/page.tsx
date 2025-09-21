@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useWidgetMessages } from "@/hooks/useWidgetMessages";
 import { useCustomer } from "@/hooks/useCustomer";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { WidgetSkeleton, CustomerFormSkeleton } from "@/components/skeletons/widget-skeleton";
 
 function EmbedContent() {
   const params = useSearchParams();
@@ -204,9 +205,18 @@ function EmbedContent() {
   if (showForm) {
     return (
       <div className="h-full w-full">
-        <CustomerForm onSubmit={handleCustomerSubmit} loading={loading} />
+        {loading ? (
+          <CustomerFormSkeleton />
+        ) : (
+          <CustomerForm onSubmit={handleCustomerSubmit} loading={loading} />
+        )}
       </div>
     );
+  }
+
+  // Show skeleton while loading messages
+  if (loading && !messageRows) {
+    return <WidgetSkeleton />;
   }
 
   return (
