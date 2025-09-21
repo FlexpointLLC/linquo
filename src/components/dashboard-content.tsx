@@ -37,7 +37,7 @@ export function DashboardContent() {
   );
   const { data: lastMessages } = useLastMessages(conversationIds);
 
-  const { agents, customers, refresh: refreshData } = useDataCache();
+  const { agents, customers } = useDataCache();
   const { agent } = useAuth();
 
   // Auto-select first conversation if none is selected
@@ -53,14 +53,12 @@ export function DashboardContent() {
   return (
     <div className="h-[calc(100vh-80px)] w-full">
       {/* Error Display - Only show for actual errors, not empty data */}
-      {(conversationError || messageError || agentsError || customersError) && (
+      {(conversationError || messageError) && (
         <div className="p-3 bg-red-50 border border-red-200">
           <h4 className="text-sm font-medium text-red-800">Connection Issues:</h4>
           <ul className="text-xs text-red-600 mt-1">
             {conversationError && <li>Conversations: {conversationError}</li>}
             {messageError && <li>Messages: {messageError}</li>}
-            {agentsError && <li>Agents: {agentsError}</li>}
-            {customersError && <li>Customers: {customersError}</li>}
           </ul>
         </div>
       )}

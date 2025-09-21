@@ -34,7 +34,9 @@ export function useDataCache() {
   useEffect(() => {
     const listener = () => setCache({ ...globalCache });
     cacheListeners.add(listener);
-    return () => cacheListeners.delete(listener);
+    return () => {
+      cacheListeners.delete(listener);
+    };
   }, []);
 
   // Load all data once when agent is available
@@ -123,6 +125,18 @@ export function useDataCache() {
 // Helper function to notify all listeners
 function notifyListeners() {
   cacheListeners.forEach(listener => listener());
+}
+
+// Export clearCache function for use in other modules
+export function clearCache() {
+  globalCache = {
+    agents: null,
+    customers: null,
+    loading: false,
+    error: null,
+    lastLoaded: null,
+  };
+  notifyListeners();
 }
 
 // Export individual hooks for backward compatibility
