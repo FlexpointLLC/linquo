@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { Suspense } from 'react'
 import { BrandColorProvider } from '@/contexts/brand-color-context'
 
 export const metadata: Metadata = {
@@ -27,9 +28,11 @@ export default function EmbedLayout({
         }} />
       </head>
       <body>
-        <BrandColorProvider>
-          {children}
-        </BrandColorProvider>
+        <Suspense fallback={<div>Loading...</div>}>
+          <BrandColorProvider>
+            {children}
+          </BrandColorProvider>
+        </Suspense>
       </body>
     </html>
   )
