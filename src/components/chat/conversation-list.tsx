@@ -21,6 +21,7 @@ export function ConversationList({
   activeId?: string;
   onSelect?: (id: string) => void;
 }) {
+  const openCount = conversations.filter(c => c.status === "ACTIVE").length;
 
   return (
     <div className="border-r w-80 shrink-0 bg-white h-[calc(100vh-80px)] flex flex-col">
@@ -30,6 +31,7 @@ export function ConversationList({
           <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
         </div>
         <div className="flex items-center gap-4 text-sm">
+          <span className="text-blue-600 font-medium">{openCount} Open</span>
           <span className="text-gray-500">Newest</span>
         </div>
       </div>
@@ -61,7 +63,7 @@ export function ConversationList({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <div className="font-medium text-gray-900 truncate text-sm">
-                      {c.name}
+                      {c.email || c.name}
                     </div>
                     {c.timestamp && (
                       <span className="text-xs text-gray-500 flex-shrink-0">

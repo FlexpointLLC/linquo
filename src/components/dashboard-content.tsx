@@ -100,7 +100,7 @@ export function DashboardContent() {
                         {(() => {
                           const conversation = conversationRows?.find(c => c.id === activeId);
                           const customer = customers?.find(c => c.id === conversation?.customer_id);
-                          return customer?.display_name || `Conversation ${activeId?.slice(0, 8)}`;
+                          return customer?.email || `Conversation ${activeId?.slice(0, 8)}`;
                         })()}
                       </h3>
                     </div>
