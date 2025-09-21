@@ -39,11 +39,15 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
       {/* Close Button */}
       <div className="absolute top-4 right-4 z-10">
         <button 
-          className="text-white hover:text-gray-200 transition-colors"
+          className="text-white hover:text-gray-200 transition-colors cursor-pointer"
           onClick={() => {
+            console.log("🔴 Customer form close button clicked");
             // Send message to parent window to close the widget
             if (window.parent && window.parent !== window) {
+              console.log("🔴 Sending close-widget message from customer form");
               window.parent.postMessage({ type: 'close-widget' }, '*');
+            } else {
+              console.log("🔴 No parent window found from customer form");
             }
           }}
           title="Close widget"

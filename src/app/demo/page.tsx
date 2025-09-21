@@ -1,6 +1,39 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 export default function DemoPage() {
+  const [orgId, setOrgId] = useState("25750931-edcf-4860-8527-12616916b377");
+  const [widgetScript, setWidgetScript] = useState("");
+
+  // Update widget script when orgId changes
+  useEffect(() => {
+    const script = `http://localhost:3000/widget.js?id=${encodeURIComponent(orgId)}`;
+    setWidgetScript(script);
+    
+    // Remove existing widget
+    const existingScript = document.getElementById("linquo");
+    if (existingScript) {
+      existingScript.remove();
+    }
+    
+    // Remove existing widget elements
+    const existingBubble = document.getElementById("linquo-chat-bubble");
+    const existingWidget = document.getElementById("linquo-widget");
+    if (existingBubble) existingBubble.remove();
+    if (existingWidget) existingWidget.remove();
+    
+    // Add new widget script
+    const newScript = document.createElement("script");
+    newScript.id = "linquo";
+    newScript.async = true;
+    newScript.src = script;
+    document.body.appendChild(newScript);
+  }, [orgId]);
+
+  const handleOrgIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOrgId(e.target.value);
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600">
       <div className="container mx-auto px-5 py-10">
@@ -44,11 +77,51 @@ export default function DemoPage() {
         <div className="bg-white p-10 rounded-xl shadow-lg text-center">
           <h2 className="text-3xl font-bold mb-5 text-gray-800">🎯 Try the Widget Now!</h2>
           
-          {/* Store ID Display */}
+          {/* Organization ID Input */}
+          <div className="bg-yellow-50 p-6 rounded-lg mb-6 border-l-4 border-yellow-500">
+            <h4 className="text-yellow-600 font-semibold mb-4">🔧 Test Different Organization IDs:</h4>
+            <div className="max-w-md mx-auto">
+              <input
+                type="text"
+                value={orgId}
+                onChange={handleOrgIdChange}
+                placeholder="Enter Organization ID"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono"
+              />
+              <p className="text-yellow-700 text-xs mt-2">
+                Paste a different org ID to test how the widget behaves with different organizations
+              </p>
+              <div className="mt-3 text-left">
+                <p className="text-yellow-600 text-xs font-semibold mb-2">Example Organization IDs:</p>
+                <div className="space-y-1">
+                  <button 
+                    onClick={() => setOrgId("25750931-edcf-4860-8527-12616916b377")}
+                    className="block w-full text-left text-xs text-yellow-700 hover:text-yellow-900 hover:bg-yellow-100 px-2 py-1 rounded"
+                  >
+                    • 25750931-edcf-4860-8527-12616916b377 (Default)
+                  </button>
+                  <button 
+                    onClick={() => setOrgId("test-org-123")}
+                    className="block w-full text-left text-xs text-yellow-700 hover:text-yellow-900 hover:bg-yellow-100 px-2 py-1 rounded"
+                  >
+                    • test-org-123 (Test)
+                  </button>
+                  <button 
+                    onClick={() => setOrgId("demo-company-456")}
+                    className="block w-full text-left text-xs text-yellow-700 hover:text-yellow-900 hover:bg-yellow-100 px-2 py-1 rounded"
+                  >
+                    • demo-company-456 (Demo)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Current Store ID Display */}
             <div className="bg-green-50 p-4 rounded-lg mb-6 border-l-4 border-green-500">
-              <h4 className="text-green-600 font-semibold mb-2">🏪 Store ID:</h4>
+              <h4 className="text-green-600 font-semibold mb-2">🏪 Current Store ID:</h4>
               <p className="text-green-800 font-mono text-sm break-all">
-                25750931-edcf-4860-8527-12616916b377
+                {orgId}
               </p>
             </div>
 
@@ -88,12 +161,6 @@ export default function DemoPage() {
           <p>© 2024 Linquo. Built with Next.js, Supabase, and lots of ❤️</p>
         </div>
       </div>
-
-            {/* Linquo Widget Script - Default Blue */}
-            <script id="linquo" async={true} src="http://localhost:3000/widget.js?id=25750931-edcf-4860-8527-12616916b377"></script>
-            
-            {/* Example: Custom Color Widget (commented out) */}
-            {/* <script id="linquo" async={true} src="http://localhost:3000/widget.js?id=25750931-edcf-4860-8527-12616916b377&color=%23FF6B6B"></script> */}
     </div>
   );
 }

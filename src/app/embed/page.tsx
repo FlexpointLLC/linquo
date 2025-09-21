@@ -215,7 +215,7 @@ function EmbedContent() {
       <div className="bg-gray-50 border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <button 
-            className="text-gray-600 hover:text-gray-800"
+            className="text-gray-600 hover:text-gray-800 cursor-pointer"
             onClick={() => setShowForm(true)}
             title="Back to form"
           >
@@ -235,17 +235,21 @@ function EmbedContent() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="text-gray-600 hover:text-gray-800">
+          <button className="text-gray-600 hover:text-gray-800 cursor-pointer">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
             </svg>
           </button>
           <button 
-            className="text-gray-600 hover:text-gray-800"
+            className="text-gray-600 hover:text-gray-800 cursor-pointer"
             onClick={() => {
+              console.log("🔴 Close button clicked");
               // Send message to parent window to close the widget
               if (window.parent && window.parent !== window) {
+                console.log("🔴 Sending close-widget message to parent");
                 window.parent.postMessage({ type: 'close-widget' }, '*');
+              } else {
+                console.log("🔴 No parent window found or same window");
               }
             }}
             title="Close widget"

@@ -92,11 +92,13 @@
     
     // Handle messages from iframe (close widget)
     window.addEventListener('message', function (e) {
+      console.log('🔴 Received message:', e.data);
       if (!e || !e.data) return;
       if (typeof e.data !== 'object') return;
       
       // Handle close widget message
       if (e.data.type === 'close-widget') {
+        console.log('🔴 Closing widget via message');
         isOpen = false;
         container.style.display = 'none';
         // Change icon back to custom chat SVG
