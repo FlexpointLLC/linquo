@@ -19,7 +19,6 @@ export function DashboardContent() {
   const searchParams = useSearchParams();
   const [currentTab, setCurrentTab] = useState("chats");
   const [activeId, setActiveId] = useState<string | null>(null);
-  const { brandColor } = useBrandColor();
 
   useEffect(() => {
     const tab = searchParams.get("tab") ?? "chats";
