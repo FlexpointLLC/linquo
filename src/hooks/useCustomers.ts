@@ -23,12 +23,9 @@ export function useCustomers() {
         
         // If agent is not available, don't clear data - keep existing customers
         if (!agent?.org_id) {
-          console.log("⚠️ Agent or org_id not available, keeping existing customers");
           setLoading(false);
           return;
         }
-        
-        console.log("🔒 Loading customers for organization:", agent.org_id);
         
         const { data, error } = await client
           .from("customers")

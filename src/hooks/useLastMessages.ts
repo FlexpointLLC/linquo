@@ -45,7 +45,6 @@ export function useLastMessages(conversationIds: string[]) {
         
         // If agent is not available, don't clear data - keep existing last messages
         if (!agent?.org_id) {
-          console.log("⚠️ Agent or org_id not available, keeping existing last messages");
           setLoading(false);
           return;
         }

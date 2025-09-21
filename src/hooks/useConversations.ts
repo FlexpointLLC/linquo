@@ -30,12 +30,9 @@ export function useConversations() {
         
         // If agent is not available, don't clear data - keep existing conversations
         if (!agent?.org_id) {
-          console.log("⚠️ Agent or org_id not available, keeping existing conversations");
           setLoading(false);
           return;
         }
-        
-        console.log("🔒 Loading conversations for organization:", agent.org_id);
         
         const { data, error } = await client
           .from("conversations")

@@ -23,12 +23,9 @@ export function useAgents() {
         
         // If agent is not available, don't clear data - keep existing agents
         if (!agent?.org_id) {
-          console.log("⚠️ Agent or org_id not available, keeping existing agents");
           setLoading(false);
           return;
         }
-        
-        console.log("🔒 Loading agents for organization:", agent.org_id);
         
         const { data, error } = await client
           .from("agents")

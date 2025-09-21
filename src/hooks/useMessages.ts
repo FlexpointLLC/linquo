@@ -35,12 +35,9 @@ export function useMessages(conversationId: string | null) {
         
         // If agent is not available, don't clear data - keep existing messages
         if (!agent?.org_id) {
-          console.log("⚠️ Agent or org_id not available, keeping existing messages");
           setLoading(false);
           return;
         }
-        
-        console.log("🔒 Loading messages for conversation:", conversationId, "in org:", agent.org_id);
         
         const { data, error } = await client
           .from("messages")

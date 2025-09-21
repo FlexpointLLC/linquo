@@ -303,6 +303,9 @@ export function useAuth() {
     if (supabase) {
       await supabase.auth.signOut();
     }
+    // Clear all auth data on logout
+    setAuthUser({ user: null, agent: null, organization: null });
+    setLoading(false);
   };
 
   return {
