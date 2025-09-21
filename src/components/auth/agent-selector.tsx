@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -18,9 +18,34 @@ export function AgentSelector() {
   const { agent, organization, signOut } = useAuth();
   const { data: agents } = useAgents();
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Keep the last known good data to prevent disappearing
+  const [lastKnownAgent, setLastKnownAgent] = useState(agent);
+  const [lastKnownOrganization, setLastKnownOrganization] = useState(organization);
+  
+  // Update state when we have good data
+  useEffect(() => {
+    if (agent) setLastKnownAgent(agent);
+    if (organization) setLastKnownOrganization(organization);
+  }, [agent, organization]);
+  
+  // Use current data if available, otherwise use last known data
+  const displayAgent = agent || lastKnownAgent;
+  const displayOrganization = organization || lastKnownOrganization;
 
-  if (!agent || !organization) {
-    return null;
+  // If we have no data at all (first load), show loading state
+  if (!displayAgent || !displayOrganization) {
+    return (
+      <Button variant="ghost" className="flex items-center gap-2 h-8 px-2" disabled>
+        <Avatar className="h-6 w-6">
+          <AvatarFallback className="text-xs">...</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col items-start">
+          <span className="text-sm font-medium">Loading...</span>
+          <span className="text-xs text-muted-foreground">Connecting</span>
+        </div>
+      </Button>
+    );
   }
 
   const handleLogout = async () => {
@@ -34,12 +59,12 @@ export function AgentSelector() {
         <Button variant="ghost" className="flex items-center gap-2 h-8 px-2">
           <Avatar className="h-6 w-6">
             <AvatarFallback className="text-xs">
-              {agent.display_name.slice(0, 2).toUpperCase()}
+              {displayAgent.display_name.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col items-start">
-            <span className="text-sm font-medium">{agent.display_name}</span>
-            <span className="text-xs text-muted-foreground">{agent.online_status}</span>
+            <span className="text-sm font-medium">{displayAgent.display_name}</span>
+            <span className="text-xs text-muted-foreground">{displayAgent.online_status}</span>
           </div>
         </Button>
       </DropdownMenuTrigger>
@@ -48,16 +73,16 @@ export function AgentSelector() {
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-sm font-medium">{organization.name}</p>
-              <p className="text-xs text-muted-foreground">linquo.com/{organization.slug}</p>
+              <p className="text-sm font-medium">{displayOrganization.name}</p>
+              <p className="text-xs text-muted-foreground">linquo.com/{displayOrganization.slug}</p>
             </div>
           </div>
         </div>
         <DropdownMenuSeparator />
         <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{agent.display_name}</p>
-          <p className="text-xs text-muted-foreground">{agent.email}</p>
-          <p className="text-xs text-muted-foreground capitalize">{agent.online_status}</p>
+          <p className="text-sm font-medium">{displayAgent.display_name}</p>
+          <p className="text-xs text-muted-foreground">{displayAgent.email}</p>
+          <p className="text-xs text-muted-foreground capitalize">{displayAgent.online_status}</p>
         </div>
         <DropdownMenuSeparator />
         {agents && agents.length > 1 && (
@@ -65,7 +90,7 @@ export function AgentSelector() {
             <div className="px-2 py-1">
               <p className="text-xs font-medium text-muted-foreground">Other Agents</p>
             </div>
-            {agents.filter(a => a.id !== agent.id).map((otherAgent) => (
+            {agents.filter(a => a.id !== displayAgent.id).map((otherAgent) => (
               <DropdownMenuItem
                 key={otherAgent.id}
                 className="flex items-center gap-2"
