@@ -37,7 +37,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="border-r p-2 h-full flex flex-col items-center">
+    <aside className="border-r p-2 h-full flex flex-col items-center overflow-hidden">
       {/* Organization Logo Placeholder */}
       <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center mb-3" aria-label="Organization">
         <span className="text-xs font-semibold text-primary-foreground">
@@ -46,7 +46,7 @@ export function Sidebar() {
       </div>
       
       {/* Navigation Items */}
-      <nav className="flex flex-col gap-2 w-full flex-1">
+      <nav className="flex flex-col gap-2 w-full flex-1 min-h-0">
         {items.map(({ key, label, icon: Icon }) => (
           <Link
             key={key}
@@ -64,7 +64,7 @@ export function Sidebar() {
       </nav>
 
       {/* Avatar Menu at Bottom */}
-      <div className="mt-auto">
+      <div className="mt-auto flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center justify-center rounded-md p-2 hover:bg-muted transition-colors">

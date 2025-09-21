@@ -10,10 +10,10 @@ import { RefreshButton } from "@/components/refresh-button";
 export default function DashboardLayout({ children }: PropsWithChildren) {
   return (
     <ErrorBoundary>
-      <div className="min-h-screen grid grid-cols-[56px_1fr]">
+      <div className="h-screen grid grid-cols-[56px_1fr]">
         <Sidebar />
-        <div className="flex flex-col">
-          <header className="flex items-center gap-3 p-4 border-b">
+        <div className="flex flex-col h-full overflow-hidden">
+          <header className="flex items-center gap-3 p-4 border-b flex-shrink-0">
             <h1 className="text-xl font-semibold mr-auto">Dashboard</h1>
             <div className="hidden md:flex items-center gap-2">
               <Input placeholder="Search..." className="w-64" />
@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
             </div>
           </header>
           <Separator />
-          <main className="p-6">{children}</main>
+          <main className="p-6 flex-1 overflow-y-auto">{children}</main>
         </div>
       </div>
     </ErrorBoundary>
