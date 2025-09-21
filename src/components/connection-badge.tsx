@@ -1,10 +1,10 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { useConnectionStatus } from "@/hooks/useConnectionStatus";
-import { Wifi, WifiOff, Loader2 } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 
 export function ConnectionBadge() {
-  const { status, checkConnection } = useConnectionStatus();
+  const { status, refresh } = useConnectionStatus();
 
   const getBadgeProps = () => {
     switch (status) {
@@ -22,13 +22,6 @@ export function ConnectionBadge() {
           icon: <WifiOff className="h-3 w-3 mr-1" />,
           text: "Refresh",
         };
-      case "checking":
-        return {
-          variant: "secondary" as const,
-          className: "bg-gray-100 text-gray-600 border-gray-200",
-          icon: <Loader2 className="h-3 w-3 mr-1 animate-spin" />,
-          text: "Checking...",
-        };
     }
   };
 
@@ -38,7 +31,7 @@ export function ConnectionBadge() {
     <Badge
       variant={badgeProps.variant}
       className={`${badgeProps.className} cursor-pointer hover:opacity-80 transition-opacity`}
-      onClick={status === "disconnected" ? checkConnection : undefined}
+      onClick={status === "disconnected" ? refresh : undefined}
     >
       {badgeProps.icon}
       {badgeProps.text}
