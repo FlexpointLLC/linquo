@@ -2,9 +2,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export function WidgetSkeleton() {
   return (
-    <div className="h-full w-full bg-white text-gray-900 flex flex-col">
+    <div className="h-full w-full relative overflow-hidden text-gray-900 flex flex-col">
+      {/* Gradient Background - same as widget */}
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-600 to-white"></div>
       {/* Header skeleton */}
-      <div className="bg-gray-50 border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
+      <div className="relative z-10 bg-gray-50/80 border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <Skeleton className="w-4 h-4" />
           <div className="flex items-center gap-3">
@@ -22,7 +24,7 @@ export function WidgetSkeleton() {
       </div>
 
       {/* Content area skeleton */}
-      <div className="flex-1 p-4 space-y-4">
+      <div className="relative z-10 flex-1 p-4 space-y-4">
         {/* Welcome messages skeleton */}
         <div className="flex items-start gap-3">
           <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
@@ -52,7 +54,7 @@ export function WidgetSkeleton() {
       </div>
       
       {/* Input skeleton */}
-      <div className="flex-shrink-0 border-t border-gray-200 bg-white p-3">
+      <div className="relative z-10 flex-shrink-0 border-t border-gray-200 bg-white/90 p-3">
         <div className="relative">
           <Skeleton className="w-full h-12 rounded-lg" />
         </div>
