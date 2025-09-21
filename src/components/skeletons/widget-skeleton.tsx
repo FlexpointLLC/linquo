@@ -1,10 +1,19 @@
 import { Skeleton } from "@/components/ui/skeleton"
 
-export function WidgetSkeleton() {
+interface WidgetSkeletonProps {
+  brandColor?: string;
+}
+
+export function WidgetSkeleton({ brandColor = "#3B82F6" }: WidgetSkeletonProps) {
   return (
     <div className="h-full w-full relative overflow-hidden text-gray-900 flex flex-col">
       {/* Gradient Background - same as widget */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-600 to-white"></div>
+      <div 
+        className="absolute inset-0 bg-gradient-to-b to-white"
+        style={{ 
+          background: `linear-gradient(to bottom, ${brandColor}, white)` 
+        }}
+      ></div>
       {/* Header skeleton */}
       <div className="relative z-10 bg-gray-50/80 border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">

@@ -17,6 +17,7 @@ function EmbedContent() {
   const [showForm, setShowForm] = useState(true);
   const [inputValue, setInputValue] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
+  const [brandColor, setBrandColor] = useState<string>("#3B82F6"); // Default blue color
 
   // Handle hydration
   useEffect(() => {
@@ -50,14 +51,15 @@ function EmbedContent() {
     }
   }, [inputValue]);
 
-  // Set site and orgId after hydration to avoid mismatch
+  // Set site, orgId, and brandColor after hydration to avoid mismatch
   useEffect(() => {
     if (!isHydrated) return;
     
     const siteParam = params.get("site");
     const orgParam = params.get("org");
+    const colorParam = params.get("color");
     
-    console.log("🔍 URL parameters:", { siteParam, orgParam });
+    console.log("🔍 URL parameters:", { siteParam, orgParam, colorParam });
     
     if (siteParam) {
       setSite(siteParam);
@@ -72,7 +74,14 @@ function EmbedContent() {
     } else {
       console.log("❌ No orgId found in URL parameters");
     }
-  }, [params, isHydrated]);
+    
+    if (colorParam) {
+      console.log("✅ Setting brandColor from URL parameter:", colorParam);
+      setBrandColor(decodeURIComponent(colorParam));
+    } else {
+      console.log("ℹ️ Using default brand color:", brandColor);
+    }
+  }, [params, isHydrated, brandColor]);
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows } = useWidgetMessages(cid);
@@ -212,13 +221,13 @@ function EmbedContent() {
 
   // Show loading state during hydration
   if (!isHydrated) {
-    return <WidgetSkeleton />;
+    return <WidgetSkeleton brandColor={brandColor} />;
   }
 
   if (showForm) {
     return (
       <div className="h-full w-full">
-        <CustomerForm onSubmit={handleCustomerSubmit} loading={loading} />
+        <CustomerForm onSubmit={handleCustomerSubmit} loading={loading} brandColor={brandColor} />
       </div>
     );
   }

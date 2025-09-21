@@ -7,9 +7,10 @@ import { X } from "lucide-react";
 interface CustomerFormProps {
   onSubmit: (data: { name: string; email: string }) => Promise<void>;
   loading?: boolean;
+  brandColor?: string;
 }
 
-export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
+export function CustomerForm({ onSubmit, loading = false, brandColor = "#3B82F6" }: CustomerFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -34,7 +35,12 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
   return (
     <div className="h-full w-full relative overflow-hidden">
       {/* Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-600 to-white"></div>
+      <div 
+        className="absolute inset-0 bg-gradient-to-b to-white"
+        style={{ 
+          background: `linear-gradient(to bottom, ${brandColor}, white)` 
+        }}
+      ></div>
       
       {/* Close Button */}
       <div className="absolute top-4 right-4 z-10">
