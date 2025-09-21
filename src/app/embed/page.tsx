@@ -20,16 +20,39 @@ function EmbedContent() {
   const { customer, loading, createOrGetCustomer, createConversation, clearCustomer } = useCustomer();
   const { data: messageRows } = useMessages(cid);
 
-  // Check if customer exists - but don't auto-create conversation
+  // Check if customer exists and load existing conversation
   useEffect(() => {
     if (!customer) {
       setShowForm(true);
       return;
     }
     
-    // Customer exists, but don't auto-create conversation
-    // Conversation will only be created when user submits the form
+    // Customer exists, check if they have an existing conversation
+    const loadExistingConversation = async () => {
+      try {
+        const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+        if (!client) return;
+        
+        // Check for existing conversation
+        const { data: existingConv, error } = await client
+          .from("conversations")
+          .select("id")
+          .eq("customer_id", customer.id)
+          .maybeSingle();
+        
+        if (error) {
+          console.error("❌ Error loading existing conversation:", error);
+        } else if (existingConv) {
+          console.log("✅ Found existing conversation:", existingConv.id);
+          setCid(existingConv.id);
+        }
+      } catch (error) {
+        console.error("❌ Error in loadExistingConversation:", error);
+      }
+    };
+    
     setShowForm(false);
+    loadExistingConversation();
   }, [customer]);
 
   const handleCustomerSubmit = async (data: { name: string; email: string }) => {
@@ -39,9 +62,27 @@ function EmbedContent() {
       console.log("📝 Customer creation result:", customerData);
       
       if (customerData) {
-        console.log("✅ Customer created/found, switching to chat view");
-        // Don't auto-create conversation - just switch to chat view
-        // Conversation will be created when user sends first message
+        console.log("✅ Customer created/found, checking for existing conversation");
+        
+        // Check for existing conversation
+        const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+        if (client) {
+          const { data: existingConv, error } = await client
+            .from("conversations")
+            .select("id")
+            .eq("customer_id", customerData.id)
+            .maybeSingle();
+          
+          if (error) {
+            console.error("❌ Error loading existing conversation:", error);
+          } else if (existingConv) {
+            console.log("✅ Found existing conversation:", existingConv.id);
+            setCid(existingConv.id);
+          } else {
+            console.log("📝 No existing conversation found, will create on first message");
+          }
+        }
+        
         setShowForm(false);
       } else {
         // Failed to create/find customer - still show chat view
