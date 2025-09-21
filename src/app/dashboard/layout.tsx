@@ -1,3 +1,4 @@
+"use client";
 import { PropsWithChildren } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Input } from "@/components/ui/input";
