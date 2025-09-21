@@ -11,10 +11,20 @@ import { ErrorBoundary } from "@/components/error-boundary";
 
 function EmbedContent() {
   const params = useSearchParams();
-  const site = params.get("site") || (typeof window !== 'undefined' ? window.location.hostname : 'localhost');
+  const [site, setSite] = useState<string>("localhost");
   const [cid, setCid] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [inputValue, setInputValue] = useState("");
+
+  // Set site after hydration to avoid mismatch
+  useEffect(() => {
+    const siteParam = params.get("site");
+    if (siteParam) {
+      setSite(siteParam);
+    } else if (typeof window !== 'undefined') {
+      setSite(window.location.hostname);
+    }
+  }, [params]);
 
   const { customer, loading, createOrGetCustomer, createConversation, clearCustomer } = useCustomer();
   const { data: messageRows } = useMessages(cid);
