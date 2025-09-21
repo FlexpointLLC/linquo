@@ -15,28 +15,22 @@ function EmbedContent() {
   const site = params.get("site") || (typeof window !== 'undefined' ? window.location.hostname : 'localhost');
   const [cid, setCid] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [inputValue, setInputValue] = useState("");
 
   const { customer, loading, createOrGetCustomer, createConversation, clearCustomer } = useCustomer();
   const { data: messageRows } = useMessages(cid);
 
-  // Check if customer exists and create conversation
+  // Check if customer exists - but don't auto-create conversation
   useEffect(() => {
-    async function initializeCustomer() {
-      if (!customer) {
-        setShowForm(true);
-        return;
-      }
-
-      // Create or get conversation for this customer
-      const conversationId = await createConversation(customer);
-      if (conversationId) {
-        setCid(conversationId);
-        setShowForm(false);
-      }
+    if (!customer) {
+      setShowForm(true);
+      return;
     }
-
-    initializeCustomer();
-  }, [customer, createConversation]);
+    
+    // Customer exists, but don't auto-create conversation
+    // Conversation will only be created when user submits the form
+    setShowForm(false);
+  }, [customer]);
 
   const handleCustomerSubmit = async (data: { name: string; email: string }) => {
     console.log("🎯 Form submitted with data:", data, "for site:", site);
@@ -45,50 +39,18 @@ function EmbedContent() {
       console.log("📝 Customer creation result:", customerData);
       
       if (customerData) {
-        console.log("✅ Customer created/found, creating conversation...");
-        const conversationId = await createConversation(customerData);
-        console.log("💬 Conversation creation result:", conversationId);
-        
-        if (conversationId) {
-          console.log("✅ Conversation created/found, switching to chat view");
-          setCid(conversationId);
-          setShowForm(false);
-        } else {
-          console.log("⚠️ Failed to create conversation, using temporary ID");
-          const tempConversationId = `temp-${Date.now()}`;
-          setCid(tempConversationId);
-          setShowForm(false);
-        }
+        console.log("✅ Customer created/found, switching to chat view");
+        // Don't auto-create conversation - just switch to chat view
+        // Conversation will be created when user sends first message
+        setShowForm(false);
       } else {
-        // Failed to create/find customer
-        // Fallback: create a temporary customer and conversation for testing
-        // const tempCustomer = {
-        //   id: `temp-${Date.now()}`,
-        //   display_name: data.name,
-        //   email: data.email,
-        //   website: site,
-        //   status: "ACTIVE" as const,
-        //   created_at: new Date().toISOString(),
-        // };
-        const tempConversationId = `temp-conv-${Date.now()}`;
-        // Using temporary customer and conversation
-        setCid(tempConversationId);
+        // Failed to create/find customer - still show chat view
+        console.log("⚠️ Failed to create customer, but showing chat view");
         setShowForm(false);
       }
     } catch {
-      // Error in customer submit
-      // Fallback: create temporary data for testing
-      // const tempCustomer = {
-      //   id: `temp-${Date.now()}`,
-      //   display_name: data.name,
-      //   email: data.email,
-      //   website: site,
-      //   status: "ACTIVE" as const,
-      //   created_at: new Date().toISOString(),
-      // };
-      const tempConversationId = `temp-conv-${Date.now()}`;
-      // Error occurred, using temporary data
-      setCid(tempConversationId);
+      // Error in customer submit - still show chat view
+      console.log("❌ Error occurred, but showing chat view");
       setShowForm(false);
     }
   };
@@ -157,8 +119,8 @@ function EmbedContent() {
         </div>
       </div>
       
-      {/* Messages area - takes remaining space */}
-      <div className="flex-1 overflow-hidden bg-white min-h-0">
+      {/* Messages area - fixed height */}
+      <div className="h-[562px] overflow-hidden bg-white">
         <ScrollArea className="h-full">
           <div className="p-4 space-y-4">
             {/* Initial prompt */}
@@ -167,14 +129,11 @@ function EmbedContent() {
             </div>
             
             {/* Info bubble */}
-            <div className="bg-gray-100 rounded-lg p-3 flex items-start gap-2">
-              <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="bg-gray-100 rounded-lg p-3 flex items-center gap-2">
+              <div className="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-xs font-bold">i</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+              <div className="flex items-center">
                 <span className="text-sm text-gray-700">
                   Please share your email with us in case we can't get back to you right away.
                 </span>
@@ -214,24 +173,40 @@ function EmbedContent() {
           <input
             type="text"
             placeholder="Message..."
-            className="w-full px-4 py-3 pr-20 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            className="w-full pl-10 pr-20 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                const text = e.currentTarget.value.trim();
+                const text = inputValue.trim();
                 if (text) {
                   // Send message logic
                   console.log("💬 Sending message:", { text, cid, customer: customer?.id });
                   const sendMessage = async () => {
                     const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                    if (!client || !cid || !customer) {
-                      console.error("❌ Missing required data for message sending:", { client: !!client, cid, customer: !!customer });
+                    if (!client || !customer) {
+                      console.error("❌ Missing required data for message sending:", { client: !!client, customer: !!customer });
                       return;
                     }
                     
                     try {
+                      // Create conversation if it doesn't exist
+                      let conversationId = cid;
+                      if (!conversationId) {
+                        console.log("💬 Creating new conversation...");
+                        conversationId = await createConversation(customer);
+                        if (conversationId) {
+                          setCid(conversationId);
+                          console.log("✅ Conversation created:", conversationId);
+                        } else {
+                          console.error("❌ Failed to create conversation");
+                          return;
+                        }
+                      }
+                      
                       console.log("📝 Inserting message into database...");
                       const { data: messageData, error: messageError } = await client.from("messages").insert({ 
-                        conversation_id: cid, 
+                        conversation_id: conversationId, 
                         sender_type: "CUSTOMER",
                         customer_id: customer.id,
                         org_id: customer.org_id,
@@ -247,7 +222,7 @@ function EmbedContent() {
                       console.log("🔄 Updating conversation last_message_at...");
                       const { error: updateError } = await client.from("conversations").update({ 
                         last_message_at: new Date().toISOString() 
-                      }).eq("id", cid);
+                      }).eq("id", conversationId);
                       
                       if (updateError) {
                         console.error("❌ Error updating conversation:", updateError);
@@ -259,87 +234,92 @@ function EmbedContent() {
                     }
                   };
                   sendMessage();
-                  e.currentTarget.value = "";
+                  setInputValue("");
                 }
               }
             }}
           />
           
-          {/* Icons on the left */}
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-            <button className="text-gray-400 hover:text-gray-600">
+          {/* Emoji icon on the left */}
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center">
+            <button className="text-gray-400 hover:text-gray-600 flex items-center justify-center w-6 h-6">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-            <button className="text-gray-400 hover:text-gray-600 text-xs font-medium">GIF</button>
-            <button className="text-gray-400 hover:text-gray-600">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-            </button>
-            <button className="text-gray-400 hover:text-gray-600">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
             </button>
           </div>
           
           {/* Send button on the right */}
           <button 
-            onClick={(e) => {
-              const input = e.currentTarget.parentElement?.querySelector('input');
-              if (input) {
-                const text = input.value.trim();
-                if (text) {
-                  // Send message logic
-                  console.log("💬 Sending message:", { text, cid, customer: customer?.id });
-                  const sendMessage = async () => {
-                    const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                    if (!client || !cid || !customer) {
-                      console.error("❌ Missing required data for message sending:", { client: !!client, cid, customer: !!customer });
-                      return;
+            onClick={() => {
+              const text = inputValue.trim();
+              if (text) {
+                // Send message logic
+                console.log("💬 Sending message:", { text, cid, customer: customer?.id });
+                const sendMessage = async () => {
+                  const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                  if (!client || !customer) {
+                    console.error("❌ Missing required data for message sending:", { client: !!client, customer: !!customer });
+                    return;
+                  }
+                  
+                  try {
+                    // Create conversation if it doesn't exist
+                    let conversationId = cid;
+                    if (!conversationId) {
+                      console.log("💬 Creating new conversation...");
+                      conversationId = await createConversation(customer);
+                      if (conversationId) {
+                        setCid(conversationId);
+                        console.log("✅ Conversation created:", conversationId);
+                      } else {
+                        console.error("❌ Failed to create conversation");
+                        return;
+                      }
                     }
                     
-                    try {
-                      console.log("📝 Inserting message into database...");
-                      const { data: messageData, error: messageError } = await client.from("messages").insert({ 
-                        conversation_id: cid, 
-                        sender_type: "CUSTOMER",
-                        customer_id: customer.id,
-                        org_id: customer.org_id,
-                        body_text: text
-                      }).select().single();
-                      
-                      if (messageError) {
-                        console.error("❌ Error inserting message:", messageError);
-                      } else {
-                        console.log("✅ Message inserted successfully:", messageData);
-                      }
-                      
-                      console.log("🔄 Updating conversation last_message_at...");
-                      const { error: updateError } = await client.from("conversations").update({ 
-                        last_message_at: new Date().toISOString() 
-                      }).eq("id", cid);
-                      
-                      if (updateError) {
-                        console.error("❌ Error updating conversation:", updateError);
-                      } else {
-                        console.log("✅ Conversation updated successfully");
-                      }
-                    } catch (error) {
-                      console.error("❌ Error in message sending:", error);
+                    console.log("📝 Inserting message into database...");
+                    const { data: messageData, error: messageError } = await client.from("messages").insert({ 
+                      conversation_id: conversationId, 
+                      sender_type: "CUSTOMER",
+                      customer_id: customer.id,
+                      org_id: customer.org_id,
+                      body_text: text
+                    }).select().single();
+                    
+                    if (messageError) {
+                      console.error("❌ Error inserting message:", messageError);
+                    } else {
+                      console.log("✅ Message inserted successfully:", messageData);
                     }
-                  };
-                  sendMessage();
-                  input.value = "";
-                }
+                    
+                    console.log("🔄 Updating conversation last_message_at...");
+                    const { error: updateError } = await client.from("conversations").update({ 
+                      last_message_at: new Date().toISOString() 
+                    }).eq("id", conversationId);
+                    
+                    if (updateError) {
+                      console.error("❌ Error updating conversation:", updateError);
+                    } else {
+                      console.log("✅ Conversation updated successfully");
+                    }
+                  } catch (error) {
+                    console.error("❌ Error in message sending:", error);
+                  }
+                };
+                sendMessage();
+                setInputValue("");
               }
             }}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+            disabled={!inputValue.trim()}
+            className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              inputValue.trim() 
+                ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer' 
+                : 'bg-gray-200 cursor-not-allowed'
+            }`}
           >
-            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            <svg className={`w-4 h-4 ${inputValue.trim() ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </button>
         </div>
