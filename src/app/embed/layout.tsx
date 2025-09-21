@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { BrandColorProvider } from '@/contexts/brand-color-context'
 
 export const metadata: Metadata = {
   title: 'Linquo Chat Widget',
@@ -26,7 +27,9 @@ export default function EmbedLayout({
         }} />
       </head>
       <body>
-        {children}
+        <BrandColorProvider>
+          {children}
+        </BrandColorProvider>
       </body>
     </html>
   )

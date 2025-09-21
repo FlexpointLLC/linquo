@@ -49,7 +49,8 @@ export default function TestPage() {
           .from("organizations")
           .insert({
             name: orgName,
-            slug: orgSlug
+            slug: orgSlug,
+            brand_color: "#3B82F6" // Default brand color for new organizations
           })
           .select("id")
           .single();

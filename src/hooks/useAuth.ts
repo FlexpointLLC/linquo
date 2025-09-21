@@ -17,6 +17,7 @@ export type AuthUser = {
     id: string;
     name: string;
     slug: string;
+    brand_color?: string;
   } | null;
 };
 
@@ -138,7 +139,7 @@ export function useAuth() {
         // Get organization data separately with timeout
         const orgPromise = supabase
           .from("organizations")
-          .select("id, name, slug")
+          .select("id, name, slug, brand_color")
           .eq("id", agentData.org_id)
           .single();
         
@@ -287,7 +288,11 @@ export function useAuth() {
     // Create organization
     const { data: orgData, error: orgError } = await supabase
       .from("organizations")
-      .insert({ name: organizationName, slug: organizationSlug })
+      .insert({ 
+        name: organizationName, 
+        slug: organizationSlug,
+        brand_color: "#3B82F6" // Default brand color for new organizations
+      })
       .select()
       .single();
 

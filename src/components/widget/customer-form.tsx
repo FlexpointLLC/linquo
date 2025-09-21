@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
+import { useBrandColor } from "@/contexts/brand-color-context";
 
 interface CustomerFormProps {
   onSubmit: (data: { name: string; email: string }) => Promise<void>;
@@ -10,6 +11,7 @@ interface CustomerFormProps {
 }
 
 export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
+  const { brandColor } = useBrandColor();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -34,88 +36,32 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
   return (
     <div className="h-full w-full relative overflow-hidden">
       {/* Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-600 to-white"></div>
+      <div 
+        className="absolute inset-0 bg-gradient-to-b to-white"
+        style={{ background: `linear-gradient(to bottom, ${brandColor}, white)` }}
+      ></div>
       
       {/* Close Button */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-20">
         <button 
-          className="text-white hover:text-gray-200 transition-colors cursor-pointer p-1"
+          className="text-white hover:text-gray-200 transition-colors p-1"
+          style={{ cursor: 'pointer' }}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             console.log("🔴 Customer form close button clicked");
-            console.log("🔴 Window parent:", window.parent);
-            console.log("🔴 Window parent !== window:", window.parent !== window);
-            console.log("🔴 Window location:", window.location.href);
             
-            // Multiple approaches to close the widget
-            let closed = false;
-            
-            // Approach 1: Send message to parent window
+            // Send message to parent window to close widget
             if (window.parent && window.parent !== window) {
-              console.log("🔴 Attempting to send close-widget message");
+              console.log("🔴 Sending close-widget message to parent");
               try {
                 window.parent.postMessage({ type: 'close-widget' }, '*');
-                console.log("🔴 Message sent successfully");
-                closed = true;
+                console.log("🔴 Close message sent successfully");
               } catch (error) {
-                console.error("🔴 Error sending message:", error);
+                console.error("🔴 Error sending close message:", error);
               }
-            }
-            
-                  // Approach 2: Try to access parent document and hide iframe
-                  if (!closed) {
-                    console.log("🔴 Attempting direct iframe manipulation");
-                    try {
-                      if (window.parent && window.parent.document) {
-                        const iframe = window.parent.document.querySelector('iframe[src*="/embed"]') as HTMLIFrameElement;
-                        if (iframe) {
-                          iframe.style.display = 'none';
-                          console.log("🔴 Fallback: Hidden iframe directly");
-                          closed = true;
-                        }
-                      }
-                    } catch (fallbackError) {
-                      console.error("🔴 Direct iframe manipulation failed:", fallbackError);
-                    }
-                  }
-            
-                  // Approach 3: Try to access the widget container
-                  if (!closed) {
-                    console.log("🔴 Attempting to access widget container");
-                    try {
-                      if (window.parent && window.parent.document) {
-                        const widget = window.parent.document.getElementById('linquo-widget') as HTMLElement;
-                        if (widget) {
-                          widget.style.display = 'none';
-                          console.log("🔴 Fallback: Hidden widget container directly");
-                          closed = true;
-                        }
-                      }
-                    } catch (containerError) {
-                      console.error("🔴 Container manipulation failed:", containerError);
-                    }
-                  }
-            
-                  // Approach 4: Try to trigger the bubble click
-                  if (!closed) {
-                    console.log("🔴 Attempting to trigger bubble click");
-                    try {
-                      if (window.parent && window.parent.document) {
-                        const bubble = window.parent.document.getElementById('linquo-chat-bubble') as HTMLElement;
-                        if (bubble) {
-                          bubble.click();
-                          console.log("🔴 Fallback: Triggered bubble click");
-                          closed = true;
-                        }
-                      }
-                    } catch (bubbleError) {
-                      console.error("🔴 Bubble click failed:", bubbleError);
-                    }
-                  }
-            
-            if (!closed) {
-              console.error("🔴 All close attempts failed");
+            } else {
+              console.log("🔴 No parent window found");
             }
           }}
           title="Close widget"
@@ -146,7 +92,8 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             required
             disabled={loading}
-            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:bg-white transition-all"
+            style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
           />
           
           <Input
@@ -157,7 +104,8 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             required
             disabled={loading}
-            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:bg-white transition-all"
+            style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
           />
         </div>
         
@@ -166,7 +114,8 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
           <form onSubmit={handleSubmit}>
             <Button 
               type="submit" 
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              className="w-full h-12 text-white font-medium rounded-lg transition-colors"
+              style={{ backgroundColor: brandColor }}
               disabled={loading || !formData.name.trim() || !formData.email.trim()}
             >
               {loading ? "Starting Chat..." : "Start Chat"}

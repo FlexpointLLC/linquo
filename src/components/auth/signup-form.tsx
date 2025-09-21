@@ -139,6 +139,7 @@ export function SignupForm() {
         .insert({
           name: formData.organizationName,
           slug: formData.organizationSlug,
+          brand_color: "#3B82F6", // Default brand color for new organizations
         })
         .select()
         .single();
