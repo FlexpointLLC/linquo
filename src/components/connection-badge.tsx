@@ -1,10 +1,32 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { useConnectionStatus } from "@/hooks/useConnectionStatus";
-import { Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function ConnectionBadge() {
   const { status, refresh } = useConnectionStatus();
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  // Countdown effect for soft reload
+  useEffect(() => {
+    if (status === "disconnected") {
+      setCountdown(2);
+      const interval = setInterval(() => {
+        setCountdown(prev => {
+          if (prev === null || prev <= 1) {
+            clearInterval(interval);
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    } else {
+      setCountdown(null);
+    }
+  }, [status]);
 
   const getBadgeProps = () => {
     switch (status) {
@@ -19,8 +41,8 @@ export function ConnectionBadge() {
         return {
           variant: "destructive" as const,
           className: "bg-orange-100 text-orange-800 border-orange-200",
-          icon: <WifiOff className="h-3 w-3 mr-1" />,
-          text: "Refresh",
+          icon: countdown ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <WifiOff className="h-3 w-3 mr-1" />,
+          text: countdown ? `Reloading in ${countdown}s` : "Refresh",
         };
     }
   };

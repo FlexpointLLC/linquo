@@ -107,6 +107,13 @@ function EmbedContent() {
       return [];
     }
     
+    // Check for duplicate message IDs
+    const messageIds = messageRows.map(m => m.id);
+    const uniqueIds = new Set(messageIds);
+    if (messageIds.length !== uniqueIds.size) {
+      console.warn("⚠️ Duplicate message IDs detected:", messageIds);
+    }
+    
     const processedMessages = messageRows.map((m: { id: string; sender_type: string; body_text: string; created_at: string }) => ({
       id: m.id,
       author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
@@ -197,8 +204,8 @@ function EmbedContent() {
           {/* Dynamic messages from database */}
           {processedMessages.length > 0 ? (
             <div className="space-y-4">
-              {processedMessages.map((message) => (
-                <div key={message.id} className={`flex items-start gap-3 ${message.author === 'customer' ? 'justify-end' : ''}`}>
+              {processedMessages.map((message, index) => (
+                <div key={`${message.id}-${index}`} className={`flex items-start gap-3 ${message.author === 'customer' ? 'justify-end' : ''}`}>
                   {message.author === 'agent' && (
                     <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white text-sm font-medium">P</span>

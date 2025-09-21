@@ -54,7 +54,19 @@ export function useWidgetMessages(conversationId: string | null) {
             "postgres_changes" as never,
             { event: "insert", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
             (payload: { new: DbMessage }) => {
-              setData((prev) => (prev ? [...prev, payload.new] : [payload.new]));
+              setData((prev) => {
+                if (!prev) return [payload.new];
+                
+                // Check if message already exists to prevent duplicates
+                const exists = prev.some(msg => msg.id === payload.new.id);
+                if (exists) {
+                  return prev; // Don't add duplicate
+                }
+                
+                // Add new message and sort by created_at
+                const updated = [...prev, payload.new];
+                return updated.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+              });
             }
           )
           .subscribe();
