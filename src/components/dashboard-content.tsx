@@ -100,7 +100,7 @@ export function DashboardContent() {
                         {(() => {
                           const conversation = conversationRows?.find(c => c.id === activeId);
                           const customer = customers?.find(c => c.id === conversation?.customer_id);
-                          return customer?.email || `Conversation ${activeId?.slice(0, 8)}`;
+                          return customer?.display_name || `Conversation ${activeId?.slice(0, 8)}`;
                         })()}
                       </h3>
                     </div>
@@ -113,10 +113,11 @@ export function DashboardContent() {
                 <MessageThread
                   messages={(messageRows ?? []).map((m) => {
                     const customer = customers?.find(c => c.id === m.customer_id);
+                    const agent = agents?.find(a => a.id === m.agent_id);
                     return {
                       id: m.id,
                       author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
-                      name: m.sender_type === "AGENT" ? "Agent" : customer?.display_name || "Customer",
+                      name: m.sender_type === "AGENT" ? (agent?.display_name || "Agent") : (customer?.display_name || "Customer"),
                       email: m.sender_type === "CUSTOMER" ? customer?.email : undefined,
                       text: m.body_text,
                       time: new Date(m.created_at).toLocaleTimeString(),
