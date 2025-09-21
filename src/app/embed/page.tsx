@@ -77,7 +77,6 @@ function EmbedContent() {
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows } = useWidgetMessages(cid);
-  const { brandColor } = useBrandColor();
   
   // Debug conversation ID and messages
   console.log("🔍 Widget state:", { 
