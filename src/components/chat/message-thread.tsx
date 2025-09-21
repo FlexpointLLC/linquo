@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useBrandColor } from "@/contexts/brand-color-context";
 
 export type ChatMessage = {
   id: string;
@@ -11,6 +12,7 @@ export type ChatMessage = {
 };
 
 export function MessageThread({ messages }: { messages: ChatMessage[] }) {
+  const { brandColor } = useBrandColor();
   return (
     <div className="p-3">
       <div className="flex flex-col gap-2">
@@ -46,9 +48,10 @@ export function MessageThread({ messages }: { messages: ChatMessage[] }) {
                   <div
                     className={`rounded-lg px-3 py-2 inline-block ${
                       m.author === "agent"
-                        ? "bg-blue-600 text-white"
+                        ? "text-white"
                         : "bg-gray-100 text-gray-900"
                     }`}
+                    style={m.author === "agent" ? { backgroundColor: brandColor } : {}}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.text}</p>
                   </div>
@@ -57,7 +60,10 @@ export function MessageThread({ messages }: { messages: ChatMessage[] }) {
               
               {m.author === "agent" && (
                 <Avatar className="h-6 w-6 flex-shrink-0">
-                  <AvatarFallback className="text-xs bg-blue-100 text-blue-600">
+                  <AvatarFallback 
+                    className="text-xs"
+                    style={{ backgroundColor: brandColor + '20', color: brandColor }}
+                  >
                     {m.name?.slice(0, 2).toUpperCase() || "A"}
                   </AvatarFallback>
                 </Avatar>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { BrandColorProvider } from "@/contexts/brand-color-context";
 
 export const metadata: Metadata = {
   title: "Linquo",
@@ -15,8 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased" suppressHydrationWarning={true}>
-        {children}
-        <Toaster richColors position="top-right" />
+        <BrandColorProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </BrandColorProvider>
       </body>
     </html>
   );

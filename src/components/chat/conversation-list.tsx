@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useBrandColor } from "@/contexts/brand-color-context";
 
 export type ConversationListItem = {
   id: string;
@@ -20,6 +21,7 @@ export function ConversationList({
   activeId?: string;
   onSelect?: (id: string) => void;
 }) {
+  const { brandColor } = useBrandColor();
   const openCount = conversations.filter(c => c.status === "ACTIVE").length;
 
   return (
@@ -30,7 +32,7 @@ export function ConversationList({
           <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
         </div>
         <div className="flex items-center gap-4 text-sm">
-          <span className="text-blue-600 font-medium">{openCount} Open</span>
+          <span className="font-medium" style={{ color: brandColor }}>{openCount} Open</span>
           <span className="text-gray-500">Newest</span>
         </div>
       </div>
@@ -49,8 +51,9 @@ export function ConversationList({
               onClick={() => onSelect?.(c.id)}
               className={
                 "w-full text-left p-3 hover:bg-gray-50 transition-colors " +
-                (activeId === c.id ? "bg-blue-50 border-r-2 border-blue-500" : "")
+                (activeId === c.id ? "border-r-2 bg-gray-50" : "")
               }
+              style={activeId === c.id ? { borderRightColor: brandColor } : {}}
             >
               <div className="flex items-start gap-3">
                 <Avatar className="h-8 w-8">
@@ -77,7 +80,10 @@ export function ConversationList({
                   
                   <div className="flex items-center gap-2">
                     {c.unread && c.unread > 0 && (
-                      <div className="inline-flex items-center justify-center rounded-full bg-blue-600 text-white text-xs h-4 w-4">
+                      <div 
+                        className="inline-flex items-center justify-center rounded-full text-white text-xs h-4 w-4"
+                        style={{ backgroundColor: brandColor }}
+                      >
                         {c.unread}
                       </div>
                     )}

@@ -6,6 +6,7 @@ import { CustomerForm } from "@/components/widget/customer-form";
 import { useSearchParams } from "next/navigation";
 import { useWidgetMessages } from "@/hooks/useWidgetMessages";
 import { useCustomer } from "@/hooks/useCustomer";
+import { useBrandColor } from "@/contexts/brand-color-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useBrandColor } from "@/contexts/brand-color-context";
 
@@ -77,6 +78,7 @@ function EmbedContent() {
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows } = useWidgetMessages(cid);
+  const { brandColor } = useBrandColor();
   
   // Debug conversation ID and messages
   console.log("🔍 Widget state:", { 
@@ -317,7 +319,10 @@ function EmbedContent() {
               {processedMessages.map((message, index) => (
                 <div key={`${message.id}-${index}`} className={`flex items-start gap-3 ${message.author === 'customer' ? 'justify-end' : ''}`}>
                   {message.author === 'agent' && (
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div 
+                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: brandColor }}
+                    >
                       <span className="text-white text-sm font-medium">P</span>
                     </div>
                   )}
@@ -330,7 +335,7 @@ function EmbedContent() {
                     style={message.author === 'customer' ? { backgroundColor: brandColor } : {}}
                   >
                     <div className="text-sm whitespace-pre-wrap">{message.text}</div>
-                    <div className={`text-xs mt-1 ${message.author === 'agent' ? 'text-gray-500' : 'text-blue-100'}`}>
+                    <div className={`text-xs mt-1 ${message.author === 'agent' ? 'text-gray-500' : 'text-white opacity-80'}`}>
                       {message.author === 'agent' ? 'Agent' : 'You'} · {message.time}
                     </div>
                   </div>
