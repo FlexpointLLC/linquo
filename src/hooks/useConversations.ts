@@ -37,25 +37,27 @@ export function useConversations() {
         // Set data even if it's an empty array (no conversations)
         setData(data as Conversation[] || []);
 
-        const channel = client
-          .channel("conv_changes")
-          .on(
-            "postgres_changes" as never,
-            { event: "*", schema: "public", table: "conversations" },
-            () => {
-              // Reload list on any change
-              client
-                .from("conversations")
-                .select("id,last_message_at")
-                .order("last_message_at", { ascending: false, nullsFirst: false })
-                .limit(100)
-                .then(({ data }) => setData(data as Conversation[] || []));
-            }
-          )
-          .subscribe();
-        unsub = () => {
-          client.removeChannel(channel);
-        };
+        // Temporarily disable realtime to reduce connection usage
+        // const channel = client
+        //   .channel("conv_changes")
+        //   .on(
+        //     "postgres_changes" as never,
+        //     { event: "*", schema: "public", table: "conversations" },
+        //     () => {
+        //       // Reload list on any change
+        //       client
+        //         .from("conversations")
+        //         .select("id,last_message_at")
+        //         .order("last_message_at", { ascending: false, nullsFirst: false })
+        //         .limit(100)
+        //         .then(({ data }) => setData(data as Conversation[] || []));
+        //     }
+        //   )
+        //   .subscribe();
+        // unsub = () => {
+        //   client.removeChannel(channel);
+        // };
+        console.log("🔄 Realtime disabled to reduce connection usage");
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to load conversations");
       } finally {

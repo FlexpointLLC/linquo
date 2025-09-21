@@ -48,17 +48,19 @@ export function useMessages(conversationId: string | null) {
         console.log("✅ Messages loaded:", data?.length || 0, "messages");
         setData(data as DbMessage[]);
 
-        const channel = client
-          .channel(`msg_changes_${conversationId}`)
-          .on(
-            "postgres_changes" as never,
-            { event: "insert", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-            (payload: { new: DbMessage }) => {
-              setData((prev) => (prev ? [...prev, payload.new] : [payload.new]));
-            }
-          )
-          .subscribe();
-        unsub = () => client.removeChannel(channel);
+        // Temporarily disable realtime to reduce connection usage
+        // const channel = client
+        //   .channel(`msg_changes_${conversationId}`)
+        //   .on(
+        //     "postgres_changes" as never,
+        //     { event: "insert", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
+        //     (payload: { new: DbMessage }) => {
+        //       setData((prev) => (prev ? [...prev, payload.new] : [payload.new]));
+        //     }
+        //   )
+        //   .subscribe();
+        // unsub = () => client.removeChannel(channel);
+        console.log("🔄 Realtime disabled to reduce connection usage");
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to load messages");
       } finally {
