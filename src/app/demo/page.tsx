@@ -5,9 +5,17 @@ import { useState, useEffect } from "react";
 export default function DemoPage() {
   const [orgId, setOrgId] = useState("25750931-edcf-4860-8527-12616916b377");
   const [, setWidgetScript] = useState("");
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Handle hydration
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Update widget script when orgId changes
   useEffect(() => {
+    if (!isHydrated) return;
+    
     // Use production URL for external platforms, localhost for development
     const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://linquochat.vercel.app';
     const script = `${baseUrl}/widget.js?id=${encodeURIComponent(orgId)}`;
@@ -31,11 +39,21 @@ export default function DemoPage() {
     newScript.async = true;
     newScript.src = script;
     document.body.appendChild(newScript);
-  }, [orgId]);
+  }, [orgId, isHydrated]);
 
   const handleOrgIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOrgId(e.target.value);
   };
+
+  // Show loading state during hydration
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600">
       <div className="container mx-auto px-5 py-10">

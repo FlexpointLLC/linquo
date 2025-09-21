@@ -11,15 +11,21 @@ import { WidgetSkeleton, CustomerFormSkeleton } from "@/components/skeletons/wid
 
 function EmbedContent() {
   const params = useSearchParams();
-  const [site, setSite] = useState<string>("localhost");
+  const [site, setSite] = useState<string>("");
   const [orgId, setOrgId] = useState<string | null>(null);
   const [cid, setCid] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(true);
   const [inputValue, setInputValue] = useState("");
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Handle hydration
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Restore input value from localStorage on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && isHydrated) {
       try {
         const savedInput = localStorage.getItem('widget-input-value');
         if (savedInput) {
@@ -31,7 +37,7 @@ function EmbedContent() {
         console.log("❌ Error with localStorage restore:", error);
       }
     }
-  }, []);
+  }, [isHydrated]);
 
   // Save input value to localStorage whenever it changes
   useEffect(() => {
@@ -46,6 +52,8 @@ function EmbedContent() {
 
   // Set site and orgId after hydration to avoid mismatch
   useEffect(() => {
+    if (!isHydrated) return;
+    
     const siteParam = params.get("site");
     const orgParam = params.get("org");
     
@@ -64,7 +72,7 @@ function EmbedContent() {
     } else {
       console.log("❌ No orgId found in URL parameters");
     }
-  }, [params]);
+  }, [params, isHydrated]);
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows } = useWidgetMessages(cid);
@@ -201,6 +209,11 @@ function EmbedContent() {
     console.log("✅ Processed messages:", processedMessages);
     return processedMessages;
   }, [messageRows, cid]);
+
+  // Show loading state during hydration
+  if (!isHydrated) {
+    return <CustomerFormSkeleton />;
+  }
 
   if (showForm) {
     return (
