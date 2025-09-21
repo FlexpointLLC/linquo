@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState, Suspense } from "react";
-import { MessageSquare, X } from "lucide-react";
+import { X } from "lucide-react";
 import { type ChatMessage } from "@/components/chat/message-thread";
 import { CustomerForm } from "@/components/widget/customer-form";
 import { useSearchParams } from "next/navigation";
@@ -13,17 +13,21 @@ function EmbedContent() {
   const [site, setSite] = useState<string>("localhost");
   const [orgId, setOrgId] = useState<string | null>(null);
   const [cid, setCid] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(true);
   const [inputValue, setInputValue] = useState("");
 
   // Restore input value from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedInput = localStorage.getItem('widget-input-value');
-      if (savedInput) {
-        setInputValue(savedInput);
-        // Clear the saved value after restoring
-        localStorage.removeItem('widget-input-value');
+      try {
+        const savedInput = localStorage.getItem('widget-input-value');
+        if (savedInput) {
+          setInputValue(savedInput);
+          // Clear the saved value after restoring
+          localStorage.removeItem('widget-input-value');
+        }
+      } catch (error) {
+        console.log("❌ Error with localStorage restore:", error);
       }
     }
   }, []);
@@ -31,7 +35,11 @@ function EmbedContent() {
   // Save input value to localStorage whenever it changes
   useEffect(() => {
     if (typeof window !== 'undefined' && inputValue) {
-      localStorage.setItem('widget-input-value', inputValue);
+      try {
+        localStorage.setItem('widget-input-value', inputValue);
+      } catch (error) {
+        console.log("❌ Error with localStorage save:", error);
+      }
     }
   }, [inputValue]);
 
@@ -40,19 +48,38 @@ function EmbedContent() {
     const siteParam = params.get("site");
     const orgParam = params.get("org");
     
+    console.log("🔍 URL parameters:", { siteParam, orgParam });
+    
     if (siteParam) {
       setSite(siteParam);
     } else if (typeof window !== 'undefined') {
-      setSite(window.location.hostname);
+      // Use the full URL for the site parameter
+      setSite(window.location.origin);
     }
     
     if (orgParam) {
+      console.log("✅ Setting orgId from URL parameter:", orgParam);
       setOrgId(orgParam);
+    } else {
+      console.log("❌ No orgId found in URL parameters");
     }
   }, [params]);
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows } = useWidgetMessages(cid);
+  
+  // Debug conversation ID and messages
+  console.log("🔍 Widget state:", { 
+    cid, 
+    customer: customer?.id, 
+    customerName: customer?.display_name,
+    customerEmail: customer?.email,
+    messageRows: messageRows?.length || 0,
+    showForm,
+    loading,
+    site,
+    orgId
+  });
 
   // Check if customer exists and load existing conversation
   useEffect(() => {
@@ -92,15 +119,32 @@ function EmbedContent() {
   const handleCustomerSubmit = async (data: { name: string; email: string }) => {
     try {
       console.log("🚀 Starting customer creation:", { name: data.name, email: data.email, site, orgId });
+      console.log("🔍 Site parameter details:", {
+        site: site,
+        siteType: typeof site,
+        siteLength: site?.length,
+        isLocalhost: site?.includes('localhost')
+      });
+      console.log("🔍 Using method:", orgId ? "createOrGetCustomerWithOrgId" : "createOrGetCustomer");
       
       // If we have an orgId from the widget, use it directly
       // Otherwise fall back to the old method using site/website
       const newCustomer = orgId 
         ? await createOrGetCustomerWithOrgId(data.name, data.email, orgId)
         : await createOrGetCustomer(data.name, data.email, site);
+      
       console.log("✅ Customer created/found:", newCustomer);
+      console.log("🔍 Customer details:", {
+        id: newCustomer?.id,
+        name: newCustomer?.display_name,
+        email: newCustomer?.email,
+        org_id: newCustomer?.org_id,
+        status: newCustomer?.status
+      });
       
       if (newCustomer) {
+        console.log("🔄 Customer creation successful, hiding form...");
+        console.log("🔍 New customer object:", newCustomer);
         setShowForm(false);
         
         // Create conversation for this customer
@@ -109,11 +153,23 @@ function EmbedContent() {
         console.log("✅ Conversation created:", conversationId);
         
         if (conversationId) {
+          console.log("🔄 Setting conversation ID:", conversationId);
           setCid(conversationId);
+          console.log("✅ Widget state updated - should show chat interface now");
+        } else {
+          console.log("❌ Failed to create conversation, but customer was created");
+          // Still show the chat interface even if conversation creation fails
+          setShowForm(false);
         }
+      } else {
+        console.log("❌ Failed to create customer - newCustomer is null/undefined");
+        // Don't change the form state if customer creation fails
       }
     } catch (error) {
       console.error("❌ Error in handleCustomerSubmit:", error);
+      console.error("❌ Error details:", error);
+      console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+      // Don't change the form state if there's an error
     }
   };
 
@@ -147,13 +203,7 @@ function EmbedContent() {
 
   if (showForm) {
     return (
-      <div className="h-full w-full bg-background text-foreground p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            <div className="font-medium text-sm">Support</div>
-          </div>
-        </div>
+      <div className="h-full w-full">
         <CustomerForm onSubmit={handleCustomerSubmit} loading={loading} />
       </div>
     );
@@ -164,20 +214,24 @@ function EmbedContent() {
       {/* Header */}
       <div className="bg-gray-50 border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <button className="text-gray-600 hover:text-gray-800">
+          <button 
+            className="text-gray-600 hover:text-gray-800"
+            onClick={() => setShowForm(true)}
+            title="Back to form"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <div className="relative">
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">P</span>
+              <span className="text-white text-sm font-medium">S</span>
             </div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white"></div>
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
           </div>
           <div>
-            <div className="font-semibold text-sm text-gray-900">Pearl</div>
-            <div className="text-xs text-gray-500">Active 45m ago</div>
+            <div className="font-semibold text-sm text-gray-900">Support Team</div>
+            <div className="text-xs text-gray-500">Typically replies within 1 min</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -186,7 +240,16 @@ function EmbedContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
             </svg>
           </button>
-          <button className="text-gray-600 hover:text-gray-800">
+          <button 
+            className="text-gray-600 hover:text-gray-800"
+            onClick={() => {
+              // Send message to parent window to close the widget
+              if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'close-widget' }, '*');
+              }
+            }}
+            title="Close widget"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -277,7 +340,9 @@ function EmbedContent() {
                     }
                     
                     try {
-                      const { error: messageError } = await client.from("messages").insert({ 
+                      console.log("🚀 Sending message:", { conversation_id: cid, customer_id: customer.id, org_id: customer.org_id, text });
+                      
+                      const { data: messageData, error: messageError } = await client.from("messages").insert({ 
                         conversation_id: cid, 
                         sender_type: "CUSTOMER",
                         customer_id: customer.id,
@@ -285,24 +350,37 @@ function EmbedContent() {
                         body_text: text
                       }).select().single();
                       
-                      if (!messageError) {
+                      if (messageError) {
+                        console.log("❌ Error sending message:", messageError);
+                      } else {
+                        console.log("✅ Message sent successfully:", messageData);
+                        
                         // Update conversation last_message_at
-                        await client.from("conversations").update({ 
+                        const { error: updateError } = await client.from("conversations").update({ 
                           last_message_at: new Date().toISOString() 
                         }).eq("id", cid);
                         
-                        // Force refresh messages to ensure they appear immediately
+                        if (updateError) {
+                          console.log("❌ Error updating conversation:", updateError);
+                        } else {
+                          console.log("✅ Conversation updated successfully");
+                        }
+                        
                         console.log("🔄 Message sent successfully, should appear in chat now");
                       }
-                    } catch {
-                      // Error sending message
+                    } catch (sendError) {
+                      console.log("❌ Exception sending message:", sendError);
                     }
                   };
                   sendMessage();
                   setInputValue("");
                   // Clear saved input from localStorage
                   if (typeof window !== 'undefined') {
-                    localStorage.removeItem('widget-input-value');
+                    try {
+                      localStorage.removeItem('widget-input-value');
+                    } catch (error) {
+                      console.log("❌ Error clearing localStorage:", error);
+                    }
                   }
                 }
               }
@@ -354,7 +432,11 @@ function EmbedContent() {
                 setInputValue("");
                 // Clear saved input from localStorage
                 if (typeof window !== 'undefined') {
-                  localStorage.removeItem('widget-input-value');
+                  try {
+                    localStorage.removeItem('widget-input-value');
+                  } catch (error) {
+                    console.log("❌ Error clearing localStorage:", error);
+                  }
                 }
               }
             }}

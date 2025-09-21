@@ -50,14 +50,21 @@
     iframe.allow = 'clipboard-write;';
     iframe.loading = 'lazy';
 
-    // Minimal resize via postMessage (optional enhancement)
+    // Handle messages from iframe (resize and close)
     window.addEventListener('message', function (e) {
       if (!e || !e.data) return;
       if (typeof e.data !== 'object') return;
+      
+      // Handle resize messages
       if (e.data.__ic_resize) {
         var s = e.data.__ic_resize;
         if (s.width) container.style.width = s.width + 'px';
         if (s.height) container.style.height = s.height + 'px';
+      }
+      
+      // Handle close widget message
+      if (e.data.type === 'close-widget') {
+        container.style.display = 'none';
       }
     });
 

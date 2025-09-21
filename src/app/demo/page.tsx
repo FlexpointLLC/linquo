@@ -43,6 +43,15 @@ export default function DemoPage() {
         
         <div className="bg-white p-10 rounded-xl shadow-lg text-center">
           <h2 className="text-3xl font-bold mb-5 text-gray-800">🎯 Try the Widget Now!</h2>
+          
+          {/* Store ID Display */}
+          <div className="bg-green-50 p-4 rounded-lg mb-6 border-l-4 border-green-500">
+            <h4 className="text-green-600 font-semibold mb-2">🏪 Store ID:</h4>
+            <p className="text-green-800 font-mono text-sm break-all">
+              25750931-edcf-4860-8527-12616916b377
+            </p>
+          </div>
+          
           <p className="text-lg text-gray-600 mb-8">
             The Linquo chat widget should appear in the bottom-right corner of this page. 
             Click on it to start chatting!
@@ -70,7 +79,7 @@ export default function DemoPage() {
       </div>
 
       {/* Linquo Widget Script */}
-      <script async src="/widget.js"></script>
+      <script id="linquo" async={true} src="http://localhost:3000/widget.js?id=25750931-edcf-4860-8527-12616916b377"></script>
     </div>
   );
 }

@@ -29,10 +29,13 @@ export function useWidgetMessages(conversationId: string | null) {
     async function load() {
       try {
         if (!client || !conversationId) {
+          console.log("❌ Widget messages: No client or conversationId", { client: !!client, conversationId });
           setData([]);
           setLoading(false);
           return;
         }
+        
+        console.log("🔍 Widget messages: Loading messages for conversation:", conversationId);
         
         // Widget messages - no organization filter needed
         const { data, error } = await client
@@ -42,9 +45,11 @@ export function useWidgetMessages(conversationId: string | null) {
           .order("created_at", { ascending: true });
         
         if (error) {
+          console.log("❌ Widget messages: Error loading messages:", error);
           throw error;
         }
         
+        console.log("✅ Widget messages: Loaded messages:", data?.length || 0, "messages");
         setData(data as DbMessage[]);
 
         // Enable realtime subscription for message syncing
