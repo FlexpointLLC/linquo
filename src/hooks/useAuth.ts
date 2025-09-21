@@ -33,7 +33,7 @@ export function useAuth() {
   useEffect(() => {
     const globalTimeout = setTimeout(() => {
       setLoading(false);
-    }, 5000); // 5 second global timeout
+    }, 15000); // 15 second global timeout
 
     return () => clearTimeout(globalTimeout);
   }, []);
@@ -42,7 +42,7 @@ export function useAuth() {
     // Immediate timeout fallback
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 3000); // 3 second timeout
+    }, 10000); // 10 second timeout
 
     const supabase = getSupabaseBrowser();
     
@@ -69,7 +69,7 @@ export function useAuth() {
         const result = await Promise.race([
           agentPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Agent query timeout')), 3000)
+            setTimeout(() => reject(new Error('Agent query timeout')), 10000)
           )
         ]);
         
@@ -77,10 +77,10 @@ export function useAuth() {
 
         if (agentError) {
           // If this is a "not found" error and we haven't retried, wait a bit and try again
-          if (agentError.code === 'PGRST116' && retryCount < 3) {
+          if (agentError.code === 'PGRST116' && retryCount < 5) {
             setTimeout(() => {
               loadUserData(user, retryCount + 1);
-            }, 1000);
+            }, 2000 * (retryCount + 1)); // Exponential backoff
             return;
           }
           
@@ -104,7 +104,7 @@ export function useAuth() {
         const orgResult = await Promise.race([
           orgPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Organization query timeout')), 3000)
+            setTimeout(() => reject(new Error('Organization query timeout')), 10000)
           )
         ]);
         
@@ -136,7 +136,10 @@ export function useAuth() {
             organization: orgData,
           });
         }
-      } catch {
+      } catch (error) {
+        // Log the error for debugging but keep the user logged in
+        console.warn('Auth data loading error:', error);
+        
         // Keep the user logged in even if there's an error
         setAuthUser({
           user,
@@ -155,7 +158,7 @@ export function useAuth() {
         const sessionResult = await Promise.race([
           sessionPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Session query timeout')), 5000)
+            setTimeout(() => reject(new Error('Session query timeout')), 10000)
           )
         ]);
         
@@ -190,7 +193,8 @@ export function useAuth() {
 
         return subscription;
 
-      } catch {
+      } catch (error) {
+        console.warn('Auth initialization error:', error);
         setLoading(false);
         return null;
       }

@@ -9,7 +9,27 @@ export function getSupabaseBrowser() {
   }
   
   try {
-    const client = createClient(url, key, { auth: { persistSession: true } });
+    const client = createClient(url, key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce'
+      },
+      db: {
+        schema: 'public'
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'linquo-chat-widget'
+        }
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
+      }
+    });
     return client;
   } catch {
     return null;
