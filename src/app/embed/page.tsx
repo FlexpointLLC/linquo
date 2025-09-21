@@ -8,7 +8,6 @@ import { useWidgetMessages } from "@/hooks/useWidgetMessages";
 import { useCustomer } from "@/hooks/useCustomer";
 import { useBrandColor } from "@/contexts/brand-color-context";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { useBrandColor } from "@/contexts/brand-color-context";
 
 function EmbedContent() {
   const params = useSearchParams();
