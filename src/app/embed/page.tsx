@@ -16,6 +16,25 @@ function EmbedContent() {
   const [showForm, setShowForm] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
+  // Restore input value from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedInput = localStorage.getItem('widget-input-value');
+      if (savedInput) {
+        setInputValue(savedInput);
+        // Clear the saved value after restoring
+        localStorage.removeItem('widget-input-value');
+      }
+    }
+  }, []);
+
+  // Save input value to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && inputValue) {
+      localStorage.setItem('widget-input-value', inputValue);
+    }
+  }, [inputValue]);
+
   // Set site and orgId after hydration to avoid mismatch
   useEffect(() => {
     const siteParam = params.get("site");
@@ -281,6 +300,10 @@ function EmbedContent() {
                   };
                   sendMessage();
                   setInputValue("");
+                  // Clear saved input from localStorage
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('widget-input-value');
+                  }
                 }
               }
             }}
@@ -329,6 +352,10 @@ function EmbedContent() {
                 };
                 sendMessage();
                 setInputValue("");
+                // Clear saved input from localStorage
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('widget-input-value');
+                }
               }
             }}
             disabled={!inputValue.trim()}

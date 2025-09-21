@@ -1,7 +1,7 @@
 "use client";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function Composer({ 
   onSend, 
@@ -11,6 +11,25 @@ export function Composer({
   customerEmail?: string;
 }) {
   const [text, setText] = useState("");
+
+  // Restore text from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedText = localStorage.getItem('dashboard-composer-text');
+      if (savedText) {
+        setText(savedText);
+        // Clear the saved text after restoring
+        localStorage.removeItem('dashboard-composer-text');
+      }
+    }
+  }, []);
+
+  // Save text to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && text) {
+      localStorage.setItem('dashboard-composer-text', text);
+    }
+  }, [text]);
   
   function handleSend() {
     const trimmed = text.trim();
@@ -21,6 +40,10 @@ export function Composer({
     
     onSend?.(trimmed);
     setText("");
+    // Clear saved text from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('dashboard-composer-text');
+    }
   }
   
   return (
