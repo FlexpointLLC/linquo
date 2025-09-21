@@ -138,8 +138,9 @@ export function useAuth() {
             organization: orgData,
           });
         }
-      } catch {
+      } catch (error) {
         // Keep the user logged in even if there's an error
+        console.log("⚠️ useAuth: Error loading agent/org data, but keeping user logged in:", error);
         setAuthUser({
           user,
           agent: null,

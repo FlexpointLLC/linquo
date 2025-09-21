@@ -36,43 +36,34 @@ export function DashboardWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If user exists but no agent/organization, show setup message
+  // If user exists but no agent/organization, show a warning but allow dashboard to load
   if (!agent || !organization) {
+    console.log("⚠️ Dashboard: Missing agent/org data, but allowing dashboard to load", {
+      hasAgent: !!agent,
+      hasOrganization: !!organization,
+      userId: user?.id
+    });
+    
+    // Show a warning banner instead of blocking the entire dashboard
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <h2 className="text-xl font-semibold mb-4">Account Setup Required</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            {!agent && !organization 
-              ? "Your account is being set up. Please wait a moment or refresh the page."
-              : "Your account needs to be set up with an organization. Please contact your administrator or create a new account."
-            }
-          </p>
-          <div className="flex gap-2 justify-center">
+      <div className="min-h-screen">
+        <div className="bg-yellow-50 border-b border-yellow-200 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <span className="text-sm text-yellow-800">
+                Account setup in progress. Some features may be limited.
+              </span>
+            </div>
             <button
-              onClick={() => {
-                // Refresh the page to retry loading user data
-                window.location.reload();
-              }}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              onClick={() => window.location.reload()}
+              className="text-xs text-yellow-600 hover:text-yellow-800 underline"
             >
-              Refresh Page
-            </button>
-            <button
-              onClick={() => {
-                // Sign out and redirect to signup
-                const supabase = getSupabaseBrowser();
-                if (supabase) {
-                  supabase.auth.signOut();
-                }
-                router.push("/signup");
-              }}
-              className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
-            >
-              Create New Account
+              Refresh
             </button>
           </div>
         </div>
+        {children}
       </div>
     );
   }
