@@ -1,9 +1,8 @@
-import { PropsWithChildren, Suspense } from "react";
+import { PropsWithChildren } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
   return (

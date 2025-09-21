@@ -45,9 +45,7 @@ export function useAuth() {
     if (!supabase) return;
 
     let reconnectTimeout: NodeJS.Timeout;
-    let healthCheckInterval: NodeJS.Timeout;
-
-    const checkConnection = async () => {
+    const healthCheckInterval: NodeJS.Timeout = setInterval(async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
@@ -55,7 +53,7 @@ export function useAuth() {
         } else {
           setConnectionStatus('disconnected');
         }
-      } catch (error) {
+      } catch {
         setConnectionStatus('disconnected');
         // Attempt to reconnect
         setConnectionStatus('reconnecting');
@@ -63,13 +61,10 @@ export function useAuth() {
           window.location.reload();
         }, 5000);
       }
-    };
-
-    // Check connection every 30 seconds
-    healthCheckInterval = setInterval(checkConnection, 30000);
+    }, 30000);
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         setConnectionStatus('disconnected');
       } else if (event === 'SIGNED_IN') {

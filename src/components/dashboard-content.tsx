@@ -27,18 +27,18 @@ export function DashboardContent() {
     setActiveId(cid);
   }, [searchParams]);
 
-  const { data: conversationRows, error: conversationError, loading: conversationsLoading } = useConversations();
-  const { data: messageRows, error: messageError, loading: messagesLoading } = useMessages(currentTab === "chats" ? activeId : null);
+  const { data: conversationRows, error: conversationError } = useConversations();
+  const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
   
   // Memoize conversation IDs to prevent infinite loops
   const conversationIds = useMemo(() => 
     conversationRows?.map(c => c.id) || [], 
     [conversationRows]
   );
-  const { data: lastMessages, loading: lastMessagesLoading } = useLastMessages(conversationIds);
+  const { data: lastMessages } = useLastMessages(conversationIds);
 
-  const { agents, customers, loading: dataCacheLoading } = useDataCache();
-  const { agent, loading: authLoading } = useAuth();
+  const { agents, customers } = useDataCache();
+  const { agent } = useAuth();
 
   // Auto-select first conversation if none is selected
   useEffect(() => {
@@ -137,8 +137,7 @@ export function DashboardContent() {
             {activeId && (
               <div className="border-t border-gray-200 p-4 bg-white">
                 <Composer
-                  conversationId={activeId}
-                  onMessageSent={async (text) => {
+                  onSend={async (text) => {
                     if (!agent || !activeId) {
                       console.log("❌ Missing agent or activeId");
                       return;

@@ -63,56 +63,56 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
               }
             }
             
-            // Approach 2: Try to access parent document and hide iframe
-            if (!closed) {
-              console.log("🔴 Attempting direct iframe manipulation");
-              try {
-                if (window.parent && window.parent.document) {
-                  const iframe = window.parent.document.querySelector('iframe[src*="/embed"]');
-                  if (iframe) {
-                    iframe.style.display = 'none';
-                    console.log("🔴 Fallback: Hidden iframe directly");
-                    closed = true;
+                  // Approach 2: Try to access parent document and hide iframe
+                  if (!closed) {
+                    console.log("🔴 Attempting direct iframe manipulation");
+                    try {
+                      if (window.parent && window.parent.document) {
+                        const iframe = window.parent.document.querySelector('iframe[src*="/embed"]') as HTMLIFrameElement;
+                        if (iframe) {
+                          iframe.style.display = 'none';
+                          console.log("🔴 Fallback: Hidden iframe directly");
+                          closed = true;
+                        }
+                      }
+                    } catch (fallbackError) {
+                      console.error("🔴 Direct iframe manipulation failed:", fallbackError);
+                    }
                   }
-                }
-              } catch (fallbackError) {
-                console.error("🔴 Direct iframe manipulation failed:", fallbackError);
-              }
-            }
             
-            // Approach 3: Try to access the widget container
-            if (!closed) {
-              console.log("🔴 Attempting to access widget container");
-              try {
-                if (window.parent && window.parent.document) {
-                  const widget = window.parent.document.getElementById('linquo-widget');
-                  if (widget) {
-                    widget.style.display = 'none';
-                    console.log("🔴 Fallback: Hidden widget container directly");
-                    closed = true;
+                  // Approach 3: Try to access the widget container
+                  if (!closed) {
+                    console.log("🔴 Attempting to access widget container");
+                    try {
+                      if (window.parent && window.parent.document) {
+                        const widget = window.parent.document.getElementById('linquo-widget') as HTMLElement;
+                        if (widget) {
+                          widget.style.display = 'none';
+                          console.log("🔴 Fallback: Hidden widget container directly");
+                          closed = true;
+                        }
+                      }
+                    } catch (containerError) {
+                      console.error("🔴 Container manipulation failed:", containerError);
+                    }
                   }
-                }
-              } catch (containerError) {
-                console.error("🔴 Container manipulation failed:", containerError);
-              }
-            }
             
-            // Approach 4: Try to trigger the bubble click
-            if (!closed) {
-              console.log("🔴 Attempting to trigger bubble click");
-              try {
-                if (window.parent && window.parent.document) {
-                  const bubble = window.parent.document.getElementById('linquo-chat-bubble');
-                  if (bubble) {
-                    bubble.click();
-                    console.log("🔴 Fallback: Triggered bubble click");
-                    closed = true;
+                  // Approach 4: Try to trigger the bubble click
+                  if (!closed) {
+                    console.log("🔴 Attempting to trigger bubble click");
+                    try {
+                      if (window.parent && window.parent.document) {
+                        const bubble = window.parent.document.getElementById('linquo-chat-bubble') as HTMLElement;
+                        if (bubble) {
+                          bubble.click();
+                          console.log("🔴 Fallback: Triggered bubble click");
+                          closed = true;
+                        }
+                      }
+                    } catch (bubbleError) {
+                      console.error("🔴 Bubble click failed:", bubbleError);
+                    }
                   }
-                }
-              } catch (bubbleError) {
-                console.error("🔴 Bubble click failed:", bubbleError);
-              }
-            }
             
             if (!closed) {
               console.error("🔴 All close attempts failed");

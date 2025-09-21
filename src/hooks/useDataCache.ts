@@ -116,6 +116,9 @@ export function useDataCache() {
       globalCache.customers = customersResult.data as CachedCustomer[];
       globalCache.lastLoaded = Date.now();
       globalCache.error = null;
+      
+      // Save to localStorage
+      saveCacheToStorage(globalCache);
     } catch (error) {
       globalCache.error = error instanceof Error ? error.message : "Failed to load data";
     } finally {
