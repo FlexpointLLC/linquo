@@ -28,9 +28,9 @@ export function DashboardHeader() {
 
   return (
     <header className="flex items-center gap-3 p-4 border-b flex-shrink-0">
-      <h1 className="text-xl font-semibold mr-auto">{title}</h1>
-      <div className="hidden md:flex items-center gap-2">
-        <ConnectionBadge />
+      <h1 className="text-xl font-semibold">{title}</h1>
+      <ConnectionBadge />
+      <div className="hidden md:flex items-center gap-2 ml-auto">
         <Input placeholder="Search..." className="w-64" />
         <Button size="sm" variant="outline">
           <Bell className="h-4 w-4" />
