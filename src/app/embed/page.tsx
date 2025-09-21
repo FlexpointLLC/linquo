@@ -87,14 +87,17 @@ function EmbedContent() {
   };
 
   const messages = useMemo<ChatMessage[]>(() => {
-    return (messageRows ?? []).map((m) => ({
+    console.log("🔄 Processing messages:", { messageRows, cid });
+    const processedMessages = (messageRows ?? []).map((m) => ({
       id: m.id,
       author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
       name: m.sender_type === "AGENT" ? "Agent" : "Customer",
       text: m.body_text,
       time: new Date(m.created_at).toLocaleTimeString(),
     }));
-  }, [messageRows]);
+    console.log("✅ Processed messages:", processedMessages);
+    return processedMessages;
+  }, [messageRows, cid]);
 
   if (showForm) {
     return (
@@ -182,7 +185,7 @@ function EmbedContent() {
             </div>
             
             {/* Existing messages */}
-            {messages.length > 0 && (
+            {messages.length > 0 ? (
               <div className="space-y-2">
                 {messages.map((message) => (
                   <div key={message.id} className={`${message.author === 'agent' ? 'bg-gray-100' : 'bg-blue-500 text-white'} rounded-lg p-3`}>
@@ -192,6 +195,10 @@ function EmbedContent() {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 text-sm py-4">
+                {cid ? "No messages yet. Start the conversation!" : "Conversation will start when you send a message."}
               </div>
             )}
           </div>
@@ -234,6 +241,7 @@ function EmbedContent() {
                         console.error("❌ Error inserting message:", messageError);
                       } else {
                         console.log("✅ Message inserted successfully:", messageData);
+                        console.log("🔄 Message should now appear in the chat!");
                       }
                       
                       console.log("🔄 Updating conversation last_message_at...");
@@ -294,6 +302,7 @@ function EmbedContent() {
                       console.error("❌ Error inserting message:", messageError);
                     } else {
                       console.log("✅ Message inserted successfully:", messageData);
+                      console.log("🔄 Message should now appear in the chat!");
                     }
                     
                     console.log("🔄 Updating conversation last_message_at...");
