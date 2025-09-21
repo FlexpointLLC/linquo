@@ -45,12 +45,23 @@ export default function DemoPage() {
           <h2 className="text-3xl font-bold mb-5 text-gray-800">🎯 Try the Widget Now!</h2>
           
           {/* Store ID Display */}
-          <div className="bg-green-50 p-4 rounded-lg mb-6 border-l-4 border-green-500">
-            <h4 className="text-green-600 font-semibold mb-2">🏪 Store ID:</h4>
-            <p className="text-green-800 font-mono text-sm break-all">
-              25750931-edcf-4860-8527-12616916b377
-            </p>
-          </div>
+            <div className="bg-green-50 p-4 rounded-lg mb-6 border-l-4 border-green-500">
+              <h4 className="text-green-600 font-semibold mb-2">🏪 Store ID:</h4>
+              <p className="text-green-800 font-mono text-sm break-all">
+                25750931-edcf-4860-8527-12616916b377
+              </p>
+            </div>
+
+            <div className="bg-blue-50 p-4 rounded-lg mb-6 border-l-4 border-blue-500">
+              <h4 className="text-blue-600 font-semibold mb-2">💬 Chat Bubble Features:</h4>
+              <ul className="text-blue-800 text-sm space-y-1">
+                <li>• 68x68px customizable chat bubble</li>
+                <li>• Click to open/close widget</li>
+                <li>• Icon changes: Chat icon (closed) → X icon (open)</li>
+                <li>• Customizable brand color via URL parameter</li>
+                <li>• Hover effects and smooth transitions</li>
+              </ul>
+            </div>
           
           <p className="text-lg text-gray-600 mb-8">
             The Linquo chat widget should appear in the bottom-right corner of this page. 
@@ -78,8 +89,11 @@ export default function DemoPage() {
         </div>
       </div>
 
-      {/* Linquo Widget Script */}
-      <script id="linquo" async={true} src="http://localhost:3000/widget.js?id=25750931-edcf-4860-8527-12616916b377"></script>
+            {/* Linquo Widget Script - Default Blue */}
+            <script id="linquo" async={true} src="http://localhost:3000/widget.js?id=25750931-edcf-4860-8527-12616916b377"></script>
+            
+            {/* Example: Custom Color Widget (commented out) */}
+            {/* <script id="linquo" async={true} src="http://localhost:3000/widget.js?id=25750931-edcf-4860-8527-12616916b377&color=%23FF6B6B"></script> */}
     </div>
   );
 }
