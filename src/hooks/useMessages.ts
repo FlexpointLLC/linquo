@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { useAuth } from "@/hooks/useAuth";
 
 export type DbMessage = {
   id: string;
@@ -16,6 +17,7 @@ export function useMessages(conversationId: string | null) {
   const [data, setData] = useState<DbMessage[] | null>(null);
   const [loading, setLoading] = useState(Boolean(conversationId));
   const [error, setError] = useState<string | null>(null);
+  const { agent } = useAuth();
 
   useEffect(() => {
     const client = getSupabaseBrowser();
@@ -30,10 +32,21 @@ export function useMessages(conversationId: string | null) {
           setData([]);
           return;
         }
+        
+        // If agent is not available, don't clear data - keep existing messages
+        if (!agent?.org_id) {
+          console.log("⚠️ Agent or org_id not available, keeping existing messages");
+          setLoading(false);
+          return;
+        }
+        
+        console.log("🔒 Loading messages for conversation:", conversationId, "in org:", agent.org_id);
+        
         const { data, error } = await client
           .from("messages")
           .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at")
           .eq("conversation_id", conversationId)
+          .eq("org_id", agent.org_id)
           .order("created_at", { ascending: true });
         
         if (error) {
@@ -65,7 +78,7 @@ export function useMessages(conversationId: string | null) {
     return () => {
       if (unsub) unsub();
     };
-  }, [conversationId]);
+  }, [conversationId, agent?.org_id]);
 
   return { data, loading, error };
 }

@@ -16,7 +16,8 @@ export function Composer({
     const trimmed = text.trim();
     if (!trimmed) return;
     
-    // Test if function is being called
+    console.log("🚀 Composer handleSend called with:", trimmed);
+    console.log("📤 onSend function available:", !!onSend);
     
     onSend?.(trimmed);
     setText("");

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { useAuth } from "@/hooks/useAuth";
 
 export type LastMessage = {
   conversation_id: string;
@@ -12,6 +13,7 @@ export function useLastMessages(conversationIds: string[]) {
   const [data, setData] = useState<LastMessage[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { agent } = useAuth();
 
   // Memoize the conversationIds to prevent infinite loops
   const memoizedConversationIds = useMemo(() => conversationIds, [conversationIds]);
@@ -40,10 +42,19 @@ export function useLastMessages(conversationIds: string[]) {
           setError("Supabase client not available");
           return;
         }
+        
+        // If agent is not available, don't clear data - keep existing last messages
+        if (!agent?.org_id) {
+          console.log("⚠️ Agent or org_id not available, keeping existing last messages");
+          setLoading(false);
+          return;
+        }
+        
         const { data: messages, error } = await client
           .from("messages")
           .select("conversation_id, body_text, created_at")
           .in("conversation_id", memoizedConversationIds)
+          .eq("org_id", agent.org_id)
           .order("created_at", { ascending: false });
 
         if (error) {
@@ -70,7 +81,7 @@ export function useLastMessages(conversationIds: string[]) {
     }
 
     loadLastMessages();
-  }, [memoizedConversationIds]);
+  }, [memoizedConversationIds, agent?.org_id]);
 
   return { data, loading, error };
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { useAuth } from "@/hooks/useAuth";
 
 export type Customer = { id: string; display_name: string; email: string; status: "ACTIVE" | "BLOCKED"; country?: string };
 
@@ -8,6 +9,7 @@ export function useCustomers() {
   const [data, setData] = useState<Customer[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { agent } = useAuth();
 
   useEffect(() => {
     const client = getSupabaseBrowser();
@@ -18,7 +20,21 @@ export function useCustomers() {
           setLoading(false);
           return;
         }
-        const { data, error } = await client.from("customers").select("id,display_name,email,status,country").order("display_name");
+        
+        // If agent is not available, don't clear data - keep existing customers
+        if (!agent?.org_id) {
+          console.log("⚠️ Agent or org_id not available, keeping existing customers");
+          setLoading(false);
+          return;
+        }
+        
+        console.log("🔒 Loading customers for organization:", agent.org_id);
+        
+        const { data, error } = await client
+          .from("customers")
+          .select("id,display_name,email,status,country")
+          .eq("org_id", agent.org_id)
+          .order("display_name");
         if (error) throw error;
         setData(data as Customer[]);
       } catch (e: unknown) {
@@ -28,7 +44,7 @@ export function useCustomers() {
       }
     }
     load();
-  }, []);
+  }, [agent?.org_id]);
 
   return { data, loading, error };
 }

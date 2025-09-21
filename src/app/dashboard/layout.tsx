@@ -1,11 +1,11 @@
-"use client";
 import { PropsWithChildren } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Bell, RefreshCw } from "lucide-react";
+import { Bell } from "lucide-react";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { RefreshButton } from "@/components/refresh-button";
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
   return (
@@ -20,13 +20,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
               <Button size="sm" variant="outline">
                 <Bell className="h-4 w-4" />
               </Button>
-              <Button 
-                size="sm" 
-                variant="secondary"
-                onClick={() => window.location.reload()}
-              >
-                <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-              </Button>
+              <RefreshButton />
             </div>
           </header>
           <Separator />

@@ -146,13 +146,24 @@ export function DashboardContent() {
                     return customer?.email;
                   })()}
                   onSend={async (text) => {
-                    if (!agent || !activeId) return;
+                    console.log("🎯 Dashboard onSend called with:", text);
+                    console.log("👤 Agent available:", !!agent);
+                    console.log("💬 Active conversation ID:", activeId);
+                    
+                    if (!agent || !activeId) {
+                      console.log("❌ Missing agent or activeId");
+                      return;
+                    }
 
                     const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                    if (!client) return;
+                    if (!client) {
+                      console.log("❌ Supabase client not available");
+                      return;
+                    }
 
                     try {
-                      await client.from("messages").insert({
+                      console.log("📝 Inserting message to Supabase...");
+                      const { error: messageError } = await client.from("messages").insert({
                         conversation_id: activeId,
                         sender_type: "AGENT",
                         agent_id: agent.id,
@@ -160,12 +171,21 @@ export function DashboardContent() {
                         body_text: text,
                       });
 
+                      if (messageError) {
+                        console.log("❌ Error inserting message:", messageError);
+                        return;
+                      }
+
+                      console.log("✅ Message inserted successfully");
+                      
                       await client
                         .from("conversations")
                         .update({ last_message_at: new Date().toISOString() })
                         .eq("id", activeId);
-                    } catch {
-                      // Error sending message
+                      
+                      console.log("✅ Conversation timestamp updated");
+                    } catch (error) {
+                      console.log("❌ Error sending message:", error);
                     }
                   }}
                 />
