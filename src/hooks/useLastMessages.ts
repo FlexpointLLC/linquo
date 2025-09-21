@@ -14,8 +14,6 @@ export function useLastMessages(conversationIds: string[]) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const conversationIdsString = conversationIds.join(",");
-    
     if (!conversationIds.length) {
       setData([]);
       setLoading(false);
@@ -70,7 +68,7 @@ export function useLastMessages(conversationIds: string[]) {
     }
 
     loadLastMessages();
-  }, [conversationIdsString]);
+  }, [conversationIds]);
 
   return { data, loading, error };
 }
