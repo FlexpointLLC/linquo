@@ -32,8 +32,9 @@ export function useAuth() {
   // Global fallback to prevent infinite loading
   useEffect(() => {
     const globalTimeout = setTimeout(() => {
+      console.log("🔄 useAuth: Global timeout reached, stopping loading");
       setLoading(false);
-    }, 10000); // 10 second global timeout
+    }, 8000); // 8 second global timeout
 
     return () => clearTimeout(globalTimeout);
   }, []);
@@ -41,8 +42,9 @@ export function useAuth() {
   useEffect(() => {
     // Immediate timeout fallback
     const timeout = setTimeout(() => {
+      console.log("🔄 useAuth: Initial timeout reached, stopping loading");
       setLoading(false);
-    }, 3000); // 3 second timeout
+    }, 5000); // 5 second timeout
 
     const supabase = getSupabaseBrowser();
     
