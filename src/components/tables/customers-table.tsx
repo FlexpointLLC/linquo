@@ -4,7 +4,7 @@ type Customer = { id: string; display_name: string; email: string; status: "ACTI
 
 export function CustomersTable({ data }: { data: Customer[] }) {
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Customers</h1>
         <p className="text-gray-600">
@@ -12,19 +12,19 @@ export function CustomersTable({ data }: { data: Customer[] }) {
         </p>
       </div>
       
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200">
         <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead className="px-4">Name</TableHead>
+          <TableHead className="px-4">Email</TableHead>
+          <TableHead className="px-4">Status</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={3} className="text-center py-8">
+            <TableCell colSpan={3} className="text-center py-8 px-4">
               <div className="text-muted-foreground">
                 <div className="text-sm">No customers yet</div>
                 <div className="text-xs mt-1">Customers will appear here when they start conversations</div>
@@ -34,9 +34,9 @@ export function CustomersTable({ data }: { data: Customer[] }) {
         ) : (
           data.map((c) => (
             <TableRow key={c.id}>
-              <TableCell>{c.display_name}</TableCell>
-              <TableCell>{c.email}</TableCell>
-              <TableCell className="capitalize">{c.status}</TableCell>
+              <TableCell className="px-4">{c.display_name}</TableCell>
+              <TableCell className="px-4">{c.email}</TableCell>
+              <TableCell className="capitalize px-4">{c.status}</TableCell>
             </TableRow>
           ))
         )}

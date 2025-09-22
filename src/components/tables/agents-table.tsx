@@ -5,7 +5,7 @@ type Agent = { id: string; display_name: string; email: string; online_status: s
 
 export function AgentsTable({ data }: { data: Agent[] }) {
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Agents</h1>
         <p className="text-gray-600">
@@ -13,19 +13,19 @@ export function AgentsTable({ data }: { data: Agent[] }) {
         </p>
       </div>
       
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200">
         <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Agent</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead className="px-4">Agent</TableHead>
+          <TableHead className="px-4">Email</TableHead>
+          <TableHead className="px-4">Status</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={3} className="text-center py-8">
+            <TableCell colSpan={3} className="text-center py-8 px-4">
               <div className="text-muted-foreground">
                 <div className="text-sm">No agents yet</div>
                 <div className="text-xs mt-1">Invite team members to get started</div>
@@ -35,12 +35,12 @@ export function AgentsTable({ data }: { data: Agent[] }) {
         ) : (
           data.map((a) => (
             <TableRow key={a.id}>
-              <TableCell className="flex items-center gap-2">
+              <TableCell className="flex items-center gap-2 px-4">
                 <Avatar className="h-6 w-6"><AvatarFallback>{a.display_name.slice(0,2).toUpperCase()}</AvatarFallback></Avatar>
                 {a.display_name}
               </TableCell>
-              <TableCell>{a.email}</TableCell>
-              <TableCell className="capitalize">{a.online_status.toLowerCase()}</TableCell>
+              <TableCell className="px-4">{a.email}</TableCell>
+              <TableCell className="capitalize px-4">{a.online_status.toLowerCase()}</TableCell>
             </TableRow>
           ))
         )}

@@ -1,34 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Copy, Check, Palette, Code, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Copy, Check, Code } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 export function EmbedSettings() {
   const { organization, loading } = useAuth();
   const [copied, setCopied] = useState(false);
-  const [customization, setCustomization] = useState({
-    primaryColor: "#3B82F6",
-    borderRadius: "12px",
-    position: "bottom-right",
-    showBranding: true,
-  });
-  const [isUpdatingColor, setIsUpdatingColor] = useState(false);
-  const [colorUpdateError, setColorUpdateError] = useState<string | null>(null);
-  const [colorUpdateSuccess, setColorUpdateSuccess] = useState(false);
+  const [orgIdCopied, setOrgIdCopied] = useState(false);
 
   const orgId = organization?.id;
-
-  // Fetch brand color from organization data
-  useEffect(() => {
-    if (organization?.brand_color) {
-      setCustomization(prev => ({
-        ...prev,
-        primaryColor: organization.brand_color || "#3B82F6"
-      }));
-    }
-  }, [organization?.brand_color]);
 
   // Generate the embed code (Chatway style)
   const generateEmbedCode = () => {
@@ -59,63 +40,25 @@ export function EmbedSettings() {
     }
   };
 
-  const handleCustomizationChange = (key: string, value: string | boolean) => {
-    setCustomization(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  // Update brand color in Supabase
-  const updateBrandColor = async (newColor: string) => {
+  const handleOrgIdCopy = async () => {
     if (!orgId) return;
-    
-    setIsUpdatingColor(true);
-    setColorUpdateError(null);
-    setColorUpdateSuccess(false);
-
     try {
-      const supabase = getSupabaseBrowser();
-      
-      if (!supabase) {
-        throw new Error('Supabase client not available');
-      }
-      
-      const { error } = await supabase
-        .from('organizations')
-        .update({ brand_color: newColor })
-        .eq('id', orgId);
-
-      if (error) {
-        throw error;
-      }
-
-      setColorUpdateSuccess(true);
-      setTimeout(() => setColorUpdateSuccess(false), 3000);
-      
-    } catch (error) {
-      console.error('Error updating brand color:', error);
-      setColorUpdateError('Failed to update brand color. Please try again.');
-      setTimeout(() => setColorUpdateError(null), 5000);
-    } finally {
-      setIsUpdatingColor(false);
+      await navigator.clipboard.writeText(orgId);
+      setOrgIdCopied(true);
+      setTimeout(() => setOrgIdCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = orgId;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setOrgIdCopied(true);
+      setTimeout(() => setOrgIdCopied(false), 2000);
     }
   };
 
-  // Handle brand color change with debouncing
-  const handleBrandColorChange = (newColor: string) => {
-    setCustomization(prev => ({
-      ...prev,
-      primaryColor: newColor
-    }));
-    
-    // Update in Supabase after a short delay
-    const timeoutId = setTimeout(() => {
-      updateBrandColor(newColor);
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
-  };
 
   // Show skeleton loader while loading
   if (loading) {
@@ -126,30 +69,14 @@ export function EmbedSettings() {
           <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Embed Code Section Skeleton */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse"></div>
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <div className="h-4 bg-gray-200 rounded w-full mb-2 animate-pulse"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-              </div>
-              <div className="h-10 bg-gray-200 rounded w-full animate-pulse"></div>
+        <div className="max-w-2xl">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse"></div>
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="h-4 bg-gray-200 rounded w-full mb-2 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
             </div>
-          </div>
-          
-          {/* Customization Section Skeleton */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
-              <div className="space-y-4">
-                <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
-                <div className="h-10 bg-gray-200 rounded w-full animate-pulse"></div>
-                <div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"></div>
-                <div className="h-10 bg-gray-200 rounded w-full animate-pulse"></div>
-              </div>
-            </div>
+            <div className="h-10 bg-gray-200 rounded w-full animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -172,11 +99,11 @@ export function EmbedSettings() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Embed Code</h1>
         <p className="text-gray-600">
-          Generate and customize your chat widget embed code for <strong>{organization.name}</strong>
+          Generate your chat widget embed code for <strong>{organization.name}</strong>
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="max-w-2xl mb-8">
         {/* Embed Code Section */}
         <div className="space-y-6">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -218,115 +145,41 @@ export function EmbedSettings() {
               <li>Customers can start chatting immediately</li>
             </ol>
           </div>
-        </div>
 
-        {/* Customization Section */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Palette className="h-5 w-5 text-gray-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Widget Customization</h2>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Primary Color
-                  {isUpdatingColor && (
-                    <Loader2 className="inline-block ml-2 h-4 w-4 animate-spin text-blue-600" />
-                  )}
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={customization.primaryColor}
-                    onChange={(e) => handleBrandColorChange(e.target.value)}
-                    className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
-                    disabled={isUpdatingColor}
-                  />
-                  <input
-                    type="text"
-                    value={customization.primaryColor}
-                    onChange={(e) => handleBrandColorChange(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
-                    placeholder="#3B82F6"
-                    disabled={isUpdatingColor}
-                  />
-                </div>
-                {colorUpdateSuccess && (
-                  <p className="mt-2 text-sm text-green-600">✅ Brand color updated successfully!</p>
-                )}
-                {colorUpdateError && (
-                  <p className="mt-2 text-sm text-red-600">❌ {colorUpdateError}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Border Radius
-                </label>
-                <select
-                  value={customization.borderRadius}
-                  onChange={(e) => handleCustomizationChange('borderRadius', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  <option value="0px">Sharp (0px)</option>
-                  <option value="4px">Small (4px)</option>
-                  <option value="8px">Medium (8px)</option>
-                  <option value="12px">Large (12px)</option>
-                  <option value="16px">Extra Large (16px)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Position
-                </label>
-                <select
-                  value={customization.position}
-                  onChange={(e) => handleCustomizationChange('position', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  <option value="bottom-right">Bottom Right</option>
-                  <option value="bottom-left">Bottom Left</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="showBranding"
-                  checked={customization.showBranding}
-                  onChange={(e) => handleCustomizationChange('showBranding', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="showBranding" className="text-sm font-medium text-gray-700">
-                  Show &quot;Powered by Linquo&quot; branding
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 className="font-semibold text-green-900 mb-2">🎯 Preview</h3>
-            <p className="text-green-800 text-sm">
-              Your widget will appear with the selected customization. Changes are applied in real-time.
-            </p>
-          </div>
         </div>
       </div>
 
       {/* Organization Info */}
-      <div className="mt-8 bg-gray-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Organization Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="font-medium text-gray-600">Organization ID:</span>
-            <span className="ml-2 font-mono text-gray-900">{orgId}</span>
+      <div className="max-w-2xl bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <h3 className="text-lg font-semibold text-gray-900">Organization Details</h3>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Organization Name</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {organization.name}
+            </p>
           </div>
-          <div>
-            <span className="font-medium text-gray-600">Organization Name:</span>
-            <span className="ml-2 text-gray-900">{organization.name}</span>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Organization ID</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-md border flex-1">
+                {orgId}
+              </p>
+              <button
+                onClick={handleOrgIdCopy}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                title="Copy Organization ID"
+              >
+                {orgIdCopied ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

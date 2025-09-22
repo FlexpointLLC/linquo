@@ -49,7 +49,7 @@ export function Composer({
   }
   
   return (
-    <div className="p-3 bg-white border-t">
+    <div className="px-3 bg-white">
       <div className="text-xs text-gray-500 mb-1">
         Reply {customerEmail || "customer"}
       </div>
@@ -77,9 +77,6 @@ export function Composer({
             Send
           </Button>
         </div>
-      </div>
-      <div className="text-xs text-gray-400 mt-1">
-        Use ⌘K for shortcuts
       </div>
     </div>
   );

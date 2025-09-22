@@ -13,6 +13,8 @@ import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 
 export function DashboardContent() {
   const router = useRouter();
@@ -67,7 +69,7 @@ export function DashboardContent() {
 
       {currentTab === "chats" && (
         <div className="grid grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6">
-          <ConversationList
+              <ConversationList
                 conversations={(conversationRows ?? []).map((c) => {
                   const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
                   
@@ -101,6 +103,16 @@ export function DashboardContent() {
                         })()}
                       </h3>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <Check className="h-4 w-4" />
+                      Resolve
+                    </Button>
                   </div>
                 </div>
               </div>

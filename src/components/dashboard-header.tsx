@@ -35,13 +35,6 @@ export function DashboardHeader() {
         <Button size="sm" variant="outline">
           <Bell className="h-4 w-4" />
         </Button>
-        <Button 
-          size="sm" 
-          variant="secondary"
-          onClick={handleRefresh}
-        >
-          <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-        </Button>
       </div>
     </header>
   );
