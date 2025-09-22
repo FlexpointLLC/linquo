@@ -8,7 +8,7 @@ export function useConnectionStatus() {
   const [status, setStatus] = useState<ConnectionStatus>("connected");
   const { agent, loading, connectionStatus } = useAuth();
   const previousStatus = useRef<ConnectionStatus>("connected");
-  const softReloadTimeout = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Use connection status from useAuth and also check agent data
   useEffect(() => {
@@ -30,40 +30,16 @@ export function useConnectionStatus() {
       console.log("🔄 Connection lost, attempting automatic reconnection...");
       
       // Clear any existing timeout
-      if (softReloadTimeout.current) {
-        clearTimeout(softReloadTimeout.current);
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
       }
       
-      // Try to reconnect by refreshing auth state first
-      const attemptReconnection = async () => {
-        try {
-          console.log("🔄 Attempting to restore connection...");
-          
-          // Try to refresh the auth session
-          const { getSupabaseBrowser } = await import("@/lib/supabase-browser");
-          const supabase = getSupabaseBrowser();
-          if (supabase) {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (error) {
-              console.error("❌ Error getting session:", error);
-            } else if (session) {
-              console.log("✅ Session restored, connection should be back");
-              return; // Session restored, no need to reload
-            }
-          }
-          
-          // If session refresh didn't work, try a soft reload as fallback
-          console.log("🔄 Session refresh failed, falling back to soft reload...");
-          window.location.reload();
-        } catch (error) {
-          console.error("❌ Reconnection attempt failed:", error);
-          // Fallback to page reload
-          window.location.reload();
-        }
-      };
-      
-      // Attempt reconnection after a short delay
-      softReloadTimeout.current = setTimeout(attemptReconnection, 2000);
+      // Simple reconnection: just reload the page after a short delay
+      // This is more reliable than trying to refresh the auth state
+      reconnectTimeout.current = setTimeout(() => {
+        console.log("🔄 Reloading page to restore connection...");
+        window.location.reload();
+      }, 2000);
     }
     
     // Update previous status
@@ -71,17 +47,17 @@ export function useConnectionStatus() {
     
     // Cleanup timeout on unmount
     return () => {
-      if (softReloadTimeout.current) {
-        clearTimeout(softReloadTimeout.current);
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
       }
     };
   }, [status]);
 
   // Manual refresh function for when user clicks the badge
   const refresh = () => {
-    // Clear any pending soft reload
-    if (softReloadTimeout.current) {
-      clearTimeout(softReloadTimeout.current);
+    // Clear any pending reconnection
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
     }
     // Immediate reload when user clicks
     window.location.reload();
