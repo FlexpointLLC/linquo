@@ -129,10 +129,10 @@ export function WidgetCustomization() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-full animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-full animate-pulse"></div>
+            <div className="h-4 bg-muted rounded w-24 mb-2 animate-pulse"></div>
+            <div className="h-10 bg-muted rounded w-full animate-pulse"></div>
+            <div className="h-4 bg-muted rounded w-20 mb-2 animate-pulse"></div>
+            <div className="h-10 bg-muted rounded w-full animate-pulse"></div>
           </div>
         </CardContent>
       </Card>
@@ -171,7 +171,7 @@ export function WidgetCustomization() {
           <CardContent className="space-y-6">
             {/* Brand Color */}
             <div>
-              <Label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-foreground mb-2">
                 Brand Color
               </Label>
               <div className="flex items-center gap-3">
@@ -179,7 +179,7 @@ export function WidgetCustomization() {
                   type="color"
                   value={customization.primaryColor}
                   onChange={(e) => handleCustomizationChange('primaryColor', e.target.value)}
-                  className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                  className="w-12 h-10 rounded border border-border cursor-pointer"
                 />
                 <Input
                   type="text"
@@ -193,7 +193,7 @@ export function WidgetCustomization() {
 
             {/* Text Lines */}
             <div>
-              <Label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-foreground mb-2">
                 Welcome Messages
               </Label>
               <div className="space-y-3">
@@ -214,7 +214,7 @@ export function WidgetCustomization() {
 
             {/* Button Text */}
             <div>
-              <Label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-foreground mb-2">
                 Button Text
               </Label>
               <Input
@@ -227,7 +227,7 @@ export function WidgetCustomization() {
 
             {/* Icon Alignment */}
             <div>
-              <Label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-foreground mb-2">
                 Icon Alignment
               </Label>
               <Select
@@ -257,8 +257,8 @@ export function WidgetCustomization() {
             </div>
 
             {/* Chat Header */}
-            <div className="pt-4 border-t border-gray-200">
-              <Label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="pt-4 border-t border-border">
+              <Label className="block text-sm font-medium text-foreground mb-2">
                 Chat Header
               </Label>
               <div className="space-y-3">

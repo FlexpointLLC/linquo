@@ -7,13 +7,13 @@ export function AgentsTable({ data }: { data: Agent[] }) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Agents</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Agents</h1>
+        <p className="text-muted-foreground">
           Manage your team members and their access to the dashboard
         </p>
       </div>
       
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="bg-card rounded-lg border border-border">
         <Table>
       <TableHeader>
         <TableRow>
@@ -43,8 +43,8 @@ export function AgentsTable({ data }: { data: Agent[] }) {
               <TableCell className="px-4">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   a.is_active 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
+                    ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
+                    : 'bg-red-500/20 text-red-600 dark:text-red-400'
                 }`}>
                   {a.is_active ? 'Active' : 'Inactive'}
                 </span>

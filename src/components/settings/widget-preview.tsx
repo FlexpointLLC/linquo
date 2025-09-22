@@ -51,7 +51,7 @@ export function WidgetPreview({
   );
 
   return (
-    <div className="relative w-full h-[600px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
+    <div className="relative w-full h-[600px] bg-muted rounded-lg border-2 border-dashed border-border overflow-hidden">
 
       {/* Widget Bubble - Scaled down to fit preview */}
       <div className={`absolute ${getBubblePosition()}`}>
@@ -72,7 +72,7 @@ export function WidgetPreview({
       {/* Widget Container - Scaled down to fit preview (240x420px) */}
       {isOpen && (
         <div 
-          className={`absolute ${getWidgetPosition()} bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden`}
+          className={`absolute ${getWidgetPosition()} bg-background rounded-lg shadow-2xl border border-border overflow-hidden`}
           style={{ width: '240px', height: '420px' }}
         >
           {showForm ? (

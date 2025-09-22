@@ -62,14 +62,14 @@ export function Composer({
   }
   
   return (
-    <div className="px-3 bg-white">
+    <div className="px-3 bg-background">
       {/* Typing indicator or reply text */}
       {typingUsers.length > 0 ? (
-        <div className="text-xs text-gray-500 mb-1 italic">
+        <div className="text-xs text-muted-foreground mb-1 italic">
           {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
         </div>
       ) : (
-        <div className="text-xs text-gray-500 mb-1">
+        <div className="text-xs text-muted-foreground mb-1">
           Reply {customerEmail || "customer"}
         </div>
       )}
@@ -85,7 +85,7 @@ export function Composer({
             }
           }}
           placeholder="Write a reply..."
-          className="min-h-[80px] resize-none border-gray-200 pr-20"
+          className="min-h-[80px] resize-none border-border pr-20"
           style={{ '--tw-ring-color': brandColor, '--tw-border-color': brandColor } as React.CSSProperties}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {

@@ -6,13 +6,13 @@ export function CustomersTable({ data }: { data: Customer[] }) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Customers</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Customers</h1>
+        <p className="text-muted-foreground">
           View and manage your customer base and their conversation history
         </p>
       </div>
       
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="bg-card rounded-lg border border-border">
         <Table>
       <TableHeader>
         <TableRow>

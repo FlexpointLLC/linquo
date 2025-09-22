@@ -11,14 +11,14 @@ export function ConnectionBadge() {
       case "connected":
         return {
           variant: "default" as const,
-          className: "bg-green-100 text-green-800 border-green-200",
+          className: "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/20",
           icon: <Wifi className="h-3 w-3 mr-1" />,
           text: "Connected",
         };
       case "disconnected":
         return {
           variant: "destructive" as const,
-          className: "bg-orange-100 text-orange-800 border-orange-200",
+          className: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/10",
           icon: <WifiOff className="h-3 w-3 mr-1" />,
           text: "Reconnecting...",
         };

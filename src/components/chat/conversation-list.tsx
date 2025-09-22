@@ -56,11 +56,11 @@ export function ConversationList({
   const resolvedCount = conversations.filter(c => c.state === "CLOSED").length;
 
   return (
-    <div className="border-r w-80 shrink-0 bg-white h-[calc(100vh-80px)] flex flex-col">
+    <div className="border-r w-80 shrink-0 bg-background h-[calc(100vh-80px)] flex flex-col">
       {/* Header */}
       <div className="px-3 pt-3 pb-0 border-b">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">Inbox</h2>
+          <h2 className="text-lg font-semibold text-foreground">Inbox</h2>
         </div>
         
         {/* Tabs */}
@@ -69,10 +69,13 @@ export function ConversationList({
             onClick={() => setActiveTab("open")}
             className={`pb-2 px-1 font-medium transition-colors ${
               activeTab === "open"
-                ? "text-gray-900 border-b-2"
-                : "text-gray-500 hover:text-gray-700"
+                ? "border-b-2"
+                : "text-muted-foreground hover:text-foreground"
             }`}
-            style={activeTab === "open" ? { borderBottomColor: brandColor } : {}}
+            style={activeTab === "open" ? { 
+              borderBottomColor: brandColor,
+              color: brandColor 
+            } : {}}
           >
             Open ({openCount})
           </button>
@@ -80,10 +83,13 @@ export function ConversationList({
             onClick={() => setActiveTab("newest")}
             className={`pb-2 px-1 font-medium transition-colors ${
               activeTab === "newest"
-                ? "text-gray-900 border-b-2"
-                : "text-gray-500 hover:text-gray-700"
+                ? "border-b-2"
+                : "text-muted-foreground hover:text-foreground"
             }`}
-            style={activeTab === "newest" ? { borderBottomColor: brandColor } : {}}
+            style={activeTab === "newest" ? { 
+              borderBottomColor: brandColor,
+              color: brandColor 
+            } : {}}
           >
             Newest ({newestCount})
           </button>
@@ -91,10 +97,13 @@ export function ConversationList({
             onClick={() => setActiveTab("resolved")}
             className={`pb-2 px-1 font-medium transition-colors ${
               activeTab === "resolved"
-                ? "text-gray-900 border-b-2"
-                : "text-gray-500 hover:text-gray-700"
+                ? "border-b-2"
+                : "text-muted-foreground hover:text-foreground"
             }`}
-            style={activeTab === "resolved" ? { borderBottomColor: brandColor } : {}}
+            style={activeTab === "resolved" ? { 
+              borderBottomColor: brandColor,
+              color: brandColor 
+            } : {}}
           >
             Resolved ({resolvedCount})
           </button>
@@ -102,9 +111,9 @@ export function ConversationList({
       </div>
 
       {/* Conversation List */}
-      <div className="divide-y divide-gray-100 flex-1 overflow-y-auto">
+      <div className="divide-y divide-border flex-1 overflow-y-auto">
         {filteredConversations.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-muted-foreground">
             <div className="text-sm">
               {activeTab === "open" && "No open conversations"}
               {activeTab === "newest" && "No conversations today"}
@@ -122,31 +131,31 @@ export function ConversationList({
               key={c.id}
               onClick={() => onSelect?.(c.id)}
               className={
-                "w-full text-left p-3 hover:bg-gray-50 transition-colors " +
-                (activeId === c.id ? "border-r-2 bg-gray-50" : "")
+                "w-full text-left p-3 hover:bg-muted transition-colors " +
+                (activeId === c.id ? "border-r-2 bg-muted" : "")
               }
               style={activeId === c.id ? { borderRightColor: brandColor } : {}}
             >
               <div className="flex items-start gap-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
+                  <AvatarFallback className="text-xs bg-muted text-muted-foreground">
                     {c.name?.slice(0, 2).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <div className="font-medium text-gray-900 truncate text-sm">
+                    <div className="font-medium text-foreground truncate text-sm">
                       {c.name}
                     </div>
                     {c.timestamp && (
-                      <span className="text-xs text-gray-500 flex-shrink-0">
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
                         {c.timestamp}
                       </span>
                     )}
                   </div>
                   
-                  <div className="text-xs text-gray-600 truncate mb-1">
+                  <div className="text-xs text-muted-foreground truncate mb-1">
                     {c.lastMessage || "No messages yet"}
                   </div>
                   

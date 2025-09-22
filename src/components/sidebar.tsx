@@ -39,8 +39,8 @@ export function Sidebar() {
   return (
     <aside className="border-r p-2 h-full flex flex-col items-center overflow-hidden">
       {/* Organization Logo Placeholder */}
-      <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center mb-3" aria-label="Organization">
-        <span className="text-xs font-semibold text-primary-foreground">
+      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center mb-3" aria-label="Organization">
+        <span className="text-xs font-semibold text-muted-foreground">
           {organization?.name?.charAt(0)?.toUpperCase() || "L"}
         </span>
       </div>
