@@ -8,6 +8,11 @@ export type Conversation = {
   title?: string;
   customer_id: string;
   last_message_at: string | null;
+  customers: {
+    id: string;
+    display_name: string;
+    email: string;
+  } | null;
 };
 
 export function useConversations() {
