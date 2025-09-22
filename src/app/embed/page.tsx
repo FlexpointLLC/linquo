@@ -318,7 +318,7 @@ function EmbedContent() {
                    >
                      <span className="text-white text-sm font-medium">P</span>
                    </div>
-                   <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
+                   <div className="bg-white rounded-lg p-3 max-w-xs">
                      <div className="text-sm text-gray-800">
                        Please share your email with us in case we can&apos;t get back to you right away.
                      </div>
@@ -333,7 +333,7 @@ function EmbedContent() {
                    >
                      <span className="text-white text-sm font-medium">P</span>
                    </div>
-                   <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
+                   <div className="bg-white rounded-lg p-3 max-w-xs">
                      <div className="text-sm text-gray-800">
                        Hi there! 👋 Need help with our services? Just ask here and we&apos;ll assist you!
                      </div>
@@ -357,7 +357,7 @@ function EmbedContent() {
                      <div 
                        className={`rounded-lg p-3 max-w-xs ${
                          message.author === 'agent' 
-                           ? 'bg-gray-100' 
+                           ? 'bg-white' 
                            : 'text-white'
                        }`}
                        style={message.author === 'customer' ? { backgroundColor: brandColor } : {}}
@@ -368,7 +368,7 @@ function EmbedContent() {
                        </div>
                      </div>
                      {message.author === 'customer' && (
-                       <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                       <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
                          <span className="text-gray-600 text-sm font-medium">Y</span>
                        </div>
                      )}
@@ -389,7 +389,7 @@ function EmbedContent() {
                      >
                        <span className="text-white text-sm font-medium">A</span>
                      </div>
-                     <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
+                     <div className="bg-white rounded-lg p-3 max-w-xs">
                        <div className="text-sm text-gray-600 italic">
                          {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
                        </div>
@@ -541,7 +541,7 @@ function EmbedContent() {
                    className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                      inputValue.trim() 
                        ? 'cursor-pointer' 
-                       : 'bg-gray-200 cursor-not-allowed'
+                       : 'bg-gray-100 cursor-not-allowed'
                    }`}
                    style={inputValue.trim() ? { backgroundColor: brandColor } : {}}
                  >

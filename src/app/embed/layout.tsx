@@ -15,7 +15,7 @@ export default function EmbedLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="light">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style dangerouslySetInnerHTML={{
@@ -24,11 +24,12 @@ export default function EmbedLayout({
               margin: 0;
               padding: 0;
               overflow: hidden;
+              background: white;
             }
           `
         }} />
       </head>
-      <body>
+      <body className="light">
         <Suspense fallback={<GradientLoadingFallback />}>
           <BrandColorProvider>
             {children}

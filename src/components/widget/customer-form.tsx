@@ -35,6 +35,24 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
 
   return (
     <div className="h-full w-full relative overflow-hidden">
+      <style jsx>{`
+        input::placeholder {
+          color: #6b7280 !important;
+          opacity: 1 !important;
+        }
+        input::-webkit-input-placeholder {
+          color: #6b7280 !important;
+          opacity: 1 !important;
+        }
+        input::-moz-placeholder {
+          color: #6b7280 !important;
+          opacity: 1 !important;
+        }
+        input:-ms-input-placeholder {
+          color: #6b7280 !important;
+          opacity: 1 !important;
+        }
+      `}</style>
       {/* Gradient Background */}
       <div 
         className="absolute inset-0 bg-gradient-to-b to-white"
@@ -87,13 +105,25 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
           <Input
             id="name"
             type="text"
-            placeholder="Your your name"
+            placeholder="Enter your name"
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             required
             disabled={loading}
-            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:bg-white transition-all"
-            style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
+            className="w-full h-12 px-4 border-0 rounded-lg text-black placeholder-gray-500 focus:ring-2 transition-all"
+            style={{ 
+              '--tw-ring-color': brandColor,
+              backgroundColor: 'white',
+              border: 'none',
+              color: 'black',
+              '--placeholder-color': '#6b7280'
+            } as React.CSSProperties}
+            onFocus={(e) => {
+              e.target.style.setProperty('--placeholder-color', '#6b7280');
+            }}
+            onBlur={(e) => {
+              e.target.style.setProperty('--placeholder-color', '#6b7280');
+            }}
           />
           
           <Input
@@ -104,8 +134,20 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             required
             disabled={loading}
-            className="w-full h-12 px-4 bg-gray-100 border-0 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:bg-white transition-all"
-            style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
+            className="w-full h-12 px-4 border-0 rounded-lg text-black placeholder-gray-500 focus:ring-2 transition-all"
+            style={{ 
+              '--tw-ring-color': brandColor,
+              backgroundColor: 'white',
+              border: 'none',
+              color: 'black',
+              '--placeholder-color': '#6b7280'
+            } as React.CSSProperties}
+            onFocus={(e) => {
+              e.target.style.setProperty('--placeholder-color', '#6b7280');
+            }}
+            onBlur={(e) => {
+              e.target.style.setProperty('--placeholder-color', '#6b7280');
+            }}
           />
         </div>
         
