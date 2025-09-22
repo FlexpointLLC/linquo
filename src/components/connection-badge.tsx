@@ -20,7 +20,7 @@ export function ConnectionBadge() {
           variant: "destructive" as const,
           className: "bg-orange-100 text-orange-800 border-orange-200",
           icon: <WifiOff className="h-3 w-3 mr-1" />,
-          text: "Refresh",
+          text: "Reconnecting...",
         };
     }
   };
@@ -30,8 +30,9 @@ export function ConnectionBadge() {
   return (
     <Badge
       variant={badgeProps.variant}
-      className={`${badgeProps.className} cursor-pointer hover:opacity-80 transition-opacity`}
+      className={`${badgeProps.className} ${status === "disconnected" ? "cursor-pointer hover:opacity-80" : ""} transition-opacity`}
       onClick={status === "disconnected" ? refresh : undefined}
+      title={status === "disconnected" ? "Click to manually refresh" : undefined}
     >
       {badgeProps.icon}
       {badgeProps.text}

@@ -23,22 +23,47 @@ export function useConnectionStatus() {
     }
   }, [agent, loading, connectionStatus]);
 
-  // Auto soft reload when status changes to disconnected
+  // Auto reconnection when status changes to disconnected
   useEffect(() => {
-    // Only trigger soft reload if status changed from connected to disconnected
+    // Only trigger reconnection if status changed from connected to disconnected
     if (previousStatus.current === "connected" && status === "disconnected") {
-      console.log("🔄 Connection lost, scheduling soft reload in 5 minutes...");
+      console.log("🔄 Connection lost, attempting automatic reconnection...");
       
       // Clear any existing timeout
       if (softReloadTimeout.current) {
         clearTimeout(softReloadTimeout.current);
       }
       
-      // Schedule soft reload after 30 seconds for immediate recovery
-      softReloadTimeout.current = setTimeout(() => {
-        console.log("🔄 Executing soft reload...");
-        window.location.reload();
-      }, 30000);
+      // Try to reconnect by refreshing auth state first
+      const attemptReconnection = async () => {
+        try {
+          console.log("🔄 Attempting to restore connection...");
+          
+          // Try to refresh the auth session
+          const { getSupabaseBrowser } = await import("@/lib/supabase-browser");
+          const supabase = getSupabaseBrowser();
+          if (supabase) {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) {
+              console.error("❌ Error getting session:", error);
+            } else if (session) {
+              console.log("✅ Session restored, connection should be back");
+              return; // Session restored, no need to reload
+            }
+          }
+          
+          // If session refresh didn't work, try a soft reload as fallback
+          console.log("🔄 Session refresh failed, falling back to soft reload...");
+          window.location.reload();
+        } catch (error) {
+          console.error("❌ Reconnection attempt failed:", error);
+          // Fallback to page reload
+          window.location.reload();
+        }
+      };
+      
+      // Attempt reconnection after a short delay
+      softReloadTimeout.current = setTimeout(attemptReconnection, 2000);
     }
     
     // Update previous status

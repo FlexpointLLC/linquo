@@ -59,14 +59,14 @@
       });
   }
 
-  // Function to update bubble color
-  function updateBubbleColor(bubble, color) {
-    if (bubble) {
-      bubble.style.backgroundColor = color;
-      bubble.style.boxShadow = '0 4px 12px ' + color + '40';
-      console.log('🎨 Bubble color updated to:', color);
-    }
-  }
+  // Function to update bubble color (for future use)
+  // function updateBubbleColor(bubble, color) {
+  //   if (bubble) {
+  //     bubble.style.backgroundColor = color;
+  //     bubble.style.boxShadow = '0 4px 12px ' + color + '40';
+  //     console.log('🎨 Bubble color updated to:', color);
+  //   }
+  // }
 
   // Fetch brand color and then create widget
   fetchBrandColor(orgId, function() {

@@ -33,6 +33,10 @@ export function useRealtimeMessages(conversationId: string | null) {
       try {
         console.log("🔍 Loading initial messages for conversation:", conversationId);
         
+        if (!client) {
+          throw new Error("Supabase client not available");
+        }
+        
         const { data: messages, error } = await client
           .from("messages")
           .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at")
@@ -73,7 +77,7 @@ export function useRealtimeMessages(conversationId: string | null) {
     const handleNewMessage = (message: RealtimeMessage) => {
       console.log("📨 New realtime message received:", message);
       setData(prev => {
-        if (!prev) return [message];
+        if (!prev) return [message as DbMessage];
         
         // Check if message already exists to prevent duplicates
         const exists = prev.some(msg => msg.id === message.id);
@@ -83,7 +87,7 @@ export function useRealtimeMessages(conversationId: string | null) {
         }
         
         // Add new message and sort by created_at
-        const updated = [...prev, message];
+        const updated = [...prev, message as DbMessage];
         return updated.sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
@@ -132,7 +136,7 @@ export function useRealtimeMessages(conversationId: string | null) {
     }
 
     try {
-      const connection = realtimeService.createConversationChannel(
+      realtimeService.createConversationChannel(
         conversationId,
         handleNewMessage,
         handleConnectionChange
