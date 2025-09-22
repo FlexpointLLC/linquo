@@ -2,8 +2,7 @@
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Bell, RefreshCw } from "lucide-react";
-import { useDataCache } from "@/hooks/useDataCache";
+import { Bell } from "lucide-react";
 import { ConnectionBadge } from "@/components/connection-badge";
 
 const tabTitles: Record<string, string> = {
@@ -18,13 +17,6 @@ export function DashboardHeader() {
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") ?? "chats";
   const title = tabTitles[currentTab] || "Dashboard";
-  const { refresh } = useDataCache();
-
-  const handleRefresh = () => {
-    refresh();
-    // Also refresh the page to reload conversations
-    window.location.reload();
-  };
 
   return (
     <header className="flex items-center gap-3 p-4 border-b flex-shrink-0">
