@@ -39,7 +39,7 @@ export function ConversationList({
       case "open":
         return conv.state !== "CLOSED";
       case "newest":
-        return conv.state !== "CLOSED" && isToday;
+        return isToday; // Show ALL conversations from today (both open and resolved)
       case "resolved":
         return conv.state === "CLOSED";
       default:
@@ -51,7 +51,7 @@ export function ConversationList({
   const newestCount = conversations.filter(c => {
     const today = new Date();
     const convDate = c.created_at ? new Date(c.created_at) : new Date(c.timestamp || '');
-    return c.state !== "CLOSED" && convDate.toDateString() === today.toDateString();
+    return convDate.toDateString() === today.toDateString(); // Count ALL conversations from today
   }).length;
   const resolvedCount = conversations.filter(c => c.state === "CLOSED").length;
 
@@ -60,7 +60,7 @@ export function ConversationList({
       {/* Header */}
       <div className="px-3 pt-3 pb-0 border-b">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Inbox</h2>
         </div>
         
         {/* Tabs */}
