@@ -8,6 +8,8 @@ export type Conversation = {
   title?: string;
   customer_id: string;
   last_message_at: string | null;
+  state?: "OPEN" | "CLOSED";
+  created_at?: string;
   customers: {
     id: string;
     display_name: string;
@@ -61,7 +63,7 @@ export function useConversations() {
         // First get conversations
         const { data: conversations, error } = await client
           .from("conversations")
-          .select("id,customer_id,last_message_at")
+          .select("id,customer_id,last_message_at,state,created_at")
           .eq("org_id", agent.org_id)
           .order("last_message_at", { ascending: false, nullsFirst: false })
           .limit(100);
@@ -124,7 +126,7 @@ export function useConversations() {
               // Reload list on any change
               client
                 .from("conversations")
-                .select("id,customer_id,last_message_at")
+                .select("id,customer_id,last_message_at,state,created_at")
                 .eq("org_id", agent.org_id)
                 .order("last_message_at", { ascending: false, nullsFirst: false })
                 .limit(100)

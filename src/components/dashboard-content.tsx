@@ -14,7 +14,8 @@ import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, RotateCcw } from "lucide-react";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 export function DashboardContent() {
   const router = useRouter();
@@ -41,6 +42,27 @@ export function DashboardContent() {
 
   const { agents, customers } = useDataCache();
   const { agent } = useAuth();
+
+  // Handle resolve/unresolve conversation
+  const handleResolveConversation = async (conversationId: string, currentState: string) => {
+    try {
+      const supabase = getSupabaseBrowser();
+      if (!supabase) return;
+
+      const newState = currentState === "CLOSED" ? "OPEN" : "CLOSED";
+      
+      const { error } = await supabase
+        .from("conversations")
+        .update({ state: newState })
+        .eq("id", conversationId);
+
+      if (error) {
+        console.error("Error updating conversation state:", error);
+      }
+    } catch (error) {
+      console.error("Error resolving conversation:", error);
+    }
+  };
 
 
 
@@ -79,7 +101,9 @@ export function DashboardContent() {
                     email: c.customers?.email,
                     lastMessage: lastMessage?.body_text || "No messages yet",
                     status: "ACTIVE" as const,
-                    timestamp: c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : undefined
+                    state: c.state || "OPEN",
+                    timestamp: c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : undefined,
+                    created_at: c.created_at
                   };
                 })}
                 activeId={activeId ?? undefined}
@@ -105,14 +129,32 @@ export function DashboardContent() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      <Check className="h-4 w-4" />
-                      Resolve
-                    </Button>
+                    {(() => {
+                      const conversation = conversationRows?.find(c => c.id === activeId);
+                      const currentState = conversation?.state || "OPEN";
+                      const isResolved = currentState === "CLOSED";
+                      
+                      return (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="flex items-center gap-2"
+                          onClick={() => handleResolveConversation(activeId, currentState)}
+                        >
+                          {isResolved ? (
+                            <>
+                              <RotateCcw className="h-4 w-4" />
+                              Open Again
+                            </>
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4" />
+                              Resolve
+                            </>
+                          )}
+                        </Button>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
