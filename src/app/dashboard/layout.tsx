@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { DashboardBrandColorProvider } from "@/contexts/dashboard-brand-color-context";
+import { DynamicMain } from "@/components/dynamic-main";
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
   return (
@@ -15,9 +16,9 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
             <div className="flex flex-col h-full overflow-hidden">
               <DashboardHeader />
               <Separator />
-              <main className="p-6 flex-1 overflow-y-auto">
+              <DynamicMain>
                 {children}
-              </main>
+              </DynamicMain>
             </div>
           </div>
         </DashboardBrandColorProvider>

@@ -104,7 +104,10 @@ export function DashboardContent() {
       )}
 
       {currentTab === "chats" && (
-        <div className="grid grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6">
+        <div 
+          className="grid grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6"
+          style={{ overflow: 'hidden' }}
+        >
               <ConversationList
                 conversations={(conversationRows ?? []).map((c) => {
                   const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
@@ -127,7 +130,7 @@ export function DashboardContent() {
                   router.push(url.pathname + "?" + url.searchParams.toString());
                 }}
               />
-          <div className="flex flex-col h-[calc(100vh-80px)] bg-background">
+          <div className="flex flex-col h-[calc(100vh-80px)] bg-background pt-0 pb-0">
             {/* Conversation Header with Actions */}
             {activeId && (
               <div className="border-b p-3 bg-background flex-shrink-0">

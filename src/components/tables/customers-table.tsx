@@ -4,7 +4,7 @@ type Customer = { id: string; display_name: string; email: string; status: "ACTI
 
 export function CustomersTable({ data }: { data: Customer[] }) {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Customers</h1>
         <p className="text-muted-foreground">

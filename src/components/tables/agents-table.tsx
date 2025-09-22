@@ -5,7 +5,7 @@ type Agent = { id: string; display_name: string; email: string; online_status: s
 
 export function AgentsTable({ data }: { data: Agent[] }) {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Agents</h1>
         <p className="text-muted-foreground">
