@@ -5,8 +5,8 @@ export function GradientLoadingFallback() {
   const searchParams = useSearchParams();
   const colorParam = searchParams.get('color');
   
-  // Use the color from URL parameter, fallback to default purple
-  const gradientColor = colorParam || '#3f4ad9';
+  // Use the color from URL parameter, fallback to white
+  const gradientColor = colorParam || '#ffffff';
   
   return (
     <div 

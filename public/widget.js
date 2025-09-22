@@ -6,7 +6,7 @@
   // Get the script element to extract the org ID
   var script = document.currentScript || document.querySelector('script[id="linquo"]');
   var orgId = null;
-  var brandColor = '#3f4ad9'; // Default brand color
+  var brandColor = '#ffffff'; // Default white color
   
   if (script) {
     var src = script.src;

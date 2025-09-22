@@ -243,8 +243,8 @@ function EmbedContent() {
     );
   }
 
-  // Use widget color for gradient, fallback to brand color, then default purple
-  const gradientColor = widgetColor || brandColor || '#3f4ad9';
+  // Use widget color for gradient, fallback to brand color, then white
+  const gradientColor = widgetColor || brandColor || '#ffffff';
   
   return (
     <div 
