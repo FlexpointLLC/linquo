@@ -24,16 +24,7 @@ export function BrandColorProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Check if we already have the brand color cached in memory
-    const cacheKey = `brand-color-${orgId}`;
-    const cachedColor = sessionStorage.getItem(cacheKey);
-    
-    if (cachedColor) {
-      console.log("🎨 Using cached brand color:", cachedColor);
-      setBrandColor(cachedColor);
-      setIsLoading(false);
-      return;
-    }
+    // Always fetch fresh brand color from API (no caching)
 
     // Fetch brand color from API
     const fetchBrandColor = async () => {
@@ -51,9 +42,6 @@ export function BrandColorProvider({ children }: { children: ReactNode }) {
         console.log("🎨 Fetched brand color:", color);
         setBrandColor(color);
         
-        // Cache the color in sessionStorage (cleared on tab close)
-        sessionStorage.setItem(cacheKey, color);
-        
       } catch (error) {
         console.error("Error fetching brand color:", error);
         setBrandColor("#3f4ad9"); // Fallback to default
@@ -65,18 +53,6 @@ export function BrandColorProvider({ children }: { children: ReactNode }) {
     fetchBrandColor();
   }, [orgId]);
 
-  // Clear cache on page unload
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (orgId) {
-        const cacheKey = `brand-color-${orgId}`;
-        sessionStorage.removeItem(cacheKey);
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [orgId]);
 
   return (
     <BrandColorContext.Provider value={{ brandColor, isLoading }}>
