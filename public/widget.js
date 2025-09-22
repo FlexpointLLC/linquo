@@ -20,26 +20,52 @@
   }
 
   // Function to fetch brand color from API
-  function fetchBrandColor(orgId, callback) {
+  function fetchBrandColor(orgId, callback, retryCount) {
+    retryCount = retryCount || 0;
+    var maxRetries = 2;
     var baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://linquochat.vercel.app';
+    console.log('🎨 Fetching brand color for org:', orgId, 'from:', baseUrl, '(attempt ' + (retryCount + 1) + ')');
+    
     fetch(baseUrl + '/api/organization/' + encodeURIComponent(orgId))
       .then(function(response) {
+        console.log('🎨 API response status:', response.status);
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error('Network response was not ok: ' + response.status);
         }
         return response.json();
       })
       .then(function(data) {
+        console.log('🎨 API response data:', data);
         if (data.brand_color) {
           brandColor = data.brand_color;
-          console.log('🎨 Brand color fetched:', brandColor);
+          console.log('🎨 Brand color updated to:', brandColor);
+        } else {
+          console.log('🎨 No brand_color in response, using default:', brandColor);
         }
         callback();
       })
       .catch(function(error) {
-        console.error('Error fetching brand color:', error);
-        callback(); // Continue with default color
+        console.error('🎨 Error fetching brand color (attempt ' + (retryCount + 1) + '):', error);
+        
+        if (retryCount < maxRetries) {
+          console.log('🎨 Retrying in 1 second...');
+          setTimeout(function() {
+            fetchBrandColor(orgId, callback, retryCount + 1);
+          }, 1000);
+        } else {
+          console.log('🎨 Max retries reached, using default brand color:', brandColor);
+          callback(); // Continue with default color
+        }
       });
+  }
+
+  // Function to update bubble color
+  function updateBubbleColor(bubble, color) {
+    if (bubble) {
+      bubble.style.backgroundColor = color;
+      bubble.style.boxShadow = '0 4px 12px ' + color + '40';
+      console.log('🎨 Bubble color updated to:', color);
+    }
   }
 
   // Fetch brand color and then create widget
@@ -49,6 +75,8 @@
       var bubble = document.createElement('div');
       bubble.id = 'linquo-chat-bubble';
       bubble.style.cssText = 'position:fixed;bottom:24px;right:24px;width:68px;height:68px;border-radius:50%;background-color:' + brandColor + ';box-shadow:0 4px 12px ' + brandColor + '40;cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;';
+      
+      console.log('🎨 Creating bubble with color:', brandColor);
       
       // Add hover effects
       bubble.addEventListener('mouseenter', function() {
