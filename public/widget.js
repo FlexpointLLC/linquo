@@ -1,6 +1,8 @@
 (function() {
   'use strict';
   
+  console.log('🎨 Linquo Widget v2.1 - Brand color fix');
+  
   // Get the script element to extract the org ID
   var script = document.currentScript || document.querySelector('script[id="linquo"]');
   var orgId = null;
@@ -59,14 +61,14 @@
       });
   }
 
-  // Function to update bubble color (for future use)
-  // function updateBubbleColor(bubble, color) {
-  //   if (bubble) {
-  //     bubble.style.backgroundColor = color;
-  //     bubble.style.boxShadow = '0 4px 12px ' + color + '40';
-  //     console.log('🎨 Bubble color updated to:', color);
-  //   }
-  // }
+  // Function to update bubble color
+  function updateBubbleColor(bubble, color) {
+    if (bubble) {
+      bubble.style.backgroundColor = color;
+      bubble.style.boxShadow = '0 4px 12px ' + color + '40';
+      console.log('🎨 Bubble color updated to:', color);
+    }
+  }
 
   // Fetch brand color and then create widget
   fetchBrandColor(orgId, function() {
@@ -77,6 +79,7 @@
       bubble.style.cssText = 'position:fixed;bottom:24px;right:24px;width:68px;height:68px;border-radius:50%;background-color:' + brandColor + ';box-shadow:0 4px 12px ' + brandColor + '40;cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;';
       
       console.log('🎨 Creating bubble with color:', brandColor);
+      console.log('🎨 Bubble CSS:', bubble.style.cssText);
       
       // Add hover effects
       bubble.addEventListener('mouseenter', function() {
@@ -97,6 +100,9 @@
       chatIcon.style.color = 'white';
       
       bubble.appendChild(chatIcon);
+      
+      // Ensure bubble color is properly set
+      updateBubbleColor(bubble, brandColor);
       
       // Create widget container (initially hidden)
       var container = document.createElement('div');
