@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useDashboardBrandColor } from "@/contexts/dashboard-brand-color-context";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo } from "react";
 
 export type ChatMessage = {
   id: string;
@@ -12,7 +12,7 @@ export type ChatMessage = {
   avatar?: string;
 };
 
-export function MessageThread({ messages }: { messages: ChatMessage[] }) {
+export const MessageThread = memo(function MessageThread({ messages }: { messages: ChatMessage[] }) {
   const { brandColor } = useDashboardBrandColor();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +89,6 @@ export function MessageThread({ messages }: { messages: ChatMessage[] }) {
       </div>
     </div>
   );
-}
+});
 
 

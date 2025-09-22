@@ -1,11 +1,11 @@
 "use client";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useDashboardBrandColor } from "@/contexts/dashboard-brand-color-context";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 
-export function Composer({ 
+export const Composer = memo(function Composer({ 
   onSend, 
   customerEmail,
   conversationId,
@@ -107,6 +107,6 @@ export function Composer({
       </div>
     </div>
   );
-}
+});
 
 

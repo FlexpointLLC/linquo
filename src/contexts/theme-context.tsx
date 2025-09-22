@@ -40,10 +40,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Save theme to localStorage when it changes
+  // Save theme to localStorage when it changes (debounced)
   const handleSetTheme = useCallback((newTheme: Theme) => {
     setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
+    // Debounce localStorage writes
+    setTimeout(() => {
+      localStorage.setItem("theme", newTheme);
+    }, 0);
   }, []);
 
   // Calculate actual theme based on current theme setting
@@ -54,11 +57,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return theme;
   }, [theme, systemTheme]);
 
-  // Apply theme to document
+  // Apply theme to document (debounced to prevent excessive DOM updates)
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(actualTheme);
+    const timeoutId = setTimeout(() => {
+      const root = document.documentElement;
+      root.classList.remove("light", "dark");
+      root.classList.add(actualTheme);
+    }, 0);
+    
+    return () => clearTimeout(timeoutId);
   }, [actualTheme]);
 
   const value = useMemo(() => ({

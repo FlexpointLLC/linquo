@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useDashboardBrandColor } from "@/contexts/dashboard-brand-color-context";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 export type ConversationListItem = {
   id: string;
@@ -17,7 +17,7 @@ export type ConversationListItem = {
 
 type ChatTab = "open" | "newest" | "resolved";
 
-export function ConversationList({
+export const ConversationList = memo(function ConversationList({
   conversations,
   activeId,
   onSelect,
@@ -177,4 +177,4 @@ export function ConversationList({
       </div>
     </div>
   );
-}
+});

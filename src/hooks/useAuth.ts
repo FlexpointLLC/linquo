@@ -43,7 +43,7 @@ export function useAuth() {
   useEffect(() => {
     const globalTimeout = setTimeout(() => {
       setLoading(false);
-    }, 15000); // 15 second global timeout
+    }, 8000); // Reduced to 8 second global timeout
 
     return () => clearTimeout(globalTimeout);
   }, []);
@@ -92,7 +92,7 @@ export function useAuth() {
     // Immediate timeout fallback
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 10000); // 10 second timeout
+    }, 5000); // Reduced to 5 second timeout
 
     const supabase = getSupabaseBrowser();
     
@@ -119,7 +119,7 @@ export function useAuth() {
         const result = await Promise.race([
           agentPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Agent query timeout')), 10000)
+            setTimeout(() => reject(new Error('Agent query timeout')), 5000)
           )
         ]);
         
@@ -127,10 +127,10 @@ export function useAuth() {
 
         if (agentError) {
           // If this is a "not found" error and we haven't retried, wait a bit and try again
-          if (agentError.code === 'PGRST116' && retryCount < 5) {
+          if (agentError.code === 'PGRST116' && retryCount < 2) {
             setTimeout(() => {
               loadUserData(user, retryCount + 1);
-            }, 2000 * (retryCount + 1)); // Exponential backoff
+            }, 1000); // Reduced retry delay
             return;
           }
           
@@ -154,7 +154,7 @@ export function useAuth() {
         const orgResult = await Promise.race([
           orgPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Organization query timeout')), 10000)
+            setTimeout(() => reject(new Error('Organization query timeout')), 5000)
           )
         ]);
         
