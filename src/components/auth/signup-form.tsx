@@ -158,6 +158,7 @@ export function SignupForm() {
           online_status: "OFFLINE",
           org_id: orgData.id,
           user_id: authData.user.id,
+          role: "OWNER", // Set as owner during signup
         })
         .select()
         .single();

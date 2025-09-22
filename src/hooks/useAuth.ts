@@ -12,6 +12,7 @@ export type AuthUser = {
     email: string;
     online_status: "ONLINE" | "AWAY" | "OFFLINE";
     org_id: string;
+    role?: string;
   } | null;
   organization: {
     id: string;
@@ -111,7 +112,8 @@ export function useAuth() {
             display_name,
             email,
             online_status,
-            org_id
+            org_id,
+            role
           `)
           .eq("user_id", user.id)
           .single();

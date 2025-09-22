@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { useAuth } from "@/hooks/useAuth";
 
-export type CachedAgent = { id: string; display_name: string; email: string; online_status: string; is_active: boolean };
+export type CachedAgent = { id: string; display_name: string; email: string; online_status: string; is_active: boolean; role?: string };
 export type CachedCustomer = { id: string; display_name: string; email: string; status: "ACTIVE" | "BLOCKED"; country?: string; created_at: string };
 
 interface DataCache {
@@ -100,7 +100,7 @@ export function useDataCache() {
       const [agentsResult, customersResult] = await Promise.all([
         client
           .from("agents")
-          .select("id,display_name,email,online_status,is_active")
+          .select("id,display_name,email,online_status,is_active,role")
           .eq("org_id", agent.org_id)
           .order("display_name"),
         client
