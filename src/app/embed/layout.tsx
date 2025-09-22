@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { BrandColorProvider } from '@/contexts/brand-color-context'
+import { GradientLoadingFallback } from '@/components/embed/gradient-loading'
 
 export const metadata: Metadata = {
   title: 'Linquo Chat Widget',
@@ -28,7 +29,7 @@ export default function EmbedLayout({
         }} />
       </head>
       <body>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<GradientLoadingFallback />}>
           <BrandColorProvider>
             {children}
           </BrandColorProvider>
