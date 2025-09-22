@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-type Customer = { id: string; display_name: string; email: string; status: "ACTIVE" | "BLOCKED"; country?: string };
+type Customer = { id: string; display_name: string; email: string; status: "ACTIVE" | "BLOCKED"; country?: string; created_at: string };
 
 export function CustomersTable({ data }: { data: Customer[] }) {
   return (
@@ -18,7 +18,7 @@ export function CustomersTable({ data }: { data: Customer[] }) {
         <TableRow>
           <TableHead className="px-4">Name</TableHead>
           <TableHead className="px-4">Email</TableHead>
-          <TableHead className="px-4">Status</TableHead>
+          <TableHead className="px-4">Created</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -36,7 +36,9 @@ export function CustomersTable({ data }: { data: Customer[] }) {
             <TableRow key={c.id}>
               <TableCell className="px-4">{c.display_name}</TableCell>
               <TableCell className="px-4">{c.email}</TableCell>
-              <TableCell className="capitalize px-4">{c.status}</TableCell>
+              <TableCell className="px-4">
+                {c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A'}
+              </TableCell>
             </TableRow>
           ))
         )}

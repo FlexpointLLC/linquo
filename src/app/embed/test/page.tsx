@@ -73,6 +73,7 @@ export default function TestPage() {
           email: testEmail,
           status: "ACTIVE",
           org_id: orgId,
+          created_at: new Date().toISOString(),
         }, {
           onConflict: 'email',
           ignoreDuplicates: false

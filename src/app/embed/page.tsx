@@ -12,7 +12,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 
 function EmbedContent() {
   const params = useSearchParams();
-  const { brandColor } = useBrandColor();
+  const { brandColor, chatHeaderName, chatHeaderSubtitle } = useBrandColor();
   const [site, setSite] = useState<string>("");
   const [orgId, setOrgId] = useState<string | null>(null);
   const [cid, setCid] = useState<string | null>(null);
@@ -276,9 +276,9 @@ function EmbedContent() {
                    ></div>
                  </div>
           <div>
-            <div className="font-semibold text-sm text-gray-900">Support Team</div>
+            <div className="font-semibold text-sm text-gray-900">{chatHeaderName}</div>
             <div className="text-xs text-gray-500">
-              <span>Typically replies within 1 min</span>
+              <span>{chatHeaderSubtitle}</span>
             </div>
           </div>
         </div>

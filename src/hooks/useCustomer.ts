@@ -75,6 +75,7 @@ export function useCustomer() {
           email: email,
           org_id: orgId,
           status: "ACTIVE",
+          created_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -332,6 +333,7 @@ export function useCustomer() {
           email,
           status: "ACTIVE",
           org_id: orgId, // Include org_id
+          created_at: new Date().toISOString(),
         };
         
         console.log("📝 Customer data to insert:", customerInsertData);

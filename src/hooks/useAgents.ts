@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { useAuth } from "@/hooks/useAuth";
 
-export type Agent = { id: string; display_name: string; email: string; online_status: string };
+export type Agent = { id: string; display_name: string; email: string; online_status: string; is_active: boolean };
 
 export function useAgents() {
   const [data, setData] = useState<Agent[] | null>(null);
@@ -29,7 +29,7 @@ export function useAgents() {
         
         const { data, error } = await client
           .from("agents")
-          .select("id,display_name,email,online_status")
+          .select("id,display_name,email,online_status,is_active")
           .eq("org_id", agent.org_id)
           .order("display_name");
         if (error) throw error;

@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-type Agent = { id: string; display_name: string; email: string; online_status: string };
+type Agent = { id: string; display_name: string; email: string; online_status: string; is_active: boolean };
 
 export function AgentsTable({ data }: { data: Agent[] }) {
   return (
@@ -40,7 +40,15 @@ export function AgentsTable({ data }: { data: Agent[] }) {
                 {a.display_name}
               </TableCell>
               <TableCell className="px-4">{a.email}</TableCell>
-              <TableCell className="capitalize px-4">{a.online_status.toLowerCase()}</TableCell>
+              <TableCell className="px-4">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  a.is_active 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {a.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </TableCell>
             </TableRow>
           ))
         )}

@@ -11,7 +11,7 @@ interface CustomerFormProps {
 }
 
 export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
-  const { brandColor } = useBrandColor();
+  const { brandColor, widgetTextLine1, widgetTextLine2, showBranding, buttonText } = useBrandColor();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -75,10 +75,10 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
         {/* Header Text */}
         <div style={{ paddingTop: 'calc(var(--spacing) * 24)', paddingLeft: '16px', paddingRight: '16px' }}>
           <h1 className="text-white font-semibold" style={{ fontSize: '28px', opacity: 0.7, lineHeight: '120%' }}>
-            Hello there
+            {widgetTextLine1}
           </h1>
           <h2 className="text-white font-semibold" style={{ fontSize: '28px', opacity: 1.0, lineHeight: '120%', paddingBottom: 'calc(var(--spacing) * 6)' }}>
-            How can we help?
+            {widgetTextLine2}
           </h2>
         </div>
         
@@ -118,13 +118,15 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
               style={{ backgroundColor: brandColor }}
               disabled={loading || !formData.name.trim() || !formData.email.trim()}
             >
-              {loading ? "Starting Chat..." : "Start Chat"}
+              {loading ? "Starting Chat..." : buttonText}
             </Button>
           </form>
           
-          <p className="text-center text-gray-500 text-xs">
-            Powered by Linquo
-          </p>
+          {showBranding && (
+            <p className="text-center text-gray-500 text-xs">
+              Powered by Linquo
+            </p>
+          )}
         </div>
       </div>
     </div>

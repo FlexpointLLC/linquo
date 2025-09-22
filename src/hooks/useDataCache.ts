@@ -3,8 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { useAuth } from "@/hooks/useAuth";
 
-export type CachedAgent = { id: string; display_name: string; email: string; online_status: string };
-export type CachedCustomer = { id: string; display_name: string; email: string; status: "ACTIVE" | "BLOCKED"; country?: string };
+export type CachedAgent = { id: string; display_name: string; email: string; online_status: string; is_active: boolean };
+export type CachedCustomer = { id: string; display_name: string; email: string; status: "ACTIVE" | "BLOCKED"; country?: string; created_at: string };
 
 interface DataCache {
   agents: CachedAgent[] | null;
@@ -94,22 +94,33 @@ export function useDataCache() {
     notifyListeners();
 
     try {
+      console.log("🔍 Loading data for org_id:", agent.org_id);
+      
       // Load agents and customers in parallel
       const [agentsResult, customersResult] = await Promise.all([
         client
           .from("agents")
-          .select("id,display_name,email,online_status")
+          .select("id,display_name,email,online_status,is_active")
           .eq("org_id", agent.org_id)
           .order("display_name"),
         client
           .from("customers")
-          .select("id,display_name,email,status,country")
+          .select("id,display_name,email,status,country,created_at")
           .eq("org_id", agent.org_id)
           .order("display_name")
       ]);
 
-      if (agentsResult.error) throw agentsResult.error;
-      if (customersResult.error) throw customersResult.error;
+      console.log("🔍 Agents query result:", agentsResult);
+      console.log("🔍 Customers query result:", customersResult);
+
+      if (agentsResult.error) {
+        console.error("❌ Agents query error:", agentsResult.error);
+        throw agentsResult.error;
+      }
+      if (customersResult.error) {
+        console.error("❌ Customers query error:", customersResult.error);
+        throw customersResult.error;
+      }
 
       // Update global cache
       globalCache.agents = agentsResult.data as CachedAgent[];
@@ -129,7 +140,9 @@ export function useDataCache() {
 
   // Load data when agent becomes available
   useEffect(() => {
-    if (agent?.org_id && !globalCache.lastLoaded) {
+    if (agent?.org_id) {
+      // Force reload every time to get fresh data
+      globalCache.lastLoaded = null;
       loadAllData();
     }
   }, [agent?.org_id, loadAllData]);

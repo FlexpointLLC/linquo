@@ -71,6 +71,7 @@ export default function DebugPage() {
           email: `test-${Date.now()}@example.com`,
           status: "ACTIVE" as const,
           org_id: orgId,
+          created_at: new Date().toISOString(),
         };
 
         const { data: newCustomer, error: createError } = await client
