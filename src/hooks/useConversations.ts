@@ -53,7 +53,8 @@ export function useConversations() {
           return;
         }
         
-        const { data, error } = await client
+        // First get conversations
+        const { data: conversations, error } = await client
           .from("conversations")
           .select("id,customer_id,last_message_at")
           .eq("org_id", agent.org_id)
@@ -63,9 +64,38 @@ export function useConversations() {
         if (error) {
           throw error;
         }
+        
+        // Then get customer data for all conversations
+        const customerIds = conversations?.map(c => c.customer_id).filter(Boolean) || [];
+        let customerData: { id: string; display_name: string; email: string }[] = [];
+        
+        if (customerIds.length > 0) {
+          const { data: customers, error: customerError } = await client
+            .from("customers")
+            .select("id,display_name,email")
+            .in("id", customerIds);
+          
+          if (customerError) {
+            console.error("Error fetching customers:", customerError);
+          } else {
+            customerData = customers || [];
+          }
+        }
+        
+        // Combine the data
+        const data = conversations?.map(conv => ({
+          ...conv,
+          customers: customerData.find(c => c.id === conv.customer_id) || null
+        })) || [];
         // Set data even if it's an empty array (no conversations)
-        const conversations = data as Conversation[] || [];
-        setData(conversations);
+        const conversationData = data as Conversation[] || [];
+        console.log("🔍 Conversations with customer data:", conversationData.map(c => ({
+          id: c.id,
+          customer_id: c.customer_id,
+          customer_name: c.customers?.display_name,
+          customer_email: c.customers?.email
+        })));
+        setData(conversationData);
         
         // Save to localStorage for persistence
         if (typeof window !== 'undefined') {
@@ -79,26 +109,65 @@ export function useConversations() {
           }
         }
 
-        // Temporarily disable realtime to reduce connection usage
-        // const channel = client
-        //   .channel("conv_changes")
-        //   .on(
-        //     "postgres_changes" as never,
-        //     { event: "*", schema: "public", table: "conversations" },
-        //     () => {
-        //       // Reload list on any change
-        //       client
-        //         .from("conversations")
-        //         .select("id,last_message_at")
-        //         .order("last_message_at", { ascending: false, nullsFirst: false })
-        //         .limit(100)
-        //         .then(({ data }) => setData(data as Conversation[] || []));
-        //     }
-        //   )
-        //   .subscribe();
-        // unsub = () => {
-        //   client.removeChannel(channel);
-        // };
+        // Enable realtime subscription for conversation updates
+        const channel = client
+          .channel("conv_changes")
+          .on(
+            "postgres_changes" as never,
+            { event: "*", schema: "public", table: "conversations" },
+            () => {
+              // Reload list on any change
+              client
+                .from("conversations")
+                .select("id,customer_id,last_message_at")
+                .eq("org_id", agent.org_id)
+                .order("last_message_at", { ascending: false, nullsFirst: false })
+                .limit(100)
+                .then(async ({ data: conversations }) => {
+                  if (!conversations) {
+                    setData([]);
+                    return;
+                  }
+                  
+                  // Get customer data for all conversations
+                  const customerIds = conversations.map(c => c.customer_id).filter(Boolean);
+                  let customerData: { id: string; display_name: string; email: string }[] = [];
+                  
+                  if (customerIds.length > 0) {
+                    const { data: customers } = await client
+                      .from("customers")
+                      .select("id,display_name,email")
+                      .in("id", customerIds);
+                    
+                    customerData = customers || [];
+                  }
+                  
+                  // Combine the data
+                  const combinedData = conversations.map(conv => ({
+                    ...conv,
+                    customers: customerData.find(c => c.id === conv.customer_id) || null
+                  })) as Conversation[];
+                  
+                  setData(combinedData);
+                  
+                  // Update localStorage cache
+                  if (typeof window !== 'undefined') {
+                    try {
+                      localStorage.setItem('linquo-conversations-cache', JSON.stringify({
+                        conversations,
+                        lastLoaded: Date.now()
+                      }));
+                    } catch (error) {
+                      console.warn('Failed to save conversations to localStorage:', error);
+                    }
+                  }
+                });
+            }
+          )
+          .subscribe();
+        unsub = () => {
+          client.removeChannel(channel);
+        };
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to load conversations");
       } finally {

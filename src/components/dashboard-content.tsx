@@ -40,6 +40,8 @@ export function DashboardContent() {
   const { agents, customers } = useDataCache();
   const { agent } = useAuth();
 
+
+
   // Auto-select first conversation if none is selected
   useEffect(() => {
     if (currentTab === "chats" && !activeId && conversationRows && conversationRows.length > 0) {
@@ -66,25 +68,25 @@ export function DashboardContent() {
       {currentTab === "chats" && (
         <div className="grid grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6">
           <ConversationList
-              conversations={(conversationRows ?? []).map((c) => {
-                const customer = customers?.find(cust => cust.id === c.customer_id);
-                const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
-                return {
-                  id: c.id,
-                  name: customer?.display_name || "Unknown Customer",
-                  email: customer?.email,
-                  lastMessage: lastMessage?.body_text || "No messages yet",
-                  status: "ACTIVE" as const,
-                  timestamp: c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : undefined
-                };
-              })}
-              activeId={activeId ?? undefined}
-              onSelect={(id) => {
-                const url = new URL(window.location.href);
-                url.searchParams.set("cid", id);
-                router.push(url.pathname + "?" + url.searchParams.toString());
-              }}
-            />
+                conversations={(conversationRows ?? []).map((c) => {
+                  const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
+                  
+                  return {
+                    id: c.id,
+                    name: c.customers?.display_name || "Unknown Customer",
+                    email: c.customers?.email,
+                    lastMessage: lastMessage?.body_text || "No messages yet",
+                    status: "ACTIVE" as const,
+                    timestamp: c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : undefined
+                  };
+                })}
+                activeId={activeId ?? undefined}
+                onSelect={(id) => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("cid", id);
+                  router.push(url.pathname + "?" + url.searchParams.toString());
+                }}
+              />
           <div className="flex flex-col h-[calc(100vh-80px)] bg-white">
             {/* Conversation Header with Actions */}
             {activeId && (
@@ -95,8 +97,7 @@ export function DashboardContent() {
                       <h3 className="text-lg font-semibold text-gray-900">
                         {(() => {
                           const conversation = conversationRows?.find(c => c.id === activeId);
-                          const customer = customers?.find(c => c.id === conversation?.customer_id);
-                          return customer?.display_name || `Conversation ${activeId?.slice(0, 8)}`;
+                          return conversation?.customers?.display_name || `Conversation ${activeId?.slice(0, 8)}`;
                         })()}
                       </h3>
                     </div>
