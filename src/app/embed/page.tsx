@@ -202,33 +202,33 @@ function EmbedContent() {
     }
   };
 
-  // Process messages for display
-  const processedMessages = useMemo(() => {
-    console.log("🔍 Widget message processing:", { messageRows, cid, messageCount: messageRows?.length });
-    
-    if (!messageRows || !cid) {
-      console.log("❌ No messages or cid:", { messageRows, cid });
-      return [];
-    }
-    
-    // Check for duplicate message IDs
-    const messageIds = messageRows.map(m => m.id);
-    const uniqueIds = new Set(messageIds);
-    if (messageIds.length !== uniqueIds.size) {
-      console.warn("⚠️ Duplicate message IDs detected:", messageIds);
-    }
-    
-    const processedMessages = messageRows.map((m: { id: string; sender_type: string; body_text: string; created_at: string }) => ({
-      id: m.id,
-      author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
-      name: m.sender_type === "AGENT" ? "Agent" : "Customer",
-      text: m.body_text,
-      time: new Date(m.created_at).toLocaleTimeString(),
-    }));
-    
-    console.log("✅ Processed messages:", processedMessages);
-    return processedMessages;
-  }, [messageRows, cid]);
+         // Process messages for display
+         const processedMessages = useMemo(() => {
+           console.log("🔍 Widget message processing:", { messageRows, cid, messageCount: messageRows?.length });
+           
+           if (!messageRows || !cid) {
+             console.log("❌ No messages or cid:", { messageRows, cid });
+             return [];
+           }
+           
+           // Check for duplicate message IDs
+           const messageIds = messageRows.map(m => m.id);
+           const uniqueIds = new Set(messageIds);
+           if (messageIds.length !== uniqueIds.size) {
+             console.warn("⚠️ Duplicate message IDs detected:", messageIds);
+           }
+           
+           const processedMessages = messageRows.map((m: { id: string; sender_type: string; body_text: string; created_at: string }) => ({
+             id: m.id,
+             author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
+             name: m.sender_type === "AGENT" ? "Agent" : "Customer",
+             text: m.body_text,
+             time: new Date(m.created_at).toLocaleTimeString(),
+           }));
+           
+           console.log("✅ Processed messages:", processedMessages);
+           return processedMessages;
+         }, [messageRows, cid]);
 
   // Show nothing during hydration
   if (!isHydrated) {
@@ -243,16 +243,8 @@ function EmbedContent() {
     );
   }
 
-  // Use widget color for gradient, fallback to brand color, then white
-  const gradientColor = widgetColor || brandColor || '#ffffff';
-  
   return (
-    <div 
-      className="h-full w-full text-gray-900 flex flex-col"
-      style={{
-        background: `linear-gradient(to bottom, ${gradientColor} 0%, white 100%)`
-      }}
-    >
+    <div className="h-full w-full bg-white text-gray-900 flex flex-col">
       {/* Header */}
       <div className="bg-white bg-opacity-80 backdrop-blur-sm border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -265,20 +257,22 @@ function EmbedContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div className="relative">
-            <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: brandColor }}
-            >
-              <span className="text-white text-sm font-medium">S</span>
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
-          </div>
+                 <div className="relative">
+                   <div 
+                     className="w-8 h-8 rounded-full flex items-center justify-center"
+                     style={{ backgroundColor: brandColor }}
+                   >
+                     <span className="text-white text-sm font-medium">S</span>
+                   </div>
+                   <div 
+                     className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${realtimeConnected ? 'bg-green-400' : 'bg-red-400'}`}
+                     title={realtimeConnected ? 'Connected' : 'Disconnected'}
+                   ></div>
+                 </div>
           <div>
             <div className="font-semibold text-sm text-gray-900">Support Team</div>
-            <div className="text-xs text-gray-500 flex items-center gap-1">
+            <div className="text-xs text-gray-500">
               <span>Typically replies within 1 min</span>
-              <span className={`w-2 h-2 rounded-full ${realtimeConnected ? 'bg-green-400' : 'bg-red-400'}`} title={realtimeConnected ? 'Connected' : 'Disconnected'}></span>
             </div>
           </div>
         </div>
@@ -310,70 +304,70 @@ function EmbedContent() {
       {/* Content area with messages */}
       <div className="overflow-y-auto p-4" style={{ height: '564px' }}>
         <div className="space-y-4">
-          {/* Hardcoded welcome messages */}
-          <div className="flex items-start gap-3">
-            <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: brandColor }}
-            >
-              <span className="text-white text-sm font-medium">P</span>
-            </div>
-            <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
-              <div className="text-sm text-gray-800">
-                Please share your email with us in case we can&apos;t get back to you right away.
-              </div>
-              <div className="text-xs text-gray-500 mt-1">Agent · 2:30 PM</div>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-3">
-            <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: brandColor }}
-            >
-              <span className="text-white text-sm font-medium">P</span>
-            </div>
-            <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
-              <div className="text-sm text-gray-800">
-                Hi there! 👋 Need help with our services? Just ask here and we&apos;ll assist you!
-              </div>
-              <div className="text-xs text-gray-500 mt-1">Agent · 2:31 PM</div>
-            </div>
-          </div>
+                 {/* Hardcoded welcome messages */}
+                 <div className="flex items-start gap-3">
+                   <div 
+                     className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                     style={{ backgroundColor: brandColor }}
+                   >
+                     <span className="text-white text-sm font-medium">P</span>
+                   </div>
+                   <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
+                     <div className="text-sm text-gray-800">
+                       Please share your email with us in case we can&apos;t get back to you right away.
+                     </div>
+                     <div className="text-xs text-gray-500 mt-1">Agent · 2:30 PM</div>
+                   </div>
+                 </div>
+                 
+                 <div className="flex items-start gap-3">
+                   <div 
+                     className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                     style={{ backgroundColor: brandColor }}
+                   >
+                     <span className="text-white text-sm font-medium">P</span>
+                   </div>
+                   <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
+                     <div className="text-sm text-gray-800">
+                       Hi there! 👋 Need help with our services? Just ask here and we&apos;ll assist you!
+                     </div>
+                     <div className="text-xs text-gray-500 mt-1">Agent · 2:31 PM</div>
+                   </div>
+                 </div>
 
           {/* Dynamic messages from database */}
           {processedMessages.length > 0 ? (
             <div className="space-y-4">
-              {processedMessages.map((message, index) => (
-                <div key={`${message.id}-${index}`} className={`flex items-start gap-3 ${message.author === 'customer' ? 'justify-end' : ''}`}>
-                  {message.author === 'agent' && (
-                    <div 
-                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: brandColor }}
-                    >
-                      <span className="text-white text-sm font-medium">P</span>
-                    </div>
-                  )}
-                  <div 
-                    className={`rounded-lg p-3 max-w-xs ${
-                      message.author === 'agent' 
-                        ? 'bg-gray-100' 
-                        : 'text-white'
-                    }`}
-                    style={message.author === 'customer' ? { backgroundColor: brandColor } : {}}
-                  >
-                    <div className="text-sm whitespace-pre-wrap">{message.text}</div>
-                    <div className={`text-xs mt-1 ${message.author === 'agent' ? 'text-gray-500' : 'text-white opacity-80'}`}>
-                      {message.author === 'agent' ? 'Agent' : 'You'} · {message.time}
-                    </div>
-                  </div>
-                  {message.author === 'customer' && (
-                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-gray-600 text-sm font-medium">Y</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+                 {processedMessages.map((message, index) => (
+                   <div key={`${message.id}-${index}`} className={`flex items-start gap-3 ${message.author === 'customer' ? 'justify-end' : ''}`}>
+                     {message.author === 'agent' && (
+                       <div 
+                         className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                         style={{ backgroundColor: brandColor }}
+                       >
+                         <span className="text-white text-sm font-medium">P</span>
+                       </div>
+                     )}
+                     <div 
+                       className={`rounded-lg p-3 max-w-xs ${
+                         message.author === 'agent' 
+                           ? 'bg-gray-100' 
+                           : 'text-white'
+                       }`}
+                       style={message.author === 'customer' ? { backgroundColor: brandColor } : {}}
+                     >
+                       <div className="text-sm whitespace-pre-wrap">{message.text}</div>
+                       <div className={`text-xs mt-1 ${message.author === 'agent' ? 'text-gray-500' : 'text-white opacity-80'}`}>
+                         {message.author === 'agent' ? 'Agent' : 'You'} · {message.time}
+                       </div>
+                     </div>
+                     {message.author === 'customer' && (
+                       <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                         <span className="text-gray-600 text-sm font-medium">Y</span>
+                       </div>
+                     )}
+                   </div>
+                 ))}
             </div>
           ) : (
             <div className="text-center text-gray-500 text-sm py-4">
@@ -462,63 +456,63 @@ function EmbedContent() {
           </button>
           
           {/* Send button */}
-          <button
-            onClick={() => {
-              const text = inputValue.trim();
-              if (text) {
-                // Send message logic
-                const sendMessage = async () => {
-                  const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                  if (!client || !customer || !cid) {
-                    return;
-                  }
-                  
-                  try {
-                    const { error: messageError } = await client.from("messages").insert({ 
-                      conversation_id: cid, 
-                      sender_type: "CUSTOMER",
-                      customer_id: customer.id,
-                      org_id: customer.org_id,
-                      body_text: text
-                    }).select().single();
-                    
-                    if (!messageError) {
-                      // Update conversation last_message_at
-                      await client.from("conversations").update({ 
-                        last_message_at: new Date().toISOString() 
-                      }).eq("id", cid);
-                      
-                      // Force refresh messages to ensure they appear immediately
-                      console.log("🔄 Message sent successfully, should appear in chat now");
-                    }
-                  } catch {
-                    // Error sending message
-                  }
-                };
-                sendMessage();
-                setInputValue("");
-                // Clear saved input from localStorage
-                if (typeof window !== 'undefined') {
-                  try {
-                    localStorage.removeItem('widget-input-value');
-                  } catch (error) {
-                    console.log("❌ Error clearing localStorage:", error);
-                  }
-                }
-              }
-            }}
-            disabled={!inputValue.trim()}
-            className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              inputValue.trim() 
-                ? 'cursor-pointer' 
-                : 'bg-gray-200 cursor-not-allowed'
-            }`}
-            style={inputValue.trim() ? { backgroundColor: brandColor } : {}}
-          >
-            <svg className={`w-4 h-4 ${inputValue.trim() ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </button>
+                 <button
+                   onClick={() => {
+                     const text = inputValue.trim();
+                     if (text) {
+                       // Send message logic
+                       const sendMessage = async () => {
+                         const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                         if (!client || !customer || !cid) {
+                           return;
+                         }
+                         
+                         try {
+                           const { error: messageError } = await client.from("messages").insert({ 
+                             conversation_id: cid, 
+                             sender_type: "CUSTOMER",
+                             customer_id: customer.id,
+                             org_id: customer.org_id,
+                             body_text: text
+                           }).select().single();
+                           
+                           if (!messageError) {
+                             // Update conversation last_message_at
+                             await client.from("conversations").update({ 
+                               last_message_at: new Date().toISOString() 
+                             }).eq("id", cid);
+                             
+                             // Force refresh messages to ensure they appear immediately
+                             console.log("🔄 Message sent successfully, should appear in chat now");
+                           }
+                         } catch {
+                           // Error sending message
+                         }
+                       };
+                       sendMessage();
+                       setInputValue("");
+                       // Clear saved input from localStorage
+                       if (typeof window !== 'undefined') {
+                         try {
+                           localStorage.removeItem('widget-input-value');
+                         } catch (error) {
+                           console.log("❌ Error clearing localStorage:", error);
+                         }
+                       }
+                     }
+                   }}
+                   disabled={!inputValue.trim()}
+                   className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                     inputValue.trim() 
+                       ? 'cursor-pointer' 
+                       : 'bg-gray-200 cursor-not-allowed'
+                   }`}
+                   style={inputValue.trim() ? { backgroundColor: brandColor } : {}}
+                 >
+                   <svg className={`w-4 h-4 ${inputValue.trim() ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                   </svg>
+                 </button>
         </div>
       </div>
     </div>
