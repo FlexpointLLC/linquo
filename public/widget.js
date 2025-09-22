@@ -6,7 +6,7 @@
   // Get the script element to extract the org ID
   var script = document.currentScript || document.querySelector('script[id="linquo"]');
   var orgId = null;
-  var brandColor = '#3B82F6'; // Default blue color
+  var brandColor = '#3f4ad9'; // Default brand color
   
   if (script) {
     var src = script.src;
@@ -113,7 +113,7 @@
       var iframe = document.createElement('iframe');
       // Use production URL for external platforms, localhost for development
       var baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://linquochat.vercel.app';
-      iframe.src = baseUrl + '/embed?org=' + encodeURIComponent(orgId) + '&site=' + encodeURIComponent(window.location.origin);
+      iframe.src = baseUrl + '/embed?org=' + encodeURIComponent(orgId) + '&site=' + encodeURIComponent(window.location.origin) + '&color=' + encodeURIComponent(brandColor);
       iframe.style.width = '100%';
       iframe.style.height = '100%';
       iframe.style.border = '0';

@@ -8,14 +8,14 @@ interface BrandColorContextType {
 }
 
 const BrandColorContext = createContext<BrandColorContextType>({
-  brandColor: "#3B82F6",
+  brandColor: "#3f4ad9",
   isLoading: true,
 });
 
 export function BrandColorProvider({ children }: { children: ReactNode }) {
   const params = useSearchParams();
   const orgId = params.get("org");
-  const [brandColor, setBrandColor] = useState("#3B82F6");
+  const [brandColor, setBrandColor] = useState("#3f4ad9");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function BrandColorProvider({ children }: { children: ReactNode }) {
         }
         
         const data = await response.json();
-        const color = data.brand_color || "#3B82F6";
+        const color = data.brand_color || "#3f4ad9";
         
         console.log("🎨 Fetched brand color:", color);
         setBrandColor(color);
@@ -56,7 +56,7 @@ export function BrandColorProvider({ children }: { children: ReactNode }) {
         
       } catch (error) {
         console.error("Error fetching brand color:", error);
-        setBrandColor("#3B82F6"); // Fallback to default
+        setBrandColor("#3f4ad9"); // Fallback to default
       } finally {
         setIsLoading(false);
       }

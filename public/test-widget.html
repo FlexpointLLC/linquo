@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Test - Brand Color</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #1976d2;
+        }
+        .log {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Widget Brand Color Test</h1>
+        
+        <div class="info">
+            <h3>Test Instructions:</h3>
+            <p>1. Click "Test Brand Color Fetch" to test the API call</p>
+            <p>2. Click "Load Widget" to load the widget with the organization ID</p>
+            <p>3. Check the console logs and the chat bubble color</p>
+            <p>4. The chat bubble should be purple (#3f4ad9) instead of blue</p>
+        </div>
+
+        <button class="test-button" onclick="testBrandColorFetch()">Test Brand Color Fetch</button>
+        <button class="test-button" onclick="loadWidget()">Load Widget</button>
+        <button class="test-button" onclick="clearLog()">Clear Log</button>
+
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        const orgId = '25750931-edcf-4860-8527-12616916b377';
+        const log = document.getElementById('log');
+
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            log.innerHTML = '';
+        }
+
+        async function testBrandColorFetch() {
+            addLog('🎨 Testing brand color fetch...');
+            
+            try {
+                const response = await fetch(`http://localhost:3000/api/organization/${orgId}`);
+                addLog(`📡 Response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addLog(`✅ Success! Brand color: ${data.brand_color}`);
+                    addLog(`📋 Organization: ${data.name}`);
+                } else {
+                    addLog(`❌ Error: ${response.status} ${response.statusText}`);
+                }
+            } catch (error) {
+                addLog(`❌ Fetch error: ${error.message}`);
+            }
+        }
+
+        function loadWidget() {
+            addLog('🚀 Loading widget...');
+            
+            // Remove existing widget if any
+            const existingScript = document.querySelector('script[id="linquo"]');
+            if (existingScript) {
+                existingScript.remove();
+            }
+            
+            const existingBubble = document.getElementById('linquo-chat-bubble');
+            if (existingBubble) {
+                existingBubble.remove();
+            }
+            
+            const existingWidget = document.getElementById('linquo-widget');
+            if (existingWidget) {
+                existingWidget.remove();
+            }
+
+            // Create and load the widget script
+            const script = document.createElement('script');
+            script.id = 'linquo';
+            script.src = `http://localhost:3000/widget.js?id=${orgId}`;
+            script.async = true;
+            
+            script.onload = function() {
+                addLog('✅ Widget script loaded successfully');
+            };
+            
+            script.onerror = function() {
+                addLog('❌ Failed to load widget script');
+            };
+            
+            document.head.appendChild(script);
+        }
+
+        // Initial log
+        addLog('🎯 Widget Brand Color Test Page Loaded');
+        addLog(`🏢 Organization ID: ${orgId}`);
+    </script>
+</body>
+</html>

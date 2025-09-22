@@ -18,6 +18,7 @@ function EmbedContent() {
   const [showForm, setShowForm] = useState(true);
   const [inputValue, setInputValue] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
+  const [widgetColor, setWidgetColor] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Handle hydration
@@ -58,8 +59,9 @@ function EmbedContent() {
     
     const siteParam = params.get("site");
     const orgParam = params.get("org");
+    const colorParam = params.get("color");
     
-    console.log("🔍 URL parameters:", { siteParam, orgParam });
+    console.log("🔍 URL parameters:", { siteParam, orgParam, colorParam });
     
     if (siteParam) {
       setSite(siteParam);
@@ -73,6 +75,11 @@ function EmbedContent() {
       setOrgId(orgParam);
     } else {
       console.log("❌ No orgId found in URL parameters");
+    }
+    
+    if (colorParam) {
+      console.log("🎨 Setting brand color from URL parameter:", colorParam);
+      setWidgetColor(colorParam);
     }
   }, [params, isHydrated]);
 
@@ -236,10 +243,18 @@ function EmbedContent() {
     );
   }
 
+  // Use widget color for gradient, fallback to brand color, then default purple
+  const gradientColor = widgetColor || brandColor || '#3f4ad9';
+  
   return (
-    <div className="h-full w-full bg-white text-gray-900 flex flex-col">
+    <div 
+      className="h-full w-full text-gray-900 flex flex-col"
+      style={{
+        background: `linear-gradient(to bottom, ${gradientColor} 0%, white 100%)`
+      }}
+    >
       {/* Header */}
-      <div className="bg-gray-50 border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
+      <div className="bg-white bg-opacity-80 backdrop-blur-sm border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <button 
             className="text-gray-600 hover:text-gray-800 cursor-pointer"
@@ -371,7 +386,7 @@ function EmbedContent() {
       </div>
       
       {/* Message input box */}
-      <div className="flex-shrink-0 border-t border-gray-200 bg-white p-3 sticky bottom-0">
+      <div className="flex-shrink-0 border-t border-gray-200 bg-white bg-opacity-80 backdrop-blur-sm p-3 sticky bottom-0">
         <div className="relative">
           <input
             type="text"
