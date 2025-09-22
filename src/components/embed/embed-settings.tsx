@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, Check, Palette, Code } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Copy, Check, Palette, Code, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
 export function EmbedSettings() {
   const { organization, loading } = useAuth();
@@ -13,8 +14,21 @@ export function EmbedSettings() {
     position: "bottom-right",
     showBranding: true,
   });
+  const [isUpdatingColor, setIsUpdatingColor] = useState(false);
+  const [colorUpdateError, setColorUpdateError] = useState<string | null>(null);
+  const [colorUpdateSuccess, setColorUpdateSuccess] = useState(false);
 
   const orgId = organization?.id;
+
+  // Fetch brand color from organization data
+  useEffect(() => {
+    if (organization?.brand_color) {
+      setCustomization(prev => ({
+        ...prev,
+        primaryColor: organization.brand_color || "#3B82F6"
+      }));
+    }
+  }, [organization?.brand_color]);
 
   // Generate the embed code (Chatway style)
   const generateEmbedCode = () => {
@@ -50,6 +64,57 @@ export function EmbedSettings() {
       ...prev,
       [key]: value
     }));
+  };
+
+  // Update brand color in Supabase
+  const updateBrandColor = async (newColor: string) => {
+    if (!orgId) return;
+    
+    setIsUpdatingColor(true);
+    setColorUpdateError(null);
+    setColorUpdateSuccess(false);
+
+    try {
+      const supabase = getSupabaseBrowser();
+      
+      if (!supabase) {
+        throw new Error('Supabase client not available');
+      }
+      
+      const { error } = await supabase
+        .from('organizations')
+        .update({ brand_color: newColor })
+        .eq('id', orgId);
+
+      if (error) {
+        throw error;
+      }
+
+      setColorUpdateSuccess(true);
+      setTimeout(() => setColorUpdateSuccess(false), 3000);
+      
+    } catch (error) {
+      console.error('Error updating brand color:', error);
+      setColorUpdateError('Failed to update brand color. Please try again.');
+      setTimeout(() => setColorUpdateError(null), 5000);
+    } finally {
+      setIsUpdatingColor(false);
+    }
+  };
+
+  // Handle brand color change with debouncing
+  const handleBrandColorChange = (newColor: string) => {
+    setCustomization(prev => ({
+      ...prev,
+      primaryColor: newColor
+    }));
+    
+    // Update in Supabase after a short delay
+    const timeoutId = setTimeout(() => {
+      updateBrandColor(newColor);
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
   };
 
   // Show skeleton loader while loading
@@ -167,22 +232,33 @@ export function EmbedSettings() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Primary Color
+                  {isUpdatingColor && (
+                    <Loader2 className="inline-block ml-2 h-4 w-4 animate-spin text-blue-600" />
+                  )}
                 </label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
                     value={customization.primaryColor}
-                    onChange={(e) => handleCustomizationChange('primaryColor', e.target.value)}
+                    onChange={(e) => handleBrandColorChange(e.target.value)}
                     className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                    disabled={isUpdatingColor}
                   />
                   <input
                     type="text"
                     value={customization.primaryColor}
-                    onChange={(e) => handleCustomizationChange('primaryColor', e.target.value)}
+                    onChange={(e) => handleBrandColorChange(e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
                     placeholder="#3B82F6"
+                    disabled={isUpdatingColor}
                   />
                 </div>
+                {colorUpdateSuccess && (
+                  <p className="mt-2 text-sm text-green-600">✅ Brand color updated successfully!</p>
+                )}
+                {colorUpdateError && (
+                  <p className="mt-2 text-sm text-red-600">❌ {colorUpdateError}</p>
+                )}
               </div>
 
               <div>
