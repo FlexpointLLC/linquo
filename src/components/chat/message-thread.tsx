@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useBrandColor } from "@/contexts/brand-color-context";
+import { useEffect, useRef } from "react";
 
 export type ChatMessage = {
   id: string;
@@ -13,6 +14,18 @@ export type ChatMessage = {
 
 export function MessageThread({ messages }: { messages: ChatMessage[] }) {
   const { brandColor } = useBrandColor();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }
+  }, [messages]);
+
   return (
     <div className="p-3">
       <div className="flex flex-col gap-2">
@@ -71,6 +84,8 @@ export function MessageThread({ messages }: { messages: ChatMessage[] }) {
             </div>
           ))
         )}
+        {/* Invisible element to scroll to */}
+        <div ref={messagesEndRef} />
       </div>
     </div>
   );

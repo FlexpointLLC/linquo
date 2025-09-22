@@ -1,16 +1,26 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-export function getSupabaseBrowser() {
+// Singleton Supabase client to prevent subscription drops
+let supabaseClient: SupabaseClient | null = null;
+
+export function getSupabaseBrowser(): SupabaseClient | null {
+  // Return existing client if already created
+  if (supabaseClient) {
+    return supabaseClient;
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const dbUrl = process.env.SUPABASE_DB_URL;
   
   if (!url || !key) {
+    console.error("❌ Missing Supabase environment variables");
     return null;
   }
   
   try {
-    const client = createClient(url, key, {
+    console.log("🔧 Creating singleton Supabase client");
+    supabaseClient = createClient(url, key, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -33,8 +43,11 @@ export function getSupabaseBrowser() {
         }
       }
     });
-    return client;
-  } catch {
+    
+    console.log("✅ Singleton Supabase client created successfully");
+    return supabaseClient;
+  } catch (error) {
+    console.error("❌ Failed to create Supabase client:", error);
     return null;
   }
 }

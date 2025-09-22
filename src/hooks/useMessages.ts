@@ -20,6 +20,11 @@ export function useMessages(conversationId: string | null) {
   const { agent } = useAuth();
 
   useEffect(() => {
+    // Ensure we're on the client side
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const client = getSupabaseBrowser();
     if (!conversationId) {
       return;

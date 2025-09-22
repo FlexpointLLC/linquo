@@ -18,6 +18,11 @@ export function useWidgetMessages(conversationId: string | null) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Ensure we're on the client side
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const client = getSupabaseBrowser();
     if (!conversationId) {
       setData([]);

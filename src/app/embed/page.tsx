@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense, useRef } from "react";
 import { X } from "lucide-react";
 import { type ChatMessage } from "@/components/chat/message-thread";
 import { CustomerForm } from "@/components/widget/customer-form";
 import { useSearchParams } from "next/navigation";
-import { useWidgetMessages } from "@/hooks/useWidgetMessages";
+import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useCustomer } from "@/hooks/useCustomer";
 import { useBrandColor } from "@/contexts/brand-color-context";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -18,6 +18,7 @@ function EmbedContent() {
   const [showForm, setShowForm] = useState(true);
   const [inputValue, setInputValue] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Handle hydration
   useEffect(() => {
@@ -76,7 +77,17 @@ function EmbedContent() {
   }, [params, isHydrated]);
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
-  const { data: messageRows } = useWidgetMessages(cid);
+  const { data: messageRows, isConnected: realtimeConnected } = useRealtimeMessages(cid);
+  
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }
+  }, [messageRows]);
   
   // Debug conversation ID and messages
   console.log("🔍 Widget state:", { 
@@ -88,7 +99,8 @@ function EmbedContent() {
     showForm,
     loading,
     site,
-    orgId
+    orgId,
+    realtimeConnected
   });
 
   // Check if customer exists and load existing conversation
@@ -249,7 +261,10 @@ function EmbedContent() {
           </div>
           <div>
             <div className="font-semibold text-sm text-gray-900">Support Team</div>
-            <div className="text-xs text-gray-500">Typically replies within 1 min</div>
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+              <span>Typically replies within 1 min</span>
+              <span className={`w-2 h-2 rounded-full ${realtimeConnected ? 'bg-green-400' : 'bg-red-400'}`} title={realtimeConnected ? 'Connected' : 'Disconnected'}></span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -350,6 +365,8 @@ function EmbedContent() {
               {cid ? "" : "Conversation will start when you send a message."}
             </div>
           )}
+          {/* Invisible element to scroll to */}
+          <div ref={messagesEndRef} />
         </div>
       </div>
       
