@@ -3,6 +3,7 @@ import "./globals.css";
 import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { BrandColorProvider } from "@/contexts/brand-color-context";
+import { ThemeProvider } from "@/contexts/theme-context";
 
 export const metadata: Metadata = {
   title: "Linquo",
@@ -15,13 +16,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="font-sans antialiased" suppressHydrationWarning={true}>
+    <html lang="en" suppressHydrationWarning={true}>
+      <body className="font-sans antialiased">
         <Suspense fallback={<div>Loading...</div>}>
-          <BrandColorProvider>
-            {children}
-            <Toaster richColors position="top-right" />
-          </BrandColorProvider>
+          <ThemeProvider>
+            <BrandColorProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </BrandColorProvider>
+          </ThemeProvider>
         </Suspense>
       </body>
     </html>
