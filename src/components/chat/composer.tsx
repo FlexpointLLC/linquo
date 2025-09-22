@@ -2,17 +2,27 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { useBrandColor } from "@/contexts/brand-color-context";
+import { useDashboardBrandColor } from "@/contexts/dashboard-brand-color-context";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 
 export function Composer({ 
   onSend, 
-  customerEmail 
+  customerEmail,
+  conversationId,
+  agentId
 }: { 
   onSend?: (text: string) => void;
   customerEmail?: string;
+  conversationId?: string;
+  agentId?: string;
 }) {
   const [text, setText] = useState("");
-  const { brandColor } = useBrandColor();
+  const { brandColor } = useDashboardBrandColor();
+  const { typingUsers, handleTypingStart, handleTypingStop } = useTypingIndicator(
+    conversationId || null,
+    agentId || '',
+    'agent'
+  );
 
   // Restore text from localStorage on mount
   useEffect(() => {
@@ -37,6 +47,9 @@ export function Composer({
     const trimmed = text.trim();
     if (!trimmed) return;
     
+    // Stop typing indicator
+    handleTypingStop();
+    
     console.log("🚀 Composer handleSend called with:", trimmed);
     console.log("📤 onSend function available:", !!onSend);
     
@@ -50,13 +63,27 @@ export function Composer({
   
   return (
     <div className="px-3 bg-white">
-      <div className="text-xs text-gray-500 mb-1">
-        Reply {customerEmail || "customer"}
-      </div>
+      {/* Typing indicator or reply text */}
+      {typingUsers.length > 0 ? (
+        <div className="text-xs text-gray-500 mb-1 italic">
+          {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+        </div>
+      ) : (
+        <div className="text-xs text-gray-500 mb-1">
+          Reply {customerEmail || "customer"}
+        </div>
+      )}
       <div className="relative">
         <Textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (e.target.value.trim()) {
+              handleTypingStart();
+            } else {
+              handleTypingStop();
+            }
+          }}
           placeholder="Write a reply..."
           className="min-h-[80px] resize-none border-gray-200 pr-20"
           style={{ '--tw-ring-color': brandColor, '--tw-border-color': brandColor } as React.CSSProperties}

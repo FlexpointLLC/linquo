@@ -150,6 +150,9 @@ export function DashboardContent() {
             {activeId && (
               <div className="border-t border-gray-200 p-4 bg-white">
                 <Composer
+                  conversationId={activeId}
+                  agentId={agent?.id}
+                  customerEmail={conversationRows?.find(c => c.id === activeId)?.customers?.email}
                   onSend={async (text) => {
                     if (!agent || !activeId) {
                       console.log("❌ Missing agent or activeId");

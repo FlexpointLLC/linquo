@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useBrandColor } from "@/contexts/brand-color-context";
+import { useDashboardBrandColor } from "@/contexts/dashboard-brand-color-context";
 
 export type ConversationListItem = {
   id: string;
@@ -21,7 +21,7 @@ export function ConversationList({
   activeId?: string;
   onSelect?: (id: string) => void;
 }) {
-  const { brandColor } = useBrandColor();
+  const { brandColor } = useDashboardBrandColor();
   const openCount = conversations.filter(c => c.status === "ACTIVE").length;
 
   return (

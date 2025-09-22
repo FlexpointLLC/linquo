@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useCustomer } from "@/hooks/useCustomer";
 import { useBrandColor } from "@/contexts/brand-color-context";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { ErrorBoundary } from "@/components/error-boundary";
 
 function EmbedContent() {
@@ -18,7 +19,7 @@ function EmbedContent() {
   const [showForm, setShowForm] = useState(true);
   const [inputValue, setInputValue] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
-  const [widgetColor, setWidgetColor] = useState<string | null>(null);
+  const [, setWidgetColor] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Handle hydration
@@ -85,8 +86,13 @@ function EmbedContent() {
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows, isConnected: realtimeConnected } = useRealtimeMessages(cid);
+  const { typingUsers, handleTypingStart, handleTypingStop } = useTypingIndicator(
+    cid, 
+    customer?.id || '', 
+    'customer'
+  );
   
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or typing indicator changes
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ 
@@ -94,7 +100,7 @@ function EmbedContent() {
         block: 'end'
       });
     }
-  }, [messageRows]);
+  }, [messageRows, typingUsers]);
   
   // Debug conversation ID and messages
   console.log("🔍 Widget state:", { 
@@ -302,7 +308,7 @@ function EmbedContent() {
       </div>
 
       {/* Content area with messages */}
-      <div className="overflow-y-auto p-4" style={{ height: '564px' }}>
+      <div className="overflow-y-auto p-4 pb-6" style={{ height: '564px' }}>
         <div className="space-y-4">
                  {/* Hardcoded welcome messages */}
                  <div className="flex items-start gap-3">
@@ -374,79 +380,106 @@ function EmbedContent() {
               {cid ? "" : "Conversation will start when you send a message."}
             </div>
           )}
-          {/* Invisible element to scroll to */}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
+                 {/* Typing indicator */}
+                 {typingUsers.length > 0 && (
+                   <div className="flex items-start gap-3">
+                     <div 
+                       className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                       style={{ backgroundColor: brandColor }}
+                     >
+                       <span className="text-white text-sm font-medium">A</span>
+                     </div>
+                     <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
+                       <div className="text-sm text-gray-600 italic">
+                         {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+                       </div>
+                     </div>
+                   </div>
+                 )}
+                 
+                 {/* Invisible element to scroll to */}
+                 <div ref={messagesEndRef} />
+               </div>
+             </div>
       
       {/* Message input box */}
       <div className="flex-shrink-0 border-t border-gray-200 bg-white bg-opacity-80 backdrop-blur-sm p-3 sticky bottom-0">
         <div className="relative">
-          <input
-            type="text"
-            placeholder="Message..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="w-full pl-10 pr-20 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-            style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const text = inputValue.trim();
-                if (text) {
-                  // Send message logic
-                  const sendMessage = async () => {
-                    const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                    if (!client || !customer || !cid) {
-                      return;
-                    }
-                    
-                    try {
-                      console.log("🚀 Sending message:", { conversation_id: cid, customer_id: customer.id, org_id: customer.org_id, text });
-                      
-                      const { data: messageData, error: messageError } = await client.from("messages").insert({ 
-                        conversation_id: cid, 
-                        sender_type: "CUSTOMER",
-                        customer_id: customer.id,
-                        org_id: customer.org_id,
-                        body_text: text
-                      }).select().single();
-                      
-                      if (messageError) {
-                        console.log("❌ Error sending message:", messageError);
-                      } else {
-                        console.log("✅ Message sent successfully:", messageData);
-                        
-                        // Update conversation last_message_at
-                        const { error: updateError } = await client.from("conversations").update({ 
-                          last_message_at: new Date().toISOString() 
-                        }).eq("id", cid);
-                        
-                        if (updateError) {
-                          console.log("❌ Error updating conversation:", updateError);
-                        } else {
-                          console.log("✅ Conversation updated successfully");
-                        }
-                        
-                        console.log("🔄 Message sent successfully, should appear in chat now");
-                      }
-                    } catch (sendError) {
-                      console.log("❌ Exception sending message:", sendError);
-                    }
-                  };
-                  sendMessage();
-                  setInputValue("");
-                  // Clear saved input from localStorage
-                  if (typeof window !== 'undefined') {
-                    try {
-                      localStorage.removeItem('widget-input-value');
-                    } catch (error) {
-                      console.log("❌ Error clearing localStorage:", error);
-                    }
-                  }
-                }
-              }
-            }}
-          />
+                 <input
+                   type="text"
+                   placeholder="Message..."
+                   value={inputValue}
+                   onChange={(e) => {
+                     setInputValue(e.target.value);
+                     if (e.target.value.trim()) {
+                       handleTypingStart();
+                     } else {
+                       handleTypingStop();
+                     }
+                   }}
+                   className="w-full pl-10 pr-20 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                   style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
+                   onKeyDown={(e) => {
+                     if (e.key === "Enter") {
+                       const text = inputValue.trim();
+                       if (text) {
+                         // Stop typing indicator
+                         handleTypingStop();
+                         
+                         // Send message logic
+                         const sendMessage = async () => {
+                           const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                           if (!client || !customer || !cid) {
+                             return;
+                           }
+                           
+                           try {
+                             console.log("🚀 Sending message:", { conversation_id: cid, customer_id: customer.id, org_id: customer.org_id, text });
+                             
+                             const { data: messageData, error: messageError } = await client.from("messages").insert({ 
+                               conversation_id: cid, 
+                               sender_type: "CUSTOMER",
+                               customer_id: customer.id,
+                               org_id: customer.org_id,
+                               body_text: text
+                             }).select().single();
+                             
+                             if (messageError) {
+                               console.log("❌ Error sending message:", messageError);
+                             } else {
+                               console.log("✅ Message sent successfully:", messageData);
+                               
+                               // Update conversation last_message_at
+                               const { error: updateError } = await client.from("conversations").update({ 
+                                 last_message_at: new Date().toISOString() 
+                               }).eq("id", cid);
+                               
+                               if (updateError) {
+                                 console.log("❌ Error updating conversation:", updateError);
+                               } else {
+                                 console.log("✅ Conversation updated successfully");
+                               }
+                               
+                               console.log("🔄 Message sent successfully, should appear in chat now");
+                             }
+                           } catch (sendError) {
+                             console.log("❌ Exception sending message:", sendError);
+                           }
+                         };
+                         sendMessage();
+                         setInputValue("");
+                         // Clear saved input from localStorage
+                         if (typeof window !== 'undefined') {
+                           try {
+                             localStorage.removeItem('widget-input-value');
+                           } catch (error) {
+                             console.log("❌ Error clearing localStorage:", error);
+                           }
+                         }
+                       }
+                     }
+                   }}
+                 />
           
           {/* Emoji button */}
           <button className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -460,6 +493,9 @@ function EmbedContent() {
                    onClick={() => {
                      const text = inputValue.trim();
                      if (text) {
+                       // Stop typing indicator
+                       handleTypingStop();
+                       
                        // Send message logic
                        const sendMessage = async () => {
                          const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();

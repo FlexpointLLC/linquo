@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useBrandColor } from "@/contexts/brand-color-context";
+import { useDashboardBrandColor } from "@/contexts/dashboard-brand-color-context";
 import { useEffect, useRef } from "react";
 
 export type ChatMessage = {
@@ -13,7 +13,7 @@ export type ChatMessage = {
 };
 
 export function MessageThread({ messages }: { messages: ChatMessage[] }) {
-  const { brandColor } = useBrandColor();
+  const { brandColor } = useDashboardBrandColor();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
