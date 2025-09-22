@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Copy, Check, Code } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 export function EmbedSettings() {
   const { organization, loading } = useAuth();
@@ -118,9 +119,9 @@ export function EmbedSettings() {
               </pre>
             </div>
             
-            <button
+            <Button
               onClick={handleCopy}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2"
             >
               {copied ? (
                 <>
@@ -133,7 +134,7 @@ export function EmbedSettings() {
                   Copy Embed Code
                 </>
               )}
-            </button>
+            </Button>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

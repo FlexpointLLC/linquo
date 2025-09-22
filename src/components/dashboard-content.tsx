@@ -14,14 +14,16 @@ import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Check, RotateCcw } from "lucide-react";
+import { Check, RotateCcw, Loader2 } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { toast } from "sonner";
 
 export function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentTab, setCurrentTab] = useState("chats");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [resolvingConversationId, setResolvingConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     const tab = searchParams.get("tab") ?? "chats";
@@ -46,10 +48,16 @@ export function DashboardContent() {
   // Handle resolve/unresolve conversation
   const handleResolveConversation = async (conversationId: string, currentState: string) => {
     try {
+      setResolvingConversationId(conversationId);
+      
       const supabase = getSupabaseBrowser();
-      if (!supabase) return;
+      if (!supabase) {
+        toast.error("Unable to connect to server");
+        return;
+      }
 
       const newState = currentState === "CLOSED" ? "OPEN" : "CLOSED";
+      const action = newState === "CLOSED" ? "resolved" : "reopened";
       
       const { error } = await supabase
         .from("conversations")
@@ -58,9 +66,15 @@ export function DashboardContent() {
 
       if (error) {
         console.error("Error updating conversation state:", error);
+        toast.error(`Failed to ${action} conversation`);
+      } else {
+        toast.success(`Conversation ${action} successfully`);
       }
     } catch (error) {
       console.error("Error resolving conversation:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setResolvingConversationId(null);
     }
   };
 
@@ -134,14 +148,22 @@ export function DashboardContent() {
                       const currentState = conversation?.state || "OPEN";
                       const isResolved = currentState === "CLOSED";
                       
+                      const isLoading = resolvingConversationId === activeId;
+                      
                       return (
                         <Button
                           variant="secondary"
                           size="sm"
                           className="flex items-center gap-2"
                           onClick={() => handleResolveConversation(activeId, currentState)}
+                          disabled={isLoading}
                         >
-                          {isResolved ? (
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              {isResolved ? "Opening..." : "Resolving..."}
+                            </>
+                          ) : isResolved ? (
                             <>
                               <RotateCcw className="h-4 w-4" />
                               Open Again

@@ -58,13 +58,13 @@ export function ConversationList({
   return (
     <div className="border-r w-80 shrink-0 bg-white h-[calc(100vh-80px)] flex flex-col">
       {/* Header */}
-      <div className="p-3 border-b">
+      <div className="px-3 pt-3 pb-0 border-b">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
         </div>
         
         {/* Tabs */}
-        <div className="flex items-center gap-4 text-sm border-b border-gray-200">
+        <div className="flex items-center gap-4 text-sm">
           <button
             onClick={() => setActiveTab("open")}
             className={`pb-2 px-1 font-medium transition-colors ${
