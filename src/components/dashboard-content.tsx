@@ -8,6 +8,7 @@ import { AgentsTable } from "@/components/tables/agents-table";
 import { CustomersTable } from "@/components/tables/customers-table";
 import { SettingsPanel } from "@/components/settings/settings-panel";
 import { EmbedSettings } from "@/components/embed/embed-settings";
+import { InstallationGuide } from "@/components/installation-guide";
 import { useDataCache } from "@/hooks/useDataCache";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
@@ -201,17 +202,7 @@ export function DashboardContent() {
                     }) as ChatMessage[]}
                   />
               ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="text-muted-foreground mb-4">
-                      <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-medium text-foreground mb-2">Select a conversation</h3>
-                    <p className="text-muted-foreground">Choose a conversation from the list to start chatting</p>
-                  </div>
-                </div>
+                <InstallationGuide />
               )}
             </div>
             {activeId && (

@@ -2,6 +2,30 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useDashboardBrandColor } from "@/contexts/dashboard-brand-color-context";
 import { useEffect, useRef, memo } from "react";
 
+// Function to detect URLs and make them clickable
+const formatMessageText = (text: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return parts.map((part, index) => {
+    // Check if this part is a URL by testing against the regex
+    if (part.match(/^https?:\/\/[^\s]+$/)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white hover:text-gray-200 visited:text-yellow-300 underline break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 export type ChatMessage = {
   id: string;
   author: "agent" | "customer";
@@ -66,7 +90,9 @@ export const MessageThread = memo(function MessageThread({ messages }: { message
                     }`}
                     style={m.author === "agent" ? { backgroundColor: brandColor } : {}}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.text}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {formatMessageText(m.text)}
+                    </p>
                   </div>
                 </div>
               </div>
