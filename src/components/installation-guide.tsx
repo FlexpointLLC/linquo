@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Code, Globe, Zap, MessageSquare } from "lucide-react";
+import { Copy, Check, Code, Globe, Zap } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export function InstallationGuide() {
@@ -106,7 +106,7 @@ export function InstallationGuide() {
                 <div className="flex-1">
                   <CardTitle className="text-xl mb-1">1. Copy Embed Code</CardTitle>
                   <CardDescription>
-                    Add this script to your website's HTML
+                    Add this script to your website&apos;s HTML
                   </CardDescription>
                 </div>
                 
