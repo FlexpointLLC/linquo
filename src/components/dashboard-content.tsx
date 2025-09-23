@@ -32,7 +32,7 @@ import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
-// import { useCustomerDetails } from "@/hooks/useCustomerDetails";
+import { useCustomerDetails } from "@/hooks/useCustomerDetails";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight } from "lucide-react";
@@ -46,6 +46,7 @@ export const DashboardContent = memo(function DashboardContent() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [resolvingConversationId, setResolvingConversationId] = useState<string | null>(null);
   const [isInfoSidebarOpen, setIsInfoSidebarOpen] = useState(false);
+  const [detailedCustomerData, setDetailedCustomerData] = useState<any>(null);
 
   useEffect(() => {
     const tab = searchParams.get("tab") ?? "chats";
@@ -53,6 +54,27 @@ export const DashboardContent = memo(function DashboardContent() {
     setCurrentTab(tab);
     setActiveId(cid);
   }, [searchParams]);
+
+  // Fetch detailed customer data when info sidebar opens
+  useEffect(() => {
+    if (isInfoSidebarOpen && activeId) {
+      const conversation = conversationRows?.find(c => c.id === activeId);
+      if (conversation?.customer_id) {
+        console.log("🔍 Fetching detailed customer data for:", conversation.customer_id);
+        getCustomerDetails(conversation.customer_id).then((data) => {
+          if (data) {
+            console.log("✅ Detailed customer data loaded:", data);
+            setDetailedCustomerData(data);
+          } else {
+            console.log("❌ Failed to load detailed customer data");
+            setDetailedCustomerData(null);
+          }
+        });
+      }
+    } else {
+      setDetailedCustomerData(null);
+    }
+  }, [isInfoSidebarOpen, activeId, conversationRows, getCustomerDetails]);
 
   const { data: conversationRows, error: conversationError } = useConversations();
   const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
@@ -66,7 +88,7 @@ export const DashboardContent = memo(function DashboardContent() {
 
   const { agents, customers } = useDataCache();
   const { agent } = useAuth();
-  // const { getCustomerDetails, loading: customerDetailsLoading } = useCustomerDetails();
+  const { getCustomerDetails, loading: customerDetailsLoading } = useCustomerDetails();
 
   // Typing indicator for dashboard
   const { typingUsers: dashboardTypingUsers } = useTypingIndicator(
@@ -331,6 +353,19 @@ export const DashboardContent = memo(function DashboardContent() {
                       
                       if (!customer) return null;
 
+                      // Show loading state while fetching detailed customer data
+                      if (customerDetailsLoading && !detailedCustomerData) {
+                        return (
+                          <div className="flex items-center justify-center h-32">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                            <span className="ml-2 text-sm text-muted-foreground">Loading customer details...</span>
+                          </div>
+                        );
+                      }
+
+                      // Use detailed customer data if available, otherwise fall back to basic customer data
+                      const customerData = detailedCustomerData || customer;
+
                       // Section helper with icons
                       const Section = ({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) => (
                         <details className="group border-b border-border/50">
@@ -355,27 +390,27 @@ export const DashboardContent = memo(function DashboardContent() {
                           <div className="flex flex-col items-center text-center gap-3 pb-6 border-b border-border/50">
                             <Avatar className="h-20 w-20 ring-2 ring-muted/20">
                               <AvatarFallback className="text-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
-                                {customer.display_name?.[0]?.toUpperCase() || "U"}
+                                {customerData.display_name?.[0]?.toUpperCase() || "U"}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="text-lg font-semibold text-foreground">{customer.display_name || "Unknown"}</div>
-                              <div className="text-sm text-muted-foreground truncate max-w-[200px]">{customer.email || "No email"}</div>
+                              <div className="text-lg font-semibold text-foreground">{customerData.display_name || "Unknown"}</div>
+                              <div className="text-sm text-muted-foreground truncate max-w-[200px]">{customerData.email || "No email"}</div>
                             </div>
                           </div>
 
                           {/* Location */}
                           <Section title="Location" icon={MapPin}>
-                            {(customer.city || customer.region || customer.country) ? (
+                            {(customerData.city || customerData.region || customerData.country) ? (
                               <>
                                 <div className="flex items-start justify-between py-1 gap-4">
                                   <span className="text-muted-foreground flex-shrink-0">Place</span>
-                                  <span className="text-foreground font-medium text-right break-words">{[customer.city, customer.region, customer.country].filter(Boolean).join(', ')}</span>
+                                  <span className="text-foreground font-medium text-right break-words">{[customerData.city, customerData.region, customerData.country].filter(Boolean).join(', ')}</span>
                                 </div>
-                                {customer.timezone && (
+                                {customerData.timezone && (
                                   <div className="flex items-start justify-between py-1 gap-4">
                                     <span className="text-muted-foreground flex-shrink-0">Timezone</span>
-                                    <span className="text-foreground font-medium text-right break-words">{customer.timezone}</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customerData.timezone}</span>
                                   </div>
                                 )}
                               </>
@@ -389,30 +424,30 @@ export const DashboardContent = memo(function DashboardContent() {
 
                           {/* Device */}
                           <Section title="Device" icon={Monitor}>
-                            {(customer.browser_name || customer.os_name || customer.device_type || customer.language) ? (
+                            {(customerData.browser_name || customerData.os_name || customerData.device_type || customerData.language) ? (
                               <>
-                                {customer.browser_name && (
+                                {customerData.browser_name && (
                                   <div className="flex items-start justify-between py-1 gap-4">
                                     <span className="text-muted-foreground flex-shrink-0">Browser</span>
-                                    <span className="text-foreground font-medium text-right break-words">{customer.browser_name}{customer.browser_version ? ` ${customer.browser_version}` : ''}</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customerData.browser_name}{customerData.browser_version ? ` ${customerData.browser_version}` : ''}</span>
                                   </div>
                                 )}
-                                {customer.os_name && (
+                                {customerData.os_name && (
                                   <div className="flex items-start justify-between py-1 gap-4">
                                     <span className="text-muted-foreground flex-shrink-0">OS</span>
-                                    <span className="text-foreground font-medium text-right break-words">{customer.os_name}{customer.os_version ? ` ${customer.os_version}` : ''}</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customerData.os_name}{customerData.os_version ? ` ${customerData.os_version}` : ''}</span>
                                   </div>
                                 )}
-                                {customer.device_type && (
+                                {customerData.device_type && (
                                   <div className="flex items-start justify-between py-1 gap-4">
                                     <span className="text-muted-foreground flex-shrink-0">Device</span>
-                                    <span className="text-foreground font-medium text-right break-words">{customer.device_type}</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customerData.device_type}</span>
                                   </div>
                                 )}
-                                {customer.language && (
+                                {customerData.language && (
                                   <div className="flex items-start justify-between py-1 gap-4">
                                     <span className="text-muted-foreground flex-shrink-0">Language</span>
-                                    <span className="text-foreground font-medium text-right break-words">{customer.language}</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customerData.language}</span>
                                   </div>
                                 )}
                               </>
@@ -426,26 +461,26 @@ export const DashboardContent = memo(function DashboardContent() {
 
                           {/* Behavior */}
                           <Section title="Behavior" icon={Activity}>
-                            {(typeof customer.is_returning !== 'undefined' || typeof customer.total_visits !== 'undefined' || customer.last_visit) ? (
+                            {(typeof customerData.is_returning !== 'undefined' || typeof customerData.total_visits !== 'undefined' || customerData.last_visit) ? (
                               <>
-                                {typeof customer.is_returning !== 'undefined' && (
+                                {typeof customerData.is_returning !== 'undefined' && (
                                   <div className="flex items-center justify-between py-1">
                                     <span className="text-muted-foreground">Visitor</span>
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${customer.is_returning ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'}`}>
-                                      {customer.is_returning ? 'Returning' : 'New'}
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${customerData.is_returning ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'}`}>
+                                      {customerData.is_returning ? 'Returning' : 'New'}
                                     </span>
                                   </div>
                                 )}
-                                {typeof customer.total_visits !== 'undefined' && (
+                                {typeof customerData.total_visits !== 'undefined' && (
                                   <div className="flex items-start justify-between py-1 gap-4">
                                     <span className="text-muted-foreground flex-shrink-0">Total visits</span>
-                                    <span className="text-foreground font-medium text-right break-words">{customer.total_visits}</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customerData.total_visits}</span>
                                   </div>
                                 )}
-                                {customer.last_visit && (
+                                {customerData.last_visit && (
                                   <div className="flex items-start justify-between py-1 gap-4">
                                     <span className="text-muted-foreground flex-shrink-0">Last visit</span>
-                                    <span className="text-foreground font-medium text-right break-words">{new Date(customer.last_visit).toLocaleDateString()}</span>
+                                    <span className="text-foreground font-medium text-right break-words">{new Date(customerData.last_visit).toLocaleDateString()}</span>
                                   </div>
                                 )}
                               </>
@@ -459,21 +494,21 @@ export const DashboardContent = memo(function DashboardContent() {
 
                           {/* Pages Visited */}
                           <Section title="Pages Visited" icon={Globe}>
-                            {(customer.current_url || customer.referrer_url) ? (
+                            {(customerData.current_url || customerData.referrer_url) ? (
                               <>
-                                {customer.current_url && (
+                                {customerData.current_url && (
                                   <div className="space-y-2">
                                     <div className="text-muted-foreground text-xs">Current page</div>
-                                    <a className="text-primary hover:underline text-sm block truncate" href={customer.current_url} target="_blank" rel="noreferrer">
-                                      {customer.current_url}
+                                    <a className="text-primary hover:underline text-sm block truncate" href={customerData.current_url} target="_blank" rel="noreferrer">
+                                      {customerData.current_url}
                                     </a>
                                   </div>
                                 )}
-                                {customer.referrer_url && (
+                                {customerData.referrer_url && (
                                   <div className="space-y-2">
                                     <div className="text-muted-foreground text-xs">Referrer</div>
-                                    <a className="text-primary hover:underline text-sm block truncate" href={customer.referrer_url} target="_blank" rel="noreferrer">
-                                      {customer.referrer_url}
+                                    <a className="text-primary hover:underline text-sm block truncate" href={customerData.referrer_url} target="_blank" rel="noreferrer">
+                                      {customerData.referrer_url}
                                     </a>
                                   </div>
                                 )}
