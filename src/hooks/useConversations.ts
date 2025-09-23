@@ -33,6 +33,7 @@ export function useConversations() {
           const parsed = JSON.parse(stored);
           // Only use cached data if it's less than 10 minutes old
           if (parsed.lastLoaded && Date.now() - parsed.lastLoaded < 600000) {
+            console.log("🚀 Loading from localStorage cache:", parsed.conversations);
             setData(parsed.conversations);
             setLoading(false);
             setHasLoaded(true);
@@ -65,6 +66,7 @@ export function useConversations() {
 
         // Don't reload if we already have recent data
         if (hasLoaded && data && data.length > 0) {
+          console.log("🚀 Skipping reload - already have recent data");
           setLoading(false);
           return;
         }
@@ -125,16 +127,19 @@ export function useConversations() {
         })));
         console.log("🔍 Customer data array:", customerData);
         console.log("🔍 Customer IDs from conversations:", customerIds);
+        console.log("🔍 Raw conversations from DB:", conversations);
         setData(conversationData);
         setHasLoaded(true);
         
         // Save to localStorage for persistence
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('linquo-conversations-cache', JSON.stringify({
-              conversations,
+            const cacheData = {
+              conversations: conversationData, // Save the processed data with customer info
               lastLoaded: Date.now()
-            }));
+            };
+            localStorage.setItem('linquo-conversations-cache', JSON.stringify(cacheData));
+            console.log("💾 Saved to localStorage:", cacheData);
           } catch (error) {
             console.warn('Failed to save conversations to localStorage:', error);
           }
@@ -255,7 +260,7 @@ export function useConversations() {
     return () => {
       if (unsub) unsub();
     };
-  }, [agent?.org_id]);
+  }, [agent?.org_id, hasLoaded]); // Only depend on org_id and hasLoaded, not data
 
   const refresh = useCallback(() => {
     setHasLoaded(false);
