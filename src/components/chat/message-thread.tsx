@@ -85,7 +85,7 @@ export const MessageThread = memo(function MessageThread({
                 </Avatar>
               )}
               
-              <div className={`flex-1 ${m.author === "agent" ? "flex justify-end" : ""}`}>
+              <div className="flex-1">
                 <div className={`${isSidebarOpen ? 'max-w-[75%]' : 'max-w-[70%]'} ${m.author === "agent" ? "text-right" : ""}`}>
                   <div className={`flex items-center gap-2 mb-1 ${m.author === "agent" ? "justify-end" : ""}`}>
                     <span className="text-xs font-medium text-foreground">
@@ -138,7 +138,7 @@ export const MessageThread = memo(function MessageThread({
                   </Avatar>
                 )}
                 
-                <div className={`flex-1 ${user.type === "agent" ? "flex justify-end" : ""}`}>
+                <div className="flex-1">
                   <div className={`${isSidebarOpen ? 'max-w-[75%]' : 'max-w-[70%]'} ${user.type === "agent" ? "text-right" : ""}`}>
                     <div
                       className={`rounded-lg px-3 py-2 inline-block max-w-[600px] ${
