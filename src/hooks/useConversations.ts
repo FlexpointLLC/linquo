@@ -210,7 +210,7 @@ export function useConversations() {
           }
         }
 
-        // Set up real-time subscription for new conversations only
+        // Set up real-time subscriptions
         console.log("🔄 Setting up real-time subscriptions for new conversations");
         
         // Set up realtime subscription for messages to update conversation order
@@ -259,6 +259,12 @@ export function useConversations() {
             { event: "INSERT", schema: "public", table: "conversations" },
             (payload) => {
               console.log("🔄 New conversation detected:", payload);
+              
+              // Only process conversations for the current organization
+              if (payload.new.org_id !== agent.org_id) {
+                console.log("🔄 Ignoring conversation from different org:", payload.new.org_id);
+                return;
+              }
               
               // New conversation created - add to top of list
               setData(prevData => {
@@ -316,6 +322,113 @@ export function useConversations() {
       if (unsub) unsub();
     };
   }, [agent?.org_id]); // Only depend on org_id to prevent unnecessary reloads
+
+  // Set up real-time subscriptions separately to ensure they're always active
+  useEffect(() => {
+    const client = getSupabaseBrowser();
+    if (!client || !agent?.org_id) return;
+
+    console.log("🔄 Setting up real-time subscriptions (separate effect)");
+    
+    // Set up realtime subscription for messages to update conversation order
+    const messageChannel = client
+      .channel("message_changes_separate")
+      .on(
+        "postgres_changes" as never,
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          console.log("🔄 New message detected (separate):", payload);
+          
+          // Update the conversation's last_message_at timestamp
+          if (payload.new && payload.new.conversation_id) {
+            setData(prevData => {
+              if (!prevData) return prevData;
+              
+              // Find the conversation and move it to the top
+              const updatedData = [...prevData];
+              const conversationIndex = updatedData.findIndex(
+                conv => conv.id === payload.new.conversation_id
+              );
+              
+              if (conversationIndex !== -1) {
+                // Move conversation to top and update timestamp
+                const conversation = updatedData[conversationIndex];
+                conversation.last_message_at = payload.new.created_at;
+                updatedData.splice(conversationIndex, 1);
+                updatedData.unshift(conversation);
+                
+                console.log("📈 Moved conversation to top (separate):", conversation.id);
+                return updatedData;
+              }
+              
+              return prevData;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Set up realtime subscription for new conversations only (INSERT events)
+    const conversationChannel = client
+      .channel("conv_changes_separate")
+      .on(
+        "postgres_changes" as never,
+        { event: "INSERT", schema: "public", table: "conversations" },
+        (payload) => {
+          console.log("🔄 New conversation detected (separate):", payload);
+          
+          // Only process conversations for the current organization
+          if (payload.new.org_id !== agent.org_id) {
+            console.log("🔄 Ignoring conversation from different org (separate):", payload.new.org_id);
+            return;
+          }
+          
+          // New conversation created - add to top of list
+          setData(prevData => {
+            if (!prevData) return prevData;
+            
+            const newConversation = {
+              id: payload.new.id,
+              customer_id: payload.new.customer_id,
+              last_message_at: payload.new.last_message_at,
+              state: payload.new.state,
+              created_at: payload.new.created_at,
+              customers: null // Will be populated when customer data is fetched
+            };
+            
+            // Fetch customer data for the new conversation
+            if (payload.new.customer_id) {
+              client
+                .from("customers")
+                .select("id,display_name,email")
+                .eq("id", payload.new.customer_id)
+                .single()
+                .then(({ data: customerData }) => {
+                  if (customerData) {
+                    setData(prevData => {
+                      if (!prevData) return prevData;
+                      return prevData.map(conv => 
+                        conv.id === payload.new.id 
+                          ? { ...conv, customers: customerData }
+                          : conv
+                      );
+                    });
+                  }
+                });
+            }
+            
+            console.log("📈 New conversation added to top (separate):", newConversation.id);
+            return [newConversation, ...prevData];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      client.removeChannel(messageChannel);
+      client.removeChannel(conversationChannel);
+    };
+  }, [agent?.org_id]);
 
   const refresh = useCallback(() => {
     console.log("🔄 Manual refresh triggered");
