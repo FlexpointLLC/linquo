@@ -16,8 +16,8 @@ export function WidgetCustomization() {
   const { organization, loading } = useAuth();
   const [customization, setCustomization] = useState({
     primaryColor: "#3B82F6",
-    textLine1: "Hi there! 👋 Need help with our services?",
-    textLine2: "Just ask here and we'll assist you!",
+    textLine1: "Hello there",
+    textLine2: "How can we help?",
     iconAlignment: "right" as "left" | "right",
     showBranding: true,
     chatHeaderName: "Support Team",
@@ -26,8 +26,8 @@ export function WidgetCustomization() {
   });
   const [originalCustomization, setOriginalCustomization] = useState({
     primaryColor: "#3B82F6",
-    textLine1: "Hi there! 👋 Need help with our services?",
-    textLine2: "Just ask here and we'll assist you!",
+    textLine1: "Hello there",
+    textLine2: "How can we help?",
     iconAlignment: "right" as "left" | "right",
     showBranding: true,
     chatHeaderName: "Support Team",

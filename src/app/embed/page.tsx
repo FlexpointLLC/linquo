@@ -336,7 +336,7 @@ function EmbedContent() {
                    </div>
                    <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
                      <div className="text-sm break-words overflow-wrap-anywhere">
-                       Hi there! 👋 Need help with our services? Just ask here and we&apos;ll assist you!
+                       Hello there! How can we help?
                      </div>
                      <div className="text-xs text-gray-500 mt-1">Agent · 2:31 PM</div>
                    </div>
