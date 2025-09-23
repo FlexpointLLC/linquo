@@ -86,16 +86,20 @@ export function useConversations() {
         let customerData: { id: string; display_name: string; email: string }[] = [];
         
         if (customerIds.length > 0) {
+          console.log("🔍 Fetching customer data for IDs:", customerIds);
           const { data: customers, error: customerError } = await client
             .from("customers")
             .select("id,display_name,email")
             .in("id", customerIds);
           
           if (customerError) {
-            console.error("Error fetching customers:", customerError);
+            console.error("❌ Error fetching customers:", customerError);
           } else {
+            console.log("✅ Fetched customer data:", customers);
             customerData = customers || [];
           }
+        } else {
+          console.log("⚠️ No customer IDs found in conversations");
         }
         
         // Combine the data
@@ -109,8 +113,11 @@ export function useConversations() {
           id: c.id,
           customer_id: c.customer_id,
           customer_name: c.customers?.display_name,
-          customer_email: c.customers?.email
+          customer_email: c.customers?.email,
+          has_customer_data: !!c.customers
         })));
+        console.log("🔍 Customer data array:", customerData);
+        console.log("🔍 Customer IDs from conversations:", customerIds);
         setData(conversationData);
         setHasLoaded(true);
         

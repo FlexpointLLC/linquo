@@ -144,7 +144,7 @@ export const DashboardContent = memo(function DashboardContent() {
                   
                   return {
                     id: c.id,
-                    name: c.customers?.display_name || "Unknown Customer",
+                    name: c.customers?.display_name || c.customers?.email || "Unknown Customer",
                     email: c.customers?.email,
                     lastMessage: lastMessage?.body_text || "No messages yet",
                     status: "ACTIVE" as const,
