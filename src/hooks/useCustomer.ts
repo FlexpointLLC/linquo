@@ -82,7 +82,7 @@ export function useCustomer() {
     }
   }, []);
 
-  const createOrGetCustomerWithOrgId = async (name: string, email: string, orgId: string): Promise<Customer | null> => {
+  const createOrGetCustomerWithOrgId = async (name: string, email: string, orgId: string, customerData?: any): Promise<Customer | null> => {
     console.log("🚀 Starting createOrGetCustomerWithOrgId with:", { name, email, orgId });
     setLoading(true);
     setError(null);
@@ -118,21 +118,30 @@ export function useCustomer() {
         return customerWithWebsite;
       }
 
-      // Create new customer with the provided org_id
+      // Create new customer with the provided org_id and customer data
       console.log("📝 Creating new customer with org_id:", orgId);
+      console.log("📊 Customer data to save:", customerData);
+      
+      const customerInsertData: any = {
+        display_name: name,
+        email: email,
+        org_id: orgId,
+        status: "ACTIVE",
+        created_at: new Date().toISOString(),
+      };
+
+      // Add customer data if provided
+      if (customerData) {
+        Object.assign(customerInsertData, customerData);
+      }
+
       const { data: newCustomer, error: createError } = await client
         .from("customers")
-        .insert({
-          display_name: name,
-          email: email,
-          org_id: orgId,
-          status: "ACTIVE",
-          created_at: new Date().toISOString(),
-        })
+        .insert(customerInsertData)
         .select()
         .single();
 
-      let customerData: Customer | null = null;
+      let customerResult: Customer | null = null;
 
       if (createError) {
         console.log("❌ Error creating customer:", createError);
@@ -150,19 +159,19 @@ export function useCustomer() {
             console.log("❌ Error fetching existing customer:", fetchError);
             throw createError;
           } else {
-            customerData = existingCustomer;
+            customerResult = existingCustomer;
             console.log("✅ Found existing customer:", existingCustomer);
           }
         } else {
           throw createError;
         }
       } else {
-        customerData = newCustomer;
+        customerResult = newCustomer;
         console.log("✅ New customer created:", newCustomer);
       }
 
-      if (customerData) {
-        const customerWithWebsite = { ...customerData, website: window.location.hostname };
+      if (customerResult) {
+        const customerWithWebsite = { ...customerResult, website: window.location.hostname };
         setCustomer(customerWithWebsite);
         localStorage.setItem("linquo_customer", JSON.stringify(customerWithWebsite));
         console.log("✅ Customer saved to localStorage and state:", customerWithWebsite);

@@ -151,7 +151,7 @@ function EmbedContent() {
     loadExistingConversation();
   }, [customer]);
 
-  const handleCustomerSubmit = async (data: { name: string; email: string }) => {
+  const handleCustomerSubmit = async (data: { name: string; email: string; customerData?: any }) => {
     try {
       console.log("🚀 Starting customer creation:", { name: data.name, email: data.email, site, orgId });
       console.log("🔍 Site parameter details:", {
@@ -165,7 +165,7 @@ function EmbedContent() {
       // If we have an orgId from the widget, use it directly
       // Otherwise fall back to the old method using site/website
       const newCustomer = orgId 
-        ? await createOrGetCustomerWithOrgId(data.name, data.email, orgId)
+        ? await createOrGetCustomerWithOrgId(data.name, data.email, orgId, data.customerData)
         : await createOrGetCustomer(data.name, data.email, site);
       
       console.log("✅ Customer created/found:", newCustomer);
@@ -318,8 +318,8 @@ function EmbedContent() {
                    >
                      <span className="text-white text-sm font-medium">P</span>
                    </div>
-                   <div className="bg-white rounded-lg p-3 max-w-xs">
-                     <div className="text-sm text-gray-800">
+                   <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
+                     <div className="text-sm">
                        Please share your email with us in case we can&apos;t get back to you right away.
                      </div>
                      <div className="text-xs text-gray-500 mt-1">Agent · 2:30 PM</div>
@@ -333,8 +333,8 @@ function EmbedContent() {
                    >
                      <span className="text-white text-sm font-medium">P</span>
                    </div>
-                   <div className="bg-white rounded-lg p-3 max-w-xs">
-                     <div className="text-sm text-gray-800">
+                   <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
+                     <div className="text-sm">
                        Hi there! 👋 Need help with our services? Just ask here and we&apos;ll assist you!
                      </div>
                      <div className="text-xs text-gray-500 mt-1">Agent · 2:31 PM</div>
@@ -357,7 +357,7 @@ function EmbedContent() {
                      <div 
                        className={`rounded-lg p-3 max-w-xs ${
                          message.author === 'agent' 
-                           ? 'bg-white' 
+                           ? 'bg-gray-100 text-gray-900' 
                            : 'text-white'
                        }`}
                        style={message.author === 'customer' ? { backgroundColor: brandColor } : {}}
@@ -389,8 +389,8 @@ function EmbedContent() {
                      >
                        <span className="text-white text-sm font-medium">A</span>
                      </div>
-                     <div className="bg-white rounded-lg p-3 max-w-xs">
-                       <div className="text-sm text-gray-600 italic">
+                     <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
+                       <div className="text-sm italic">
                          {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
                        </div>
                      </div>
