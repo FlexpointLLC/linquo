@@ -16,7 +16,7 @@ import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Check, RotateCcw, Loader2, Info, X } from "lucide-react";
+import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { toast } from "sonner";
 
@@ -297,94 +297,184 @@ export function DashboardContent() {
               {isInfoSidebarOpen && activeId && (
                 <div className="w-80 border-l border-border bg-background overflow-y-auto">
                   <div className="p-4">
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Conversation Info</h3>
                     {(() => {
                       const conversation = conversationRows?.find(c => c.id === activeId);
                       const customer = customers?.find(c => c.id === conversation?.customer_id);
                       
+                      if (!customer) return null;
+
+                      // Section helper with icons
+                      const Section = ({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) => (
+                        <details className="group border-b border-border/50">
+                          <summary className="flex items-center justify-between cursor-pointer list-none px-4 py-3 hover:bg-muted/30 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="p-1.5 rounded-md bg-muted/50">
+                                <Icon className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <span className="text-sm font-medium text-foreground">{title}</span>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground group-open:rotate-90 transition-transform" />
+                          </summary>
+                          <div className="px-4 pb-4 space-y-3 text-sm">
+                            {children}
+                          </div>
+                        </details>
+                      );
+
                       return (
-                        <div className="space-y-4">
-                          {/* Customer Info */}
-                          <div>
-                            <h4 className="text-sm font-medium text-foreground mb-2">Customer</h4>
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarFallback className="text-xs bg-muted text-muted-foreground">
-                                    {customer?.display_name?.slice(0, 2).toUpperCase() || "U"}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="text-sm font-medium text-foreground">
-                                    {customer?.display_name || "Unknown"}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {customer?.email || "No email"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Conversation Details */}
-                          <div>
-                            <h4 className="text-sm font-medium text-foreground mb-2">Details</h4>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Status:</span>
-                                <span className="text-foreground">
-                                  {conversation?.state === "CLOSED" ? "Resolved" : "Open"}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Created:</span>
-                                <span className="text-foreground">
-                                  {conversation?.created_at ? new Date(conversation.created_at).toLocaleDateString() : "Unknown"}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Messages:</span>
-                                <span className="text-foreground">
-                                  {messageRows?.length || 0}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Customer Data */}
-                          {customer && (
+                        <div className="space-y-1">
+                          {/* Header */}
+                          <div className="flex flex-col items-center text-center gap-3 pb-6 border-b border-border/50">
+                            <Avatar className="h-20 w-20 ring-2 ring-muted/20">
+                              <AvatarFallback className="text-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                                {customer.display_name?.[0]?.toUpperCase() || "U"}
+                              </AvatarFallback>
+                            </Avatar>
                             <div>
-                              <h4 className="text-sm font-medium text-foreground mb-2">Customer Data</h4>
-                              <div className="space-y-2 text-sm">
+                              <div className="text-lg font-semibold text-foreground">{customer.display_name || "Unknown"}</div>
+                              <div className="text-sm text-muted-foreground truncate max-w-[200px]">{customer.email || "No email"}</div>
+                            </div>
+                          </div>
+
+                          {/* Location */}
+                          <Section title="Location" icon={MapPin}>
+                            {(customer.city || customer.region || customer.country) ? (
+                              <>
+                                <div className="flex items-center justify-between py-1">
+                                  <span className="text-muted-foreground">Place</span>
+                                  <span className="text-foreground font-medium">{[customer.city, customer.region, customer.country].filter(Boolean).join(', ')}</span>
+                                </div>
+                                {customer.timezone && (
+                                  <div className="flex items-center justify-between py-1">
+                                    <span className="text-muted-foreground">Timezone</span>
+                                    <span className="text-foreground font-medium">{customer.timezone}</span>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-center py-4">
+                                <MapPin className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                                <p className="text-sm text-muted-foreground">No location data available</p>
+                              </div>
+                            )}
+                          </Section>
+
+                          {/* Device */}
+                          <Section title="Device" icon={Monitor}>
+                            {(customer.browser_name || customer.os_name || customer.device_type || customer.language) ? (
+                              <>
                                 {customer.browser_name && (
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Browser:</span>
-                                    <span className="text-foreground">{customer.browser_name}</span>
+                                  <div className="flex items-center justify-between py-1">
+                                    <span className="text-muted-foreground">Browser</span>
+                                    <span className="text-foreground font-medium">{customer.browser_name}{customer.browser_version ? ` ${customer.browser_version}` : ''}</span>
+                                  </div>
+                                )}
+                                {customer.os_name && (
+                                  <div className="flex items-center justify-between py-1">
+                                    <span className="text-muted-foreground">OS</span>
+                                    <span className="text-foreground font-medium">{customer.os_name}{customer.os_version ? ` ${customer.os_version}` : ''}</span>
                                   </div>
                                 )}
                                 {customer.device_type && (
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Device:</span>
-                                    <span className="text-foreground">{customer.device_type}</span>
+                                  <div className="flex items-center justify-between py-1">
+                                    <span className="text-muted-foreground">Device</span>
+                                    <span className="text-foreground font-medium">{customer.device_type}</span>
                                   </div>
                                 )}
-                                {customer.country && (
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Location:</span>
-                                    <span className="text-foreground">{customer.country}</span>
+                                {customer.language && (
+                                  <div className="flex items-center justify-between py-1">
+                                    <span className="text-muted-foreground">Language</span>
+                                    <span className="text-foreground font-medium">{customer.language}</span>
                                   </div>
                                 )}
-                                {customer.is_returning !== undefined && (
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Type:</span>
-                                    <span className="text-foreground">
-                                      {customer.is_returning ? "Returning" : "New"}
+                              </>
+                            ) : (
+                              <div className="text-center py-4">
+                                <Monitor className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                                <p className="text-sm text-muted-foreground">No device data available</p>
+                              </div>
+                            )}
+                          </Section>
+
+                          {/* Behavior */}
+                          <Section title="Behavior" icon={Activity}>
+                            {(typeof customer.is_returning !== 'undefined' || typeof customer.total_visits !== 'undefined' || customer.last_visit) ? (
+                              <>
+                                {typeof customer.is_returning !== 'undefined' && (
+                                  <div className="flex items-center justify-between py-1">
+                                    <span className="text-muted-foreground">Visitor</span>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${customer.is_returning ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'}`}>
+                                      {customer.is_returning ? 'Returning' : 'New'}
                                     </span>
                                   </div>
                                 )}
+                                {typeof customer.total_visits !== 'undefined' && (
+                                  <div className="flex items-center justify-between py-1">
+                                    <span className="text-muted-foreground">Total visits</span>
+                                    <span className="text-foreground font-medium">{customer.total_visits}</span>
+                                  </div>
+                                )}
+                                {customer.last_visit && (
+                                  <div className="flex items-center justify-between py-1">
+                                    <span className="text-muted-foreground">Last visit</span>
+                                    <span className="text-foreground font-medium">{new Date(customer.last_visit).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-center py-4">
+                                <Activity className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                                <p className="text-sm text-muted-foreground">No behavior data available</p>
                               </div>
+                            )}
+                          </Section>
+
+                          {/* Pages Visited */}
+                          <Section title="Pages Visited" icon={Globe}>
+                            {(customer.current_url || customer.referrer_url) ? (
+                              <>
+                                {customer.current_url && (
+                                  <div className="space-y-2">
+                                    <div className="text-muted-foreground text-xs">Current page</div>
+                                    <a className="text-primary hover:underline text-sm block truncate" href={customer.current_url} target="_blank" rel="noreferrer">
+                                      {customer.current_url}
+                                    </a>
+                                  </div>
+                                )}
+                                {customer.referrer_url && (
+                                  <div className="space-y-2">
+                                    <div className="text-muted-foreground text-xs">Referrer</div>
+                                    <a className="text-primary hover:underline text-sm block truncate" href={customer.referrer_url} target="_blank" rel="noreferrer">
+                                      {customer.referrer_url}
+                                    </a>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-center py-4">
+                                <Globe className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                                <p className="text-sm text-muted-foreground">No page data available</p>
+                              </div>
+                            )}
+                          </Section>
+
+                          {/* Conversation Details */}
+                          <Section title="Details" icon={FileText}>
+                            <div className="flex items-center justify-between py-1">
+                              <span className="text-muted-foreground">Status</span>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${conversation?.state === 'CLOSED' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'}`}>
+                                {conversation?.state === 'CLOSED' ? 'Resolved' : 'Open'}
+                              </span>
                             </div>
-                          )}
+                            <div className="flex items-center justify-between py-1">
+                              <span className="text-muted-foreground">Created</span>
+                              <span className="text-foreground font-medium">{conversation?.created_at ? new Date(conversation.created_at).toLocaleDateString() : 'Unknown'}</span>
+                            </div>
+                            <div className="flex items-center justify-between py-1">
+                              <span className="text-muted-foreground">Messages</span>
+                              <span className="text-foreground font-medium">{messageRows?.length || 0}</span>
+                            </div>
+                          </Section>
                         </div>
                       );
                     })()}

@@ -163,7 +163,58 @@ export function useDataCache() {
           .order("display_name"),
         client
           .from("customers")
-          .select("id,display_name,email,status,country,created_at")
+          .select([
+            "id",
+            "display_name",
+            "email",
+            "status",
+            "country",
+            "created_at",
+            // Device & Browser Information
+            "user_agent",
+            "browser_name",
+            "browser_version",
+            "os_name",
+            "os_version",
+            "device_type",
+            "screen_resolution",
+            "timezone",
+            // Network & Location Information
+            "ip_address",
+            "region",
+            "city",
+            "postal_code",
+            "latitude",
+            "longitude",
+            "timezone_offset",
+            // Website Context
+            "current_url",
+            "page_title",
+            "referrer_url",
+            "utm_source",
+            "utm_campaign",
+            "utm_medium",
+            // Behavioral Data
+            "session_id",
+            "session_start",
+            "is_returning",
+            "total_visits",
+            "last_visit",
+            "avg_session_duration",
+            // Technical Information
+            "connection_type",
+            "network_speed",
+            "page_load_time",
+            // Privacy & Consent
+            "gdpr_consent",
+            "cookie_consent",
+            "privacy_policy_accepted",
+            // Additional metadata
+            "device_fingerprint",
+            "language",
+            "color_depth",
+            "pixel_ratio",
+          ].join(","))
           .eq("org_id", agent.org_id)
           .order("display_name")
       ]);
@@ -181,8 +232,8 @@ export function useDataCache() {
       }
 
       // Update global cache
-      globalCache.agents = agentsResult.data as CachedAgent[];
-      globalCache.customers = customersResult.data as CachedCustomer[];
+      globalCache.agents = agentsResult.data as unknown as CachedAgent[];
+      globalCache.customers = customersResult.data as unknown as CachedCustomer[];
       globalCache.lastLoaded = Date.now();
       globalCache.error = null;
       
