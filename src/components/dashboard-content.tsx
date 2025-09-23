@@ -55,6 +55,20 @@ export const DashboardContent = memo(function DashboardContent() {
     setActiveId(cid);
   }, [searchParams]);
 
+  const { data: conversationRows, error: conversationError } = useConversations();
+  const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
+  
+  // Memoize conversation IDs to prevent infinite loops
+  const conversationIds = useMemo(() => 
+    conversationRows?.map(c => c.id) || [], 
+    [conversationRows]
+  );
+  const { data: lastMessages } = useLastMessages(conversationIds);
+
+  const { agents, customers } = useDataCache();
+  const { agent } = useAuth();
+  const { getCustomerDetails, loading: customerDetailsLoading } = useCustomerDetails();
+
   // Fetch detailed customer data when info sidebar opens
   useEffect(() => {
     if (isInfoSidebarOpen && activeId) {
@@ -75,20 +89,6 @@ export const DashboardContent = memo(function DashboardContent() {
       setDetailedCustomerData(null);
     }
   }, [isInfoSidebarOpen, activeId, conversationRows, getCustomerDetails]);
-
-  const { data: conversationRows, error: conversationError } = useConversations();
-  const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
-  
-  // Memoize conversation IDs to prevent infinite loops
-  const conversationIds = useMemo(() => 
-    conversationRows?.map(c => c.id) || [], 
-    [conversationRows]
-  );
-  const { data: lastMessages } = useLastMessages(conversationIds);
-
-  const { agents, customers } = useDataCache();
-  const { agent } = useAuth();
-  const { getCustomerDetails, loading: customerDetailsLoading } = useCustomerDetails();
 
   // Typing indicator for dashboard
   const { typingUsers: dashboardTypingUsers } = useTypingIndicator(
