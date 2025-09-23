@@ -97,14 +97,14 @@ export const MessageThread = memo(function MessageThread({
                   </div>
                   
                   <div
-                    className={`rounded-lg px-3 py-2 inline-block ${
+                    className={`rounded-lg px-3 py-2 block w-full ${
                       m.author === "agent"
                         ? "text-white"
                         : "bg-muted text-foreground"
                     }`}
                     style={m.author === "agent" ? { backgroundColor: brandColor } : {}}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-all">
                       {formatMessageText(m.text)}
                     </p>
                   </div>
@@ -141,7 +141,7 @@ export const MessageThread = memo(function MessageThread({
                 <div className={`flex-1 ${user.type === "agent" ? "flex justify-end" : ""}`}>
                   <div className={`${isSidebarOpen ? 'max-w-[45%]' : 'max-w-[70%]'} ${user.type === "agent" ? "text-right" : ""}`}>
                     <div
-                      className={`rounded-lg px-3 py-2 inline-block ${
+                      className={`rounded-lg px-3 py-2 block w-full ${
                         user.type === "agent"
                           ? "text-white"
                           : "bg-muted text-foreground"
