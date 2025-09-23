@@ -42,7 +42,13 @@ import { toast } from "sonner";
 export const DashboardContent = memo(function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [currentTab, setCurrentTab] = useState("chats");
+  const [currentTab, setCurrentTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get("tab") ?? "chats";
+    }
+    return "chats";
+  });
   const [activeId, setActiveId] = useState<string | null>(null);
   const [resolvingConversationId, setResolvingConversationId] = useState<string | null>(null);
   const [isInfoSidebarOpen, setIsInfoSidebarOpen] = useState(false);
@@ -74,6 +80,21 @@ export const DashboardContent = memo(function DashboardContent() {
     setCurrentTab(tab);
     setActiveId(cid);
   }, [searchParams]);
+
+  // Get section parameter for chat sub-tabs
+  const section = searchParams.get("section") || "open";
+
+  // Handle section change for chat sub-tabs
+  const handleSectionChange = (newSection: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("section", newSection);
+    // Preserve other parameters
+    const cid = searchParams.get("cid");
+    if (cid) {
+      url.searchParams.set("cid", cid);
+    }
+    router.push(url.pathname + "?" + url.searchParams.toString());
+  };
 
   const { data: conversationRows, error: conversationError } = useConversations();
   const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
@@ -197,9 +218,13 @@ export const DashboardContent = memo(function DashboardContent() {
                   };
                 })}
                 activeId={activeId ?? undefined}
+                section={section}
+                onSectionChange={handleSectionChange}
                 onSelect={(id) => {
                   const url = new URL(window.location.href);
                   url.searchParams.set("cid", id);
+                  url.searchParams.set("tab", currentTab); // Preserve current tab
+                  url.searchParams.set("section", section); // Preserve current section
                   router.push(url.pathname + "?" + url.searchParams.toString());
                 }}
               />

@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useDashboardBrandColor } from "@/contexts/dashboard-brand-color-context";
-import { useState, memo } from "react";
+import { useState, memo, useEffect } from "react";
 
 export type ConversationListItem = {
   id: string;
@@ -21,13 +21,24 @@ export const ConversationList = memo(function ConversationList({
   conversations,
   activeId,
   onSelect,
+  section,
+  onSectionChange,
 }: {
   conversations: ConversationListItem[];
   activeId?: string;
   onSelect?: (id: string) => void;
+  section?: string;
+  onSectionChange?: (section: string) => void;
 }) {
   const { brandColor } = useDashboardBrandColor();
-  const [activeTab, setActiveTab] = useState<ChatTab>("open");
+  const [activeTab, setActiveTab] = useState<ChatTab>((section as ChatTab) || "open");
+
+  // Sync with section prop
+  useEffect(() => {
+    if (section && (section === "open" || section === "newest" || section === "resolved")) {
+      setActiveTab(section as ChatTab);
+    }
+  }, [section]);
   
   // Filter conversations based on active tab
   const filteredConversations = conversations.filter(conv => {
@@ -66,7 +77,10 @@ export const ConversationList = memo(function ConversationList({
         {/* Tabs */}
         <div className="flex items-center gap-4 text-sm">
           <button
-            onClick={() => setActiveTab("open")}
+            onClick={() => {
+              setActiveTab("open");
+              onSectionChange?.("open");
+            }}
             className={`pb-2 px-1 font-medium transition-colors cursor-pointer ${
               activeTab === "open"
                 ? "border-b-2"
@@ -80,7 +94,10 @@ export const ConversationList = memo(function ConversationList({
             Open ({openCount})
           </button>
           <button
-            onClick={() => setActiveTab("newest")}
+            onClick={() => {
+              setActiveTab("newest");
+              onSectionChange?.("newest");
+            }}
             className={`pb-2 px-1 font-medium transition-colors cursor-pointer ${
               activeTab === "newest"
                 ? "border-b-2"
@@ -94,7 +111,10 @@ export const ConversationList = memo(function ConversationList({
             Newest ({newestCount})
           </button>
           <button
-            onClick={() => setActiveTab("resolved")}
+            onClick={() => {
+              setActiveTab("resolved");
+              onSectionChange?.("resolved");
+            }}
             className={`pb-2 px-1 font-medium transition-colors cursor-pointer ${
               activeTab === "resolved"
                 ? "border-b-2"

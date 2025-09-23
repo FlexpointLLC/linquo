@@ -29,7 +29,7 @@ export function useRealtimeMessages(conversationId: string | null) {
       return;
     }
 
-    // Debounce message loading to prevent rapid requests
+    // Reduced debounce for faster loading
     const timeoutId = setTimeout(async () => {
       try {
         console.log("🔍 Loading initial messages for conversation:", conversationId);
@@ -58,7 +58,7 @@ export function useRealtimeMessages(conversationId: string | null) {
       } finally {
         setLoading(false);
       }
-    }, 100); // 100ms debounce
+    }, 50); // Reduced to 50ms debounce for faster loading
 
     return () => clearTimeout(timeoutId);
   }, [conversationId]);
