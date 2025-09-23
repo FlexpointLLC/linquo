@@ -40,6 +40,8 @@ export type ChatMessage = {
   time: string;
   email?: string;
   avatar?: string;
+  read_by_agent?: boolean;
+  read_at?: string;
 };
 
 export const MessageThread = memo(function MessageThread({ 
@@ -93,17 +95,26 @@ export const MessageThread = memo(function MessageThread({
                   </span>
                 </div>
 
-                <div
-                  className={`rounded-lg px-3 py-2 inline-block max-w-[600px] ${
-                    m.author === "agent"
-                      ? "text-white"
-                      : "bg-muted text-foreground"
-                  }`}
-                  style={m.author === "agent" ? { backgroundColor: brandColor } : {}}
-                >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-all">
-                    {formatMessageText(m.text)}
-                  </p>
+                <div className="flex items-start gap-2">
+                  <div
+                    className={`rounded-lg px-3 py-2 inline-block max-w-[600px] ${
+                      m.author === "agent"
+                        ? "text-white"
+                        : "bg-muted text-foreground"
+                    }`}
+                    style={m.author === "agent" ? { backgroundColor: brandColor } : {}}
+                  >
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-all">
+                      {formatMessageText(m.text)}
+                    </p>
+                  </div>
+                  
+                  {/* Unread indicator for customer messages */}
+                  {m.author === "customer" && m.read_by_agent === false && (
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" title="Unread message"></div>
+                    </div>
+                  )}
                 </div>
               </div>
 

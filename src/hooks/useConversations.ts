@@ -10,6 +10,7 @@ export type Conversation = {
   last_message_at: string | null;
   state?: "OPEN" | "CLOSED";
   created_at?: string;
+  unread?: number;
   customers: {
     id: string;
     display_name: string;
@@ -106,7 +107,7 @@ export function useConversations() {
         
         // Then get customer data for all conversations
         const customerIds = conversations?.map(c => c.customer_id).filter(Boolean) || [];
-        let customerData: { id: string; display_name: string; email: string }[] = [];
+        let customerData: { id: string; display_name: string; email: string; unread_count_agent?: number }[] = [];
         
         if (customerIds.length > 0) {
           console.log("🔍 Fetching customer data for IDs:", customerIds);
@@ -119,7 +120,7 @@ export function useConversations() {
             try {
               const { data: customers, error: customerError } = await client
                 .from("customers")
-                .select("id,display_name,email")
+                .select("id,display_name,email,unread_count_agent")
                 .in("id", customerIds);
               
               if (customerError) {
@@ -152,7 +153,7 @@ export function useConversations() {
               try {
                 const { data: customer, error } = await client
                   .from("customers")
-                  .select("id,display_name,email")
+                  .select("id,display_name,email,unread_count_agent")
                   .eq("id", customerId)
                   .single();
                 
@@ -172,10 +173,14 @@ export function useConversations() {
         }
         
         // Combine the data
-        const combinedData = conversations?.map(conv => ({
-          ...conv,
-          customers: customerData.find(c => c.id === conv.customer_id) || null
-        })) || [];
+        const combinedData = conversations?.map(conv => {
+          const customer = customerData.find(c => c.id === conv.customer_id);
+          return {
+            ...conv,
+            customers: customer || null,
+            unread: 0 // Start with 0, let real-time updates handle the count
+          };
+        }) || [];
         // Set data even if it's an empty array (no conversations)
         const conversationData = combinedData as Conversation[] || [];
         
@@ -215,16 +220,16 @@ export function useConversations() {
         // Set up real-time subscriptions
         console.log("🔄 Setting up real-time subscriptions for new conversations");
         
-        // Set up realtime subscription for messages to update conversation order
+        // Set up realtime subscription for messages to update conversation order and unread count
         const messageChannel = client
           .channel("message_changes")
           .on(
             "postgres_changes" as never,
             { event: "INSERT", schema: "public", table: "messages" },
             (payload) => {
-              console.log("🔄 New message detected:", payload);
+              console.log("📨 New message detected:", payload.new.id, "Sender:", payload.new.sender_type);
               
-              // Update the conversation's last_message_at timestamp
+              // Update the conversation's last_message_at timestamp and unread count
               if (payload.new && payload.new.conversation_id) {
                 setData(prevData => {
                   if (!prevData) return prevData;
@@ -239,6 +244,14 @@ export function useConversations() {
                     // Move conversation to top and update timestamp
                     const conversation = updatedData[conversationIndex];
                     conversation.last_message_at = payload.new.created_at;
+                    
+                    // If it's a customer message, increment unread count
+                    if (payload.new.sender_type === "CUSTOMER") {
+                      const oldUnread = conversation.unread || 0;
+                      conversation.unread = oldUnread + 1;
+                      console.log("📈 Incremented unread count for conversation:", conversation.id, "Old:", oldUnread, "New:", conversation.unread);
+                    }
+                    
                     updatedData.splice(conversationIndex, 1);
                     updatedData.unshift(conversation);
                     
@@ -251,7 +264,33 @@ export function useConversations() {
               }
             }
           )
+          .on(
+            "postgres_changes" as never,
+            { event: "UPDATE", schema: "public", table: "messages" },
+            (payload) => {
+              console.log("📝 Message updated:", payload.new.id, "Read by agent:", payload.new.read_by_agent);
+              
+              // If a customer message is marked as read, decrement unread count
+              if (payload.new && payload.new.sender_type === "CUSTOMER" && payload.new.read_by_agent === true) {
+                setData(prevData => {
+                  if (!prevData) return prevData;
+                  
+                  return prevData.map(conv => {
+                    if (conv.id === payload.new.conversation_id) {
+                      const newUnreadCount = Math.max(0, (conv.unread || 0) - 1);
+                      console.log("📉 Decremented unread count for conversation:", conv.id, "New count:", newUnreadCount);
+                      return { ...conv, unread: newUnreadCount };
+                    }
+                    return conv;
+                  });
+                });
+              }
+            }
+          )
           .subscribe();
+
+        // Note: Unread count is now handled directly from message events (INSERT/UPDATE)
+        // This is more reliable than listening to customer table updates
 
         // Set up realtime subscription for new conversations only (INSERT events)
         const conversationChannel = client
@@ -278,6 +317,7 @@ export function useConversations() {
                   last_message_at: payload.new.last_message_at,
                   state: payload.new.state,
                   created_at: payload.new.created_at,
+                  unread: 0, // New conversation starts with 0 unread
                   customers: null // Will be populated when customer data is fetched
                 };
                 
@@ -285,7 +325,7 @@ export function useConversations() {
                 if (payload.new.customer_id) {
                   client
                     .from("customers")
-                    .select("id,display_name,email")
+                    .select("id,display_name,email,unread_count_agent")
                     .eq("id", payload.new.customer_id)
                     .single()
                     .then(({ data: customerData }) => {
@@ -294,7 +334,11 @@ export function useConversations() {
                           if (!prevData) return prevData;
                           return prevData.map(conv => 
                             conv.id === payload.new.id 
-                              ? { ...conv, customers: customerData }
+                              ? { 
+                                  ...conv, 
+                                  customers: customerData,
+                                  unread: customerData.unread_count_agent || 0
+                                }
                               : conv
                           );
                         });
@@ -362,6 +406,13 @@ export function useConversations() {
                 // Move conversation to top and update timestamp
                 const conversation = updatedData[conversationIndex];
                 conversation.last_message_at = payload.new.created_at;
+                
+                // If it's a customer message, increment unread count
+                if (payload.new.sender_type === "CUSTOMER") {
+                  conversation.unread = (conversation.unread || 0) + 1;
+                  console.log("📈 Incremented unread count (separate):", conversation.id, "New count:", conversation.unread);
+                }
+                
                 updatedData.splice(conversationIndex, 1);
                 updatedData.unshift(conversation);
                 
@@ -385,6 +436,30 @@ export function useConversations() {
               }
               
               return prevData;
+            });
+
+          }
+        }
+      )
+      .on(
+        "postgres_changes" as never,
+        { event: "UPDATE", schema: "public", table: "messages" },
+        (payload) => {
+          console.log("📝 Message updated (separate):", payload.new.id, "Read by agent:", payload.new.read_by_agent);
+          
+          // If a customer message is marked as read, decrement unread count
+          if (payload.new && payload.new.sender_type === "CUSTOMER" && payload.new.read_by_agent === true) {
+            setData(prevData => {
+              if (!prevData) return prevData;
+              
+              return prevData.map(conv => {
+                if (conv.id === payload.new.conversation_id) {
+                  const newUnreadCount = Math.max(0, (conv.unread || 0) - 1);
+                  console.log("📉 Decremented unread count (separate):", conv.id, "New count:", newUnreadCount);
+                  return { ...conv, unread: newUnreadCount };
+                }
+                return conv;
+              });
             });
           }
         }
@@ -555,7 +630,19 @@ export function useConversations() {
     }
   }, [data]);
 
-  return { data, loading, error, refresh, refreshCustomerData };
+  const resetUnreadCount = useCallback((conversationId: string) => {
+    setData(prevData => {
+      if (!prevData) return prevData;
+      
+      return prevData.map(conv => 
+        conv.id === conversationId 
+          ? { ...conv, unread: 0 }
+          : conv
+      );
+    });
+  }, []);
+
+  return { data, loading, error, refresh, refreshCustomerData, resetUnreadCount };
 }
 
 

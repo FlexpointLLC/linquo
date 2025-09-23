@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useMemo, memo } from "react";
+import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
 import { Composer } from "@/components/chat/composer";
@@ -97,7 +97,7 @@ export const DashboardContent = memo(function DashboardContent() {
   };
 
   const { data: conversationRows, error: conversationError } = useConversations();
-  const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
+  const { data: messageRows, error: messageError, markMessagesAsRead } = useMessages(currentTab === "chats" ? activeId : null);
   
   // Memoize conversation IDs to prevent infinite loops
   const conversationIds = useMemo(() => 
@@ -130,6 +130,26 @@ export const DashboardContent = memo(function DashboardContent() {
       setDetailedCustomerData(null);
     }
   }, [isInfoSidebarOpen, activeId, conversationRows, getCustomerDetails]);
+
+  // Mark customer messages as read when conversation is viewed
+  useEffect(() => {
+    if (activeId && messageRows && markMessagesAsRead) {
+      const unreadCustomerMessages = messageRows
+        .filter(m => m.sender_type === "CUSTOMER" && m.read_by_agent === false)
+        .map(m => m.id);
+      
+      if (unreadCustomerMessages.length > 0) {
+        console.log("📖 Marking customer messages as read:", unreadCustomerMessages.length);
+        markMessagesAsRead(unreadCustomerMessages);
+      }
+    }
+  }, [activeId, messageRows, markMessagesAsRead]);
+
+  // Get unread count from customer data
+  const getUnreadCount = useCallback((customerId: string) => {
+    const customer = customers?.find(c => c.id === customerId);
+    return customer?.unread_count_agent ?? 0;
+  }, [customers]);
 
   // Typing indicator for dashboard
   const { typingUsers: dashboardTypingUsers } = useTypingIndicator(
@@ -211,6 +231,7 @@ export const DashboardContent = memo(function DashboardContent() {
                     name: c.customers?.display_name || c.customers?.email || "Unknown Customer",
                     email: c.customers?.email,
                     lastMessage: lastMessage?.body_text || "No messages yet",
+                    unread: c.unread ?? 0, // Use nullish coalescing instead of logical OR
                     status: "ACTIVE" as const,
                     state: c.state || "OPEN",
                     timestamp: c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : undefined,
@@ -328,6 +349,8 @@ export const DashboardContent = memo(function DashboardContent() {
                           email: m.sender_type === "CUSTOMER" ? customer?.email : undefined,
                           text: m.body_text,
                           time: new Date(m.created_at).toLocaleTimeString(),
+                          read_by_agent: m.read_by_agent,
+                          read_at: m.read_at,
                         };
                       }) as ChatMessage[]}
                       typingUsers={dashboardTypingUsers}

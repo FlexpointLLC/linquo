@@ -16,6 +16,8 @@ export type DbMessage = {
   customer_id: string | null;
   body_text: string;
   created_at: string;
+  read_by_agent?: boolean;
+  read_at?: string | null;
 };
 
 export function useMessages(conversationId: string | null) {
@@ -97,7 +99,12 @@ export function useMessages(conversationId: string | null) {
                 throw error;
               }
               
-              return data as DbMessage[];
+              // Add default values for read status fields if they don't exist
+              return (data as DbMessage[]).map(msg => ({
+                ...msg,
+                read_by_agent: msg.read_by_agent ?? false,
+                read_at: msg.read_at ?? null
+              }));
             }
           );
           
@@ -155,7 +162,91 @@ export function useMessages(conversationId: string | null) {
     }
   }, []);
 
-  return { data, loading, error, clearCache };
+  // Function to mark messages as read
+  const markMessagesAsRead = useCallback(async (messageIds: string[]) => {
+    if (!conversationId || !agent?.id || messageIds.length === 0) return;
+
+    try {
+      const client = getSupabaseBrowser();
+      if (!client) return;
+
+      // Get customer ID from the first message
+      const firstMessage = data?.find(m => messageIds.includes(m.id));
+      const customerId = firstMessage?.customer_id;
+      
+      if (!customerId) {
+        console.error("❌ No customer ID found for messages");
+        return;
+      }
+
+      // Mark messages as read (only if read_by_agent column exists)
+      let messageError = null;
+      try {
+        const { error } = await client
+          .from("messages")
+          .update({ 
+            read_by_agent: true, 
+            read_at: new Date().toISOString() 
+          })
+          .in("id", messageIds)
+          .eq("conversation_id", conversationId)
+          .eq("sender_type", "CUSTOMER"); // Only mark customer messages as read
+        
+        messageError = error;
+      } catch (err) {
+        console.log("⚠️ Read status columns may not exist yet, skipping message read status update");
+        messageError = null; // Don't treat this as an error
+      }
+
+      if (messageError) {
+        console.error("❌ Error marking messages as read:", messageError);
+        return;
+      }
+
+      // Update customer's unread count
+      console.log("🔄 Updating customer unread count to 0 for customer:", customerId);
+      const { error: customerError } = await client
+        .from("customers")
+        .update({ 
+          unread_count_agent: 0 // Reset to 0 since all messages are now read
+        })
+        .eq("id", customerId)
+        .eq("org_id", agent.org_id);
+
+      if (customerError) {
+        console.error("❌ Error updating customer unread count:", customerError);
+      } else {
+        console.log("✅ Successfully updated customer unread count to 0");
+      }
+
+      // Update local state
+      setData(prev => {
+        if (!prev) return prev;
+        return prev.map(msg => 
+          messageIds.includes(msg.id) && msg.sender_type === "CUSTOMER"
+            ? { ...msg, read_by_agent: true, read_at: new Date().toISOString() }
+            : msg
+        );
+      });
+
+      // Update cache
+      const cached = messageCache.get(conversationId);
+      if (cached) {
+        const updatedMessages = cached.data.map(msg => 
+          messageIds.includes(msg.id) && msg.sender_type === "CUSTOMER"
+            ? { ...msg, read_by_agent: true, read_at: new Date().toISOString() }
+            : msg
+        );
+        messageCache.set(conversationId, { ...cached, data: updatedMessages });
+      }
+
+      console.log("✅ Marked messages as read and updated customer unread count:", messageIds.length);
+    } catch (error) {
+      console.error("❌ Failed to mark messages as read:", error);
+    }
+  }, [conversationId, agent?.id, agent?.org_id, data]);
+
+  return { data, loading, error, clearCache, markMessagesAsRead };
 }
 
 

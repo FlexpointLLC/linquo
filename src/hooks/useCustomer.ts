@@ -48,6 +48,10 @@ export type Customer = {
   last_visit?: string;
   avg_session_duration?: number;
   
+  // Unread counts
+  unread_count_agent?: number;
+  unread_count_customer?: number;
+  
   // Technical Information
   connection_type?: string;
   network_speed?: string;
@@ -117,6 +121,8 @@ export function useCustomer() {
         org_id: orgId,
         status: "ACTIVE",
         created_at: new Date().toISOString(),
+        unread_count_agent: 0,
+        unread_count_customer: 0,
       };
 
       // Add customer data if provided
@@ -383,6 +389,8 @@ export function useCustomer() {
           status: "ACTIVE",
           org_id: orgId, // Include org_id
           created_at: new Date().toISOString(),
+          unread_count_agent: 0,
+          unread_count_customer: 0,
         };
         
         console.log("📝 Customer data to insert:", customerInsertData);

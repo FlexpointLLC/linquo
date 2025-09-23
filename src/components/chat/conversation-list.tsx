@@ -62,7 +62,7 @@ export const ConversationList = memo(function ConversationList({
   const newestCount = conversations.filter(c => {
     const today = new Date();
     const convDate = c.created_at ? new Date(c.created_at) : new Date(c.timestamp || '');
-    return convDate.toDateString() === today.toDateString(); // Count ALL conversations from today
+    return convDate.toDateString() === today.toDateString();
   }).length;
   const resolvedCount = conversations.filter(c => c.state === "CLOSED").length;
 
@@ -91,7 +91,7 @@ export const ConversationList = memo(function ConversationList({
               color: brandColor 
             } : {}}
           >
-            Open ({openCount})
+            Open{openCount > 0 ? ` (${openCount})` : ''}
           </button>
           <button
             onClick={() => {
@@ -108,7 +108,7 @@ export const ConversationList = memo(function ConversationList({
               color: brandColor 
             } : {}}
           >
-            Newest ({newestCount})
+            Newest{newestCount > 0 ? ` (${newestCount})` : ''}
           </button>
           <button
             onClick={() => {
@@ -125,7 +125,7 @@ export const ConversationList = memo(function ConversationList({
               color: brandColor 
             } : {}}
           >
-            Resolved ({resolvedCount})
+            Resolved{resolvedCount > 0 ? ` (${resolvedCount})` : ''}
           </button>
         </div>
       </div>
@@ -157,7 +157,7 @@ export const ConversationList = memo(function ConversationList({
               style={activeId === c.id ? { borderRightColor: brandColor } : {}}
             >
               <div className="flex items-start gap-3">
-                <Avatar className="h-8 w-8">
+                <Avatar className={`h-8 w-8 ${c.unread && c.unread > 0 ? 'ring-2 ring-blue-500' : ''}`}>
                   <AvatarFallback className="text-xs bg-muted text-muted-foreground">
                     {c.name?.slice(0, 2).toUpperCase() || "U"}
                   </AvatarFallback>
@@ -169,25 +169,14 @@ export const ConversationList = memo(function ConversationList({
                       {c.name}
                     </div>
                     {c.timestamp && (
-                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                      <span className={`text-xs flex-shrink-0 ${c.unread && c.unread > 0 ? 'text-blue-500' : 'text-muted-foreground'}`}>
                         {c.timestamp}
                       </span>
                     )}
                   </div>
                   
-                  <div className="text-xs text-muted-foreground truncate mb-1">
+                  <div className="text-xs text-muted-foreground truncate">
                     {c.lastMessage || "No messages yet"}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {c.unread && c.unread > 0 && (
-                      <div 
-                        className="inline-flex items-center justify-center rounded-full text-white text-xs h-4 w-4"
-                        style={{ backgroundColor: brandColor }}
-                      >
-                        {c.unread}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

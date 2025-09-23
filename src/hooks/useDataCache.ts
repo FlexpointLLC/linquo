@@ -12,6 +12,8 @@ export type CachedCustomer = {
   status: "ACTIVE" | "BLOCKED"; 
   country?: string; 
   created_at: string;
+  unread_count_agent?: number;
+  unread_count_customer?: number;
   
   // Device & Browser Information
   user_agent?: string;
@@ -136,6 +138,7 @@ export function useDataCache() {
     };
   }, []);
 
+
   // Load all data once when agent is available
   const loadAllData = useCallback(async () => {
     const client = getSupabaseBrowser();
@@ -181,7 +184,9 @@ export function useDataCache() {
               "created_at",
               "browser_name",
               "device_type",
-              "is_returning"
+              "is_returning",
+              "unread_count_agent",
+              "unread_count_customer"
             ].join(","))
             .eq("org_id", agent.org_id)
             .order("created_at", { ascending: false })

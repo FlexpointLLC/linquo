@@ -254,7 +254,9 @@ function EmbedContent() {
           <div>
             <div className="font-semibold text-sm text-gray-900">{chatHeaderName}</div>
             <div className="text-xs text-gray-500">
-              <span>{chatHeaderSubtitle}</span>
+              <span>
+                {realtimeConnected ? 'Active now' : chatHeaderSubtitle}
+              </span>
             </div>
           </div>
         </div>
@@ -435,6 +437,25 @@ function EmbedContent() {
                                } else {
                                  console.log("✅ Conversation updated successfully");
                                }
+
+                               // Increment unread count for agents (if column exists)
+                               try {
+                                 const { error: unreadError } = await client
+                                   .from("customers")
+                                   .update({ 
+                                     unread_count_agent: (customer.unread_count_agent || 0) + 1
+                                   })
+                                   .eq("id", customer.id)
+                                   .eq("org_id", customer.org_id);
+
+                                 if (unreadError) {
+                                   console.log("❌ Error updating unread count:", unreadError);
+                                 } else {
+                                   console.log("✅ Unread count incremented for agents");
+                                 }
+                               } catch (err) {
+                                 console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
+                               }
                                
                                console.log("🔄 Message sent successfully, should appear in chat now");
                              }
@@ -486,6 +507,19 @@ function EmbedContent() {
                              await client.from("conversations").update({ 
                                last_message_at: new Date().toISOString() 
                              }).eq("id", cid);
+
+                             // Increment unread count for agents (if column exists)
+                             try {
+                               await client
+                                 .from("customers")
+                                 .update({ 
+                                   unread_count_agent: (customer.unread_count_agent || 0) + 1
+                                 })
+                                 .eq("id", customer.id)
+                                 .eq("org_id", customer.org_id);
+                             } catch (err) {
+                               console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
+                             }
                              
                              // Force refresh messages to ensure they appear immediately
                              console.log("🔄 Message sent successfully, should appear in chat now");
