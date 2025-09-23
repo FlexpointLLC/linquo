@@ -36,7 +36,7 @@ export type ChatMessage = {
   avatar?: string;
 };
 
-export const MessageThread = memo(function MessageThread({ messages }: { messages: ChatMessage[] }) {
+export const MessageThread = memo(function MessageThread({ messages, isSidebarOpen }: { messages: ChatMessage[], isSidebarOpen?: boolean }) {
   const { brandColor } = useDashboardBrandColor();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -72,7 +72,7 @@ export const MessageThread = memo(function MessageThread({ messages }: { message
               )}
               
               <div className={`flex-1 ${m.author === "agent" ? "flex justify-end" : ""}`}>
-                <div className={`max-w-[70%] ${m.author === "agent" ? "text-right" : ""}`}>
+                <div className={`${isSidebarOpen ? 'max-w-[45%]' : 'max-w-[70%]'} ${m.author === "agent" ? "text-right" : ""}`}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-medium text-foreground">
                       {m.email || m.name}

@@ -15,7 +15,8 @@ import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Check, RotateCcw, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Check, RotateCcw, Loader2, Info, X } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { toast } from "sonner";
 
@@ -25,6 +26,7 @@ export function DashboardContent() {
   const [currentTab, setCurrentTab] = useState("chats");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [resolvingConversationId, setResolvingConversationId] = useState<string | null>(null);
+  const [isInfoSidebarOpen, setIsInfoSidebarOpen] = useState(false);
 
   useEffect(() => {
     const tab = searchParams.get("tab") ?? "chats";
@@ -137,6 +139,15 @@ export function DashboardContent() {
               <div className="border-b p-3 bg-background flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+                        {(() => {
+                          const conversation = conversationRows?.find(c => c.id === activeId);
+                          const customerName = conversation?.customers?.display_name || `Conversation ${activeId?.slice(0, 8)}`;
+                          return customerName?.slice(0, 2).toUpperCase() || "U";
+                        })()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <h3 className="text-lg font-semibold text-foreground">
                         {(() => {
@@ -155,104 +166,232 @@ export function DashboardContent() {
                       const isLoading = resolvingConversationId === activeId;
                       
                       return (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="flex items-center gap-2"
-                          onClick={() => handleResolveConversation(activeId, currentState)}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              {isResolved ? "Opening..." : "Resolving..."}
-                            </>
-                          ) : isResolved ? (
-                            <>
-                              <RotateCcw className="h-4 w-4" />
-                              Open Again
-                            </>
-                          ) : (
-                            <>
-                              <Check className="h-4 w-4" />
-                              Resolve
-                            </>
-                          )}
-                        </Button>
+                        <>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="flex items-center gap-2"
+                            onClick={() => handleResolveConversation(activeId, currentState)}
+                            disabled={isLoading}
+                          >
+                            {isLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                {isResolved ? "Opening..." : "Resolving..."}
+                              </>
+                            ) : isResolved ? (
+                              <>
+                                <RotateCcw className="h-4 w-4" />
+                                Open Again
+                              </>
+                            ) : (
+                              <>
+                                <Check className="h-4 w-4" />
+                                Resolve
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-2"
+                            onClick={() => setIsInfoSidebarOpen(!isInfoSidebarOpen)}
+                          >
+                            {isInfoSidebarOpen ? (
+                              <>
+                                <X className="h-4 w-4" />
+                                Close
+                              </>
+                            ) : (
+                              <>
+                                <Info className="h-4 w-4" />
+                                Info
+                              </>
+                            )}
+                          </Button>
+                        </>
                       );
                     })()}
                   </div>
                 </div>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto bg-background">
-              {activeId ? (
-                <MessageThread
-                    messages={(messageRows ?? []).map((m) => {
-                      const customer = customers?.find(c => c.id === m.customer_id);
-                      const agent = agents?.find(a => a.id === m.agent_id);
-                      return {
-                        id: m.id,
-                        author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
-                        name: m.sender_type === "AGENT" ? (agent?.display_name || "Agent") : (customer?.display_name || "Customer"),
-                        email: m.sender_type === "CUSTOMER" ? customer?.email : undefined,
-                        text: m.body_text,
-                        time: new Date(m.created_at).toLocaleTimeString(),
-                      };
-                    }) as ChatMessage[]}
-                  />
-              ) : (
-                <InstallationGuide />
+            <div className="flex-1 flex overflow-hidden bg-background">
+              {/* Main Chat Area with Composer */}
+              <div className="flex-1 flex flex-col">
+                {/* Messages Area */}
+                <div className="flex-1 overflow-y-auto bg-background">
+                  {activeId ? (
+                    <MessageThread
+                        messages={(messageRows ?? []).map((m) => {
+                          const customer = customers?.find(c => c.id === m.customer_id);
+                          const agent = agents?.find(a => a.id === m.agent_id);
+                          return {
+                            id: m.id,
+                            author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
+                            name: m.sender_type === "AGENT" ? (agent?.display_name || "Agent") : (customer?.display_name || "Customer"),
+                            email: m.sender_type === "CUSTOMER" ? customer?.email : undefined,
+                            text: m.body_text,
+                            time: new Date(m.created_at).toLocaleTimeString(),
+                          };
+                        }) as ChatMessage[]}
+                        isSidebarOpen={isInfoSidebarOpen}
+                      />
+                  ) : (
+                    <InstallationGuide />
+                  )}
+                </div>
+                
+                {/* Composer */}
+                {activeId && (
+                  <div className="border-t border-border p-4 bg-background flex-shrink-0">
+                    <Composer
+                      conversationId={activeId}
+                      agentId={agent?.id}
+                      customerEmail={conversationRows?.find(c => c.id === activeId)?.customers?.email}
+                      onSend={async (text) => {
+                        if (!agent || !activeId) {
+                          console.log("❌ Missing agent or activeId");
+                          return;
+                        }
+
+                        const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                        if (!client) {
+                          console.log("❌ Supabase client not available");
+                          return;
+                        }
+
+                        try {
+                          console.log("📝 Inserting message to Supabase...");
+                          const { error: messageError } = await client.from("messages").insert({
+                            conversation_id: activeId,
+                            sender_type: "AGENT",
+                            agent_id: agent.id,
+                            org_id: agent.org_id,
+                            body_text: text,
+                          });
+
+                          if (messageError) {
+                            console.log("❌ Error inserting message:", messageError);
+                            return;
+                          }
+
+                          console.log("✅ Message inserted successfully");
+                          
+                          await client
+                            .from("conversations")
+                            .update({ last_message_at: new Date().toISOString() })
+                            .eq("id", activeId);
+                          
+                          console.log("✅ Conversation timestamp updated");
+                        } catch (error) {
+                          console.log("❌ Error sending message:", error);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {/* Info Sidebar */}
+              {isInfoSidebarOpen && activeId && (
+                <div className="w-80 border-l border-border bg-background overflow-y-auto">
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Conversation Info</h3>
+                    {(() => {
+                      const conversation = conversationRows?.find(c => c.id === activeId);
+                      const customer = customers?.find(c => c.id === conversation?.customer_id);
+                      
+                      return (
+                        <div className="space-y-4">
+                          {/* Customer Info */}
+                          <div>
+                            <h4 className="text-sm font-medium text-foreground mb-2">Customer</h4>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+                                    {customer?.display_name?.slice(0, 2).toUpperCase() || "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="text-sm font-medium text-foreground">
+                                    {customer?.display_name || "Unknown"}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {customer?.email || "No email"}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Conversation Details */}
+                          <div>
+                            <h4 className="text-sm font-medium text-foreground mb-2">Details</h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Status:</span>
+                                <span className="text-foreground">
+                                  {conversation?.state === "CLOSED" ? "Resolved" : "Open"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Created:</span>
+                                <span className="text-foreground">
+                                  {conversation?.created_at ? new Date(conversation.created_at).toLocaleDateString() : "Unknown"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Messages:</span>
+                                <span className="text-foreground">
+                                  {messageRows?.length || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Customer Data */}
+                          {customer && (
+                            <div>
+                              <h4 className="text-sm font-medium text-foreground mb-2">Customer Data</h4>
+                              <div className="space-y-2 text-sm">
+                                {customer.browser_name && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Browser:</span>
+                                    <span className="text-foreground">{customer.browser_name}</span>
+                                  </div>
+                                )}
+                                {customer.device_type && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Device:</span>
+                                    <span className="text-foreground">{customer.device_type}</span>
+                                  </div>
+                                )}
+                                {customer.country && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Location:</span>
+                                    <span className="text-foreground">{customer.country}</span>
+                                  </div>
+                                )}
+                                {customer.is_returning !== undefined && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Type:</span>
+                                    <span className="text-foreground">
+                                      {customer.is_returning ? "Returning" : "New"}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
               )}
             </div>
-            {activeId && (
-              <div className="border-t border-border p-4 bg-background">
-                <Composer
-                  conversationId={activeId}
-                  agentId={agent?.id}
-                  customerEmail={conversationRows?.find(c => c.id === activeId)?.customers?.email}
-                  onSend={async (text) => {
-                    if (!agent || !activeId) {
-                      console.log("❌ Missing agent or activeId");
-                      return;
-                    }
-
-                    const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
-                    if (!client) {
-                      console.log("❌ Supabase client not available");
-                      return;
-                    }
-
-                    try {
-                      console.log("📝 Inserting message to Supabase...");
-                      const { error: messageError } = await client.from("messages").insert({
-                        conversation_id: activeId,
-                        sender_type: "AGENT",
-                        agent_id: agent.id,
-                        org_id: agent.org_id,
-                        body_text: text,
-                      });
-
-                      if (messageError) {
-                        console.log("❌ Error inserting message:", messageError);
-                        return;
-                      }
-
-                      console.log("✅ Message inserted successfully");
-                      
-                      await client
-                        .from("conversations")
-                        .update({ last_message_at: new Date().toISOString() })
-                        .eq("id", activeId);
-                      
-                      console.log("✅ Conversation timestamp updated");
-                    } catch (error) {
-                      console.log("❌ Error sending message:", error);
-                    }
-                  }}
-                />
-              </div>
-            )}
           </div>
         </div>
       )}

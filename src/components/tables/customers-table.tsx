@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Globe, Monitor, Smartphone, Tablet } from "lucide-react";
 
 type Customer = { 
@@ -58,9 +59,16 @@ export function CustomersTable({ data }: { data: Customer[] }) {
           data.map((c) => (
             <TableRow key={c.id}>
               <TableCell className="px-4">
-                <div>
-                  <div className="font-medium text-foreground">{c.display_name}</div>
-                  <div className="text-sm text-muted-foreground">{c.email}</div>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+                      {c.display_name?.slice(0, 2).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium text-foreground">{c.display_name}</div>
+                    <div className="text-sm text-muted-foreground">{c.email}</div>
+                  </div>
                 </div>
               </TableCell>
               <TableCell className="px-4">
