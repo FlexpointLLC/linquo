@@ -109,6 +109,13 @@ export function useConversations() {
         })) || [];
         // Set data even if it's an empty array (no conversations)
         const conversationData = combinedData as Conversation[] || [];
+        
+        // Sort by last_message_at to ensure proper order
+        conversationData.sort((a, b) => {
+          const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+          const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+          return bTime - aTime; // Most recent first
+        });
         console.log("🔍 Conversations with customer data:", conversationData.map(c => ({
           id: c.id,
           customer_id: c.customer_id,
@@ -133,68 +140,111 @@ export function useConversations() {
           }
         }
 
-        // Disable realtime subscription temporarily to prevent reloading
-        // TODO: Implement more efficient realtime updates
-        /*
-        const channel = client
+        // Set up realtime subscription for messages to update conversation order
+        const messageChannel = client
+          .channel("message_changes")
+          .on(
+            "postgres_changes" as never,
+            { event: "INSERT", schema: "public", table: "messages" },
+            (payload) => {
+              console.log("🔄 New message detected:", payload);
+              
+              // Update the conversation's last_message_at timestamp
+              if (payload.new && payload.new.conversation_id) {
+                setData(prevData => {
+                  if (!prevData) return prevData;
+                  
+                  // Find the conversation and move it to the top
+                  const updatedData = [...prevData];
+                  const conversationIndex = updatedData.findIndex(
+                    conv => conv.id === payload.new.conversation_id
+                  );
+                  
+                  if (conversationIndex !== -1) {
+                    // Move conversation to top and update timestamp
+                    const conversation = updatedData[conversationIndex];
+                    conversation.last_message_at = payload.new.created_at;
+                    updatedData.splice(conversationIndex, 1);
+                    updatedData.unshift(conversation);
+                    
+                    console.log("📈 Moved conversation to top:", conversation.id);
+                    return updatedData;
+                  }
+                  
+                  return prevData;
+                });
+              }
+            }
+          )
+          .subscribe();
+
+        // Set up realtime subscription for conversation updates
+        const conversationChannel = client
           .channel("conv_changes")
           .on(
             "postgres_changes" as never,
             { event: "*", schema: "public", table: "conversations" },
-            () => {
-              // Reload list on any change
-              client
-                .from("conversations")
-                .select("id,customer_id,last_message_at,state,created_at")
-                .eq("org_id", agent.org_id)
-                .order("last_message_at", { ascending: false, nullsFirst: false })
-                .limit(100)
-                .then(async ({ data: conversations }) => {
-                  if (!conversations) {
-                    setData([]);
-                    return;
-                  }
+            (payload) => {
+              console.log("🔄 Conversation change detected:", payload);
+              
+              if (payload.eventType === "INSERT") {
+                // New conversation created - add to top of list
+                setData(prevData => {
+                  if (!prevData) return prevData;
                   
-                  // Get customer data for all conversations
-                  const customerIds = conversations.map(c => c.customer_id).filter(Boolean);
-                  let customerData: { id: string; display_name: string; email: string }[] = [];
+                  const newConversation = {
+                    id: payload.new.id,
+                    customer_id: payload.new.customer_id,
+                    last_message_at: payload.new.last_message_at,
+                    state: payload.new.state,
+                    created_at: payload.new.created_at,
+                    customers: null // Will be populated when customer data is fetched
+                  };
                   
-                  if (customerIds.length > 0) {
-                    const { data: customers } = await client
+                  // Fetch customer data for the new conversation
+                  if (payload.new.customer_id) {
+                    client
                       .from("customers")
                       .select("id,display_name,email")
-                      .in("id", customerIds);
-                    
-                    customerData = customers || [];
+                      .eq("id", payload.new.customer_id)
+                      .single()
+                      .then(({ data: customerData }) => {
+                        if (customerData) {
+                          setData(prevData => {
+                            if (!prevData) return prevData;
+                            return prevData.map(conv => 
+                              conv.id === payload.new.id 
+                                ? { ...conv, customers: customerData }
+                                : conv
+                            );
+                          });
+                        }
+                      });
                   }
                   
-                  // Combine the data
-                  const combinedData = conversations.map(conv => ({
-                    ...conv,
-                    customers: customerData.find(c => c.id === conv.customer_id) || null
-                  })) as Conversation[];
-                  
-                  setData(combinedData);
-                  
-                  // Update localStorage cache
-                  if (typeof window !== 'undefined') {
-                    try {
-                      localStorage.setItem('linquo-conversations-cache', JSON.stringify({
-                        conversations,
-                        lastLoaded: Date.now()
-                      }));
-                    } catch (error) {
-                      console.warn('Failed to save conversations to localStorage:', error);
-                    }
-                  }
+                  console.log("📈 New conversation added to top:", newConversation.id);
+                  return [newConversation, ...prevData];
                 });
+              } else if (payload.eventType === "UPDATE") {
+                // Conversation updated - refresh the list
+                setData(prevData => {
+                  if (!prevData) return prevData;
+                  
+                  return prevData.map(conv => 
+                    conv.id === payload.new.id 
+                      ? { ...conv, ...payload.new }
+                      : conv
+                  );
+                });
+              }
             }
           )
           .subscribe();
+
         unsub = () => {
-          client.removeChannel(channel);
+          client.removeChannel(messageChannel);
+          client.removeChannel(conversationChannel);
         };
-        */
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to load conversations");
       } finally {
