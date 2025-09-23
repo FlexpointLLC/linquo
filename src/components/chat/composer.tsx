@@ -85,7 +85,7 @@ export const Composer = memo(function Composer({
             }
           }}
           placeholder="Write a reply..."
-          className="min-h-[80px] resize-none border-border pr-20"
+          className="min-h-[80px] max-w-[600px] resize-none border-border pr-20 break-words overflow-wrap-anywhere"
           style={{ '--tw-ring-color': brandColor, '--tw-border-color': brandColor } as React.CSSProperties}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {

@@ -417,7 +417,7 @@ function EmbedContent() {
                        handleTypingStop();
                      }
                    }}
-                   className="w-full pl-10 pr-20 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                   className="w-full max-w-[600px] pl-10 pr-20 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent break-words overflow-wrap-anywhere"
                    style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
                    onKeyDown={(e) => {
                      if (e.key === "Enter") {
