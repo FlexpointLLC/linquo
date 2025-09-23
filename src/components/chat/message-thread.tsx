@@ -76,43 +76,41 @@ export const MessageThread = memo(function MessageThread({
           </div>
         ) : (
           messages.map((m) => (
-            <div key={m.id} className="flex gap-2">
+            <div key={m.id} className={`flex w-full items-start ${m.author === "agent" ? "justify-end" : ""}`}>
               {m.author === "customer" && (
-                <Avatar className="h-6 w-6 flex-shrink-0 ml-2">
+                <Avatar className="h-6 w-6 flex-shrink-0 mr-2">
                   <AvatarFallback className="text-xs bg-muted text-muted-foreground">
                     {m.name?.slice(0, 2).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
               )}
-              
-              <div className="flex-1">
-                <div className={`${isSidebarOpen ? 'max-w-[75%]' : 'max-w-[70%]'} ${m.author === "agent" ? "text-right" : ""}`}>
-                  <div className={`flex items-center gap-2 mb-1 ${m.author === "agent" ? "justify-end" : ""}`}>
-                    <span className="text-xs font-medium text-foreground">
-                      {m.email || m.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {m.time}
-                    </span>
-                  </div>
-                  
-                  <div
-                    className={`rounded-lg px-3 py-2 inline-block max-w-[600px] ${
-                      m.author === "agent"
-                        ? "text-white"
-                        : "bg-muted text-foreground"
-                    }`}
-                    style={m.author === "agent" ? { backgroundColor: brandColor } : {}}
-                  >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-all">
-                      {formatMessageText(m.text)}
-                    </p>
-                  </div>
+
+              <div className={`flex flex-col ${m.author === "agent" ? "items-end" : "items-start"}`}>
+                <div className={`flex items-center gap-2 mb-1 ${m.author === "agent" ? "justify-end" : ""}`}>
+                  <span className="text-xs font-medium text-foreground">
+                    {m.email || m.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {m.time}
+                  </span>
+                </div>
+
+                <div
+                  className={`rounded-lg px-3 py-2 inline-block max-w-[600px] ${
+                    m.author === "agent"
+                      ? "text-white"
+                      : "bg-muted text-foreground"
+                  }`}
+                  style={m.author === "agent" ? { backgroundColor: brandColor } : {}}
+                >
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-all">
+                    {formatMessageText(m.text)}
+                  </p>
                 </div>
               </div>
-              
+
               {m.author === "agent" && (
-                <Avatar className="h-6 w-6 flex-shrink-0 mr-2">
+                <Avatar className="h-6 w-6 flex-shrink-0 ml-2">
                   <AvatarFallback 
                     className="text-xs"
                     style={{ backgroundColor: brandColor + '20', color: brandColor }}
@@ -127,43 +125,39 @@ export const MessageThread = memo(function MessageThread({
         
         {/* Typing indicators */}
         {typingUsers.length > 0 && (
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             {typingUsers.map((user) => (
-              <div key={user.id} className="flex gap-2">
+              <div key={user.id} className={`flex w-full items-start ${user.type === "agent" ? "justify-end" : ""}`}>
                 {user.type === "customer" && (
-                  <Avatar className="h-6 w-6 flex-shrink-0 ml-2">
+                  <Avatar className="h-6 w-6 flex-shrink-0 mr-2">
                     <AvatarFallback className="text-xs bg-muted text-muted-foreground">
                       {user.name?.slice(0, 2).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                 )}
-                
-                <div className="flex-1">
-                  <div className={`${isSidebarOpen ? 'max-w-[75%]' : 'max-w-[70%]'} ${user.type === "agent" ? "text-right" : ""}`}>
-                    <div
-                      className={`rounded-lg px-3 py-2 inline-block max-w-[600px] ${
-                        user.type === "agent"
-                          ? "text-white"
-                          : "bg-muted text-foreground"
-                      }`}
-                      style={user.type === "agent" ? { backgroundColor: brandColor } : {}}
-                    >
-                      <div className="flex items-center gap-1.5 whitespace-nowrap">
-                        <div className="flex space-x-0.5">
-                          <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                          <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                          <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                        </div>
-                        <span className="text-xs opacity-70 break-words overflow-wrap-anywhere">
-                          {user.name} is typing...
-                        </span>
-                      </div>
+
+                <div
+                  className={`rounded-lg px-3 py-2 inline-block max-w-[600px] ${
+                    user.type === "agent"
+                      ? "text-white"
+                      : "bg-muted text-foreground"
+                  }`}
+                  style={user.type === "agent" ? { backgroundColor: brandColor } : {}}
+                >
+                  <div className="flex items-center gap-1.5 whitespace-nowrap">
+                    <div className="flex space-x-0.5">
+                      <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                     </div>
+                    <span className="text-xs opacity-70 break-words overflow-wrap-anywhere">
+                      {user.name} is typing...
+                    </span>
                   </div>
                 </div>
-                
+
                 {user.type === "agent" && (
-                  <Avatar className="h-6 w-6 flex-shrink-0 mr-2">
+                  <Avatar className="h-6 w-6 flex-shrink-0 ml-2">
                     <AvatarFallback 
                       className="text-xs"
                       style={{ backgroundColor: brandColor + '20', color: brandColor }}
