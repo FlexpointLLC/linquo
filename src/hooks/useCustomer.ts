@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { CustomerData } from "@/lib/customer-data-collector";
 
 export type Customer = {
   id: string;
@@ -82,7 +83,7 @@ export function useCustomer() {
     }
   }, []);
 
-  const createOrGetCustomerWithOrgId = async (name: string, email: string, orgId: string, customerData?: any): Promise<Customer | null> => {
+  const createOrGetCustomerWithOrgId = async (name: string, email: string, orgId: string, customerData?: CustomerData): Promise<Customer | null> => {
     console.log("🚀 Starting createOrGetCustomerWithOrgId with:", { name, email, orgId });
     setLoading(true);
     setError(null);
@@ -122,7 +123,7 @@ export function useCustomer() {
       console.log("📝 Creating new customer with org_id:", orgId);
       console.log("📊 Customer data to save:", customerData);
       
-      const customerInsertData: any = {
+      const customerInsertData: Record<string, unknown> = {
         display_name: name,
         email: email,
         org_id: orgId,

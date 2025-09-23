@@ -6,6 +6,7 @@ import { CustomerForm } from "@/components/widget/customer-form";
 import { useSearchParams } from "next/navigation";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useCustomer } from "@/hooks/useCustomer";
+import { CustomerData } from "@/lib/customer-data-collector";
 import { useBrandColor } from "@/contexts/brand-color-context";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -151,7 +152,7 @@ function EmbedContent() {
     loadExistingConversation();
   }, [customer]);
 
-  const handleCustomerSubmit = async (data: { name: string; email: string; customerData?: any }) => {
+  const handleCustomerSubmit = async (data: { name: string; email: string; customerData?: CustomerData }) => {
     try {
       console.log("🚀 Starting customer creation:", { name: data.name, email: data.email, site, orgId });
       console.log("🔍 Site parameter details:", {

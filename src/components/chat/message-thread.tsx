@@ -44,11 +44,9 @@ export type ChatMessage = {
 
 export const MessageThread = memo(function MessageThread({ 
   messages, 
-  isSidebarOpen, 
   typingUsers = [] 
 }: { 
   messages: ChatMessage[], 
-  isSidebarOpen?: boolean,
   typingUsers?: TypingUser[]
 }) {
   const { brandColor } = useDashboardBrandColor();

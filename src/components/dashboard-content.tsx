@@ -230,22 +230,21 @@ export function DashboardContent() {
                 {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto bg-background">
                   {activeId ? (
-                    <MessageThread
-                        messages={(messageRows ?? []).map((m) => {
-                          const customer = customers?.find(c => c.id === m.customer_id);
-                          const agent = agents?.find(a => a.id === m.agent_id);
-                          return {
-                            id: m.id,
-                            author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
-                            name: m.sender_type === "AGENT" ? (agent?.display_name || "Agent") : (customer?.display_name || "Customer"),
-                            email: m.sender_type === "CUSTOMER" ? customer?.email : undefined,
-                            text: m.body_text,
-                            time: new Date(m.created_at).toLocaleTimeString(),
-                          };
-                        }) as ChatMessage[]}
-                        isSidebarOpen={isInfoSidebarOpen}
-                        typingUsers={dashboardTypingUsers}
-                      />
+                  <MessageThread
+                      messages={(messageRows ?? []).map((m) => {
+                        const customer = customers?.find(c => c.id === m.customer_id);
+                        const agent = agents?.find(a => a.id === m.agent_id);
+                        return {
+                          id: m.id,
+                          author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
+                          name: m.sender_type === "AGENT" ? (agent?.display_name || "Agent") : (customer?.display_name || "Customer"),
+                          email: m.sender_type === "CUSTOMER" ? customer?.email : undefined,
+                          text: m.body_text,
+                          time: new Date(m.created_at).toLocaleTimeString(),
+                        };
+                      }) as ChatMessage[]}
+                      typingUsers={dashboardTypingUsers}
+                    />
                   ) : (
                     <InstallationGuide />
                   )}
