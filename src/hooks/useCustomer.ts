@@ -70,18 +70,7 @@ export function useCustomer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load customer from localStorage on mount
-  useEffect(() => {
-    const savedCustomer = localStorage.getItem("linquo_customer");
-    if (savedCustomer) {
-      try {
-        setCustomer(JSON.parse(savedCustomer));
-      } catch {
-        // Failed to parse saved customer
-        localStorage.removeItem("linquo_customer");
-      }
-    }
-  }, []);
+  // No caching - removed for better reliability
 
   const createOrGetCustomerWithOrgId = async (name: string, email: string, orgId: string, customerData?: CustomerData): Promise<Customer | null> => {
     console.log("🚀 Starting createOrGetCustomerWithOrgId with:", { name, email, orgId });
@@ -114,8 +103,7 @@ export function useCustomer() {
         console.log("✅ Found existing customer:", existingCustomer);
         const customerWithWebsite = { ...existingCustomer, website: window.location.hostname };
         setCustomer(customerWithWebsite);
-        localStorage.setItem("linquo_customer", JSON.stringify(customerWithWebsite));
-        console.log("✅ Customer saved to localStorage and state:", customerWithWebsite);
+        console.log("✅ Customer saved to state:", customerWithWebsite);
         return customerWithWebsite;
       }
 
@@ -174,8 +162,7 @@ export function useCustomer() {
       if (customerResult) {
         const customerWithWebsite = { ...customerResult, website: window.location.hostname };
         setCustomer(customerWithWebsite);
-        localStorage.setItem("linquo_customer", JSON.stringify(customerWithWebsite));
-        console.log("✅ Customer saved to localStorage and state:", customerWithWebsite);
+        console.log("✅ Customer saved to state:", customerWithWebsite);
         return customerWithWebsite;
       }
 
@@ -455,10 +442,9 @@ export function useCustomer() {
         status: customerData.status || "ACTIVE",
       };
 
-      // Save to localStorage
-      localStorage.setItem("linquo_customer", JSON.stringify(customerWithWebsite));
+      // Save to state
       setCustomer(customerWithWebsite);
-      console.log("✅ Customer saved to localStorage and state:", customerWithWebsite);
+      console.log("✅ Customer saved to state:", customerWithWebsite);
 
       return customerWithWebsite;
     } catch (e: unknown) {
@@ -607,7 +593,7 @@ export function useCustomer() {
   };
 
   const clearCustomer = () => {
-    localStorage.removeItem("linquo_customer");
+    // No caching - removed for better reliability
     setCustomer(null);
   };
 

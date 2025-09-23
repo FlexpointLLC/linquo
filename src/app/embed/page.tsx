@@ -28,32 +28,7 @@ function EmbedContent() {
     setIsHydrated(true);
   }, []);
 
-  // Restore input value from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined' && isHydrated) {
-      try {
-        const savedInput = localStorage.getItem('widget-input-value');
-        if (savedInput) {
-          setInputValue(savedInput);
-          // Clear the saved value after restoring
-          localStorage.removeItem('widget-input-value');
-        }
-      } catch (error) {
-        console.log("❌ Error with localStorage restore:", error);
-      }
-    }
-  }, [isHydrated]);
-
-  // Save input value to localStorage whenever it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined' && inputValue) {
-      try {
-        localStorage.setItem('widget-input-value', inputValue);
-      } catch (error) {
-        console.log("❌ Error with localStorage save:", error);
-      }
-    }
-  }, [inputValue]);
+  // No caching - removed for better reliability
 
   // Set site and orgId after hydration to avoid mismatch
   useEffect(() => {
@@ -469,14 +444,7 @@ function EmbedContent() {
                          };
                          sendMessage();
                          setInputValue("");
-                         // Clear saved input from localStorage
-                         if (typeof window !== 'undefined') {
-                           try {
-                             localStorage.removeItem('widget-input-value');
-                           } catch (error) {
-                             console.log("❌ Error clearing localStorage:", error);
-                           }
-                         }
+                        // No caching - removed for better reliability
                        }
                      }
                    }}
@@ -528,14 +496,7 @@ function EmbedContent() {
                        };
                        sendMessage();
                        setInputValue("");
-                       // Clear saved input from localStorage
-                       if (typeof window !== 'undefined') {
-                         try {
-                           localStorage.removeItem('widget-input-value');
-                         } catch (error) {
-                           console.log("❌ Error clearing localStorage:", error);
-                         }
-                       }
+                        // No caching - removed for better reliability
                      }
                    }}
                    disabled={!inputValue.trim()}

@@ -391,7 +391,7 @@ export function useConversations() {
       )
       .subscribe();
 
-    // Set up realtime subscription for new conversations only (INSERT events)
+    // Set up realtime subscription for conversations (INSERT and UPDATE events)
     const conversationChannel = client
       .channel("conv_changes_separate")
       .on(
@@ -458,6 +458,46 @@ export function useConversations() {
             }
             
             return [newConversation, ...prevData];
+          });
+        }
+      )
+      .on(
+        "postgres_changes" as never,
+        { event: "UPDATE", schema: "public", table: "conversations" },
+        (payload) => {
+          console.log("🔄 Conversation updated (separate):", payload);
+          
+          // Only process conversations for the current organization
+          if (payload.new.org_id !== agent.org_id) {
+            console.log("🔄 Ignoring conversation update from different org (separate):", payload.new.org_id);
+            return;
+          }
+          
+          // Update the conversation in the list
+          setData(prevData => {
+            if (!prevData) return prevData;
+            
+            const updatedData = prevData.map(conv => 
+              conv.id === payload.new.id ? { ...conv, ...payload.new } : conv
+            );
+            
+            console.log("🔄 Updated conversation in list (separate):", payload.new.id, "State:", payload.new.state);
+            
+            // Update localStorage cache
+            if (typeof window !== 'undefined') {
+              try {
+                const cacheData = {
+                  conversations: updatedData,
+                  lastLoaded: Date.now()
+                };
+                localStorage.setItem('linquo-conversations-cache', JSON.stringify(cacheData));
+                console.log("💾 Updated localStorage with conversation update");
+              } catch (error) {
+                console.warn('Failed to update localStorage with conversation update:', error);
+              }
+            }
+            
+            return updatedData;
           });
         }
       )
