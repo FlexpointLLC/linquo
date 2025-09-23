@@ -30,8 +30,8 @@ export function useConversations() {
         const stored = localStorage.getItem('linquo-conversations-cache');
         if (stored) {
           const parsed = JSON.parse(stored);
-          // Only use cached data if it's less than 2 minutes old
-          if (parsed.lastLoaded && Date.now() - parsed.lastLoaded < 120000) {
+          // Only use cached data if it's less than 5 minutes old
+          if (parsed.lastLoaded && Date.now() - parsed.lastLoaded < 300000) {
             setData(parsed.conversations);
             setLoading(false);
           }
@@ -66,7 +66,7 @@ export function useConversations() {
           .select("id,customer_id,last_message_at,state,created_at")
           .eq("org_id", agent.org_id)
           .order("last_message_at", { ascending: false, nullsFirst: false })
-          .limit(50); // Limit to 50 most recent conversations for faster loading
+          .limit(30); // Limit to 30 most recent conversations for faster loading
         
         if (error) {
           throw error;

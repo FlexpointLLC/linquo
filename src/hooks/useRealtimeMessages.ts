@@ -43,7 +43,7 @@ export function useRealtimeMessages(conversationId: string | null) {
           .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at")
           .eq("conversation_id", conversationId)
           .order("created_at", { ascending: true })
-          .limit(100); // Limit to 100 most recent messages for faster loading
+          .limit(50); // Limit to 50 most recent messages for faster loading
         
         if (error) {
           console.error("❌ Error loading initial messages:", error);

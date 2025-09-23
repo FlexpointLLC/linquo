@@ -4,11 +4,28 @@ import { useEffect, useState, useMemo, memo } from "react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
 import { Composer } from "@/components/chat/composer";
-import { AgentsTable } from "@/components/tables/agents-table";
-import { CustomersTable } from "@/components/tables/customers-table";
-import { SettingsPanel } from "@/components/settings/settings-panel";
-import { EmbedSettings } from "@/components/embed/embed-settings";
-import { InstallationGuide } from "@/components/installation-guide";
+import dynamic from "next/dynamic";
+
+// Lazy load heavy components
+const AgentsTable = dynamic(() => import("@/components/tables/agents-table").then(mod => ({ default: mod.AgentsTable })), {
+  loading: () => <div className="p-4 text-center text-muted-foreground">Loading agents...</div>
+});
+
+const CustomersTable = dynamic(() => import("@/components/tables/customers-table").then(mod => ({ default: mod.CustomersTable })), {
+  loading: () => <div className="p-4 text-center text-muted-foreground">Loading customers...</div>
+});
+
+const SettingsPanel = dynamic(() => import("@/components/settings/settings-panel").then(mod => ({ default: mod.SettingsPanel })), {
+  loading: () => <div className="p-4 text-center text-muted-foreground">Loading settings...</div>
+});
+
+const EmbedSettings = dynamic(() => import("@/components/embed/embed-settings").then(mod => ({ default: mod.EmbedSettings })), {
+  loading: () => <div className="p-4 text-center text-muted-foreground">Loading embed settings...</div>
+});
+
+const InstallationGuide = dynamic(() => import("@/components/installation-guide").then(mod => ({ default: mod.InstallationGuide })), {
+  loading: () => <div className="p-4 text-center text-muted-foreground">Loading installation guide...</div>
+});
 import { useDataCache } from "@/hooks/useDataCache";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";

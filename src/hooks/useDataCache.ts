@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { requestDeduplicator } from "@/lib/request-deduplication";
 import { useAuth } from "@/hooks/useAuth";
 
 export type CachedAgent = { id: string; display_name: string; email: string; online_status: string; is_active: boolean; role?: string };
@@ -147,8 +148,8 @@ export function useDataCache() {
       return;
     }
 
-    // Check if we have recent cached data (5 minutes)
-    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+    // Check if we have recent cached data (10 minutes for better performance)
+    const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
     if (globalCache.lastLoaded && Date.now() - globalCache.lastLoaded < CACHE_DURATION) {
       console.log("🚀 Using cached data, skipping fetch");
       return;
@@ -161,34 +162,32 @@ export function useDataCache() {
     try {
       console.log("🔍 Loading data for org_id:", agent.org_id);
       
-      // Load only essential data first for faster initial load
-      const [agentsResult, customersResult] = await Promise.all([
-        client
-          .from("agents")
-          .select("id,display_name,email,online_status,is_active,role")
-          .eq("org_id", agent.org_id)
-          .order("display_name"),
-        client
-          .from("customers")
-          .select([
-            "id",
-            "display_name", 
-            "email",
-            "status",
-            "country",
-            "created_at",
-            "browser_name",
-            "os_name",
-            "device_type",
-            "timezone",
-            "region",
-            "city",
-            "is_returning",
-            "total_visits"
-          ].join(","))
-          .eq("org_id", agent.org_id)
-          .order("display_name")
-      ]);
+      // Use request deduplication to prevent multiple identical requests
+      const requestKey = `data-${agent.org_id}`;
+      const [agentsResult, customersResult] = await requestDeduplicator.deduplicate(requestKey, async () => {
+        return Promise.all([
+          client
+            .from("agents")
+            .select("id,display_name,email,online_status,is_active,role")
+            .eq("org_id", agent.org_id)
+            .order("display_name"),
+          client
+            .from("customers")
+            .select([
+              "id",
+              "display_name", 
+              "email",
+              "status",
+              "created_at",
+              "browser_name",
+              "device_type",
+              "is_returning"
+            ].join(","))
+            .eq("org_id", agent.org_id)
+            .order("created_at", { ascending: false })
+            .limit(100) // Limit to 100 most recent customers
+        ]);
+      });
 
       if (agentsResult.error) {
         console.error("❌ Agents query error:", agentsResult.error);

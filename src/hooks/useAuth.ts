@@ -109,8 +109,8 @@ export function useAuth() {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           const { agentData, orgData, timestamp } = JSON.parse(cached);
-          // Use cache if less than 2 minutes old
-          if (Date.now() - timestamp < 2 * 60 * 1000) {
+          // Use cache if less than 5 minutes old
+          if (Date.now() - timestamp < 5 * 60 * 1000) {
             setAuthUser({ user, agent: agentData, organization: orgData });
             setLoading(false);
             return;

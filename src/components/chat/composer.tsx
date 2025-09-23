@@ -36,10 +36,14 @@ export const Composer = memo(function Composer({
     }
   }, []);
 
-  // Save text to localStorage whenever it changes
+  // Save text to localStorage with debouncing to reduce writes
   useEffect(() => {
     if (typeof window !== 'undefined' && text) {
-      localStorage.setItem('dashboard-composer-text', text);
+      const timeoutId = setTimeout(() => {
+        localStorage.setItem('dashboard-composer-text', text);
+      }, 500); // Debounce localStorage writes
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [text]);
   
