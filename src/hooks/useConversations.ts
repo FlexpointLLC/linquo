@@ -323,7 +323,7 @@ export function useConversations() {
     return () => {
       if (unsub) unsub();
     };
-  }, [agent?.org_id]); // Only depend on org_id to prevent unnecessary reloads
+  }, [agent?.org_id, data, hasLoaded]); // Include all dependencies
 
   // Set up real-time subscriptions separately to ensure they're always active
   useEffect(() => {

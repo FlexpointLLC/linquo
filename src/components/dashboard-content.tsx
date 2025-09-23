@@ -46,7 +46,27 @@ export const DashboardContent = memo(function DashboardContent() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [resolvingConversationId, setResolvingConversationId] = useState<string | null>(null);
   const [isInfoSidebarOpen, setIsInfoSidebarOpen] = useState(false);
-  const [detailedCustomerData, setDetailedCustomerData] = useState<any>(null);
+  const [detailedCustomerData, setDetailedCustomerData] = useState<{
+    id: string;
+    display_name: string;
+    email: string;
+    status: string;
+    country?: string;
+    region?: string;
+    city?: string;
+    timezone?: string;
+    browser_name?: string;
+    browser_version?: string;
+    os_name?: string;
+    os_version?: string;
+    device_type?: string;
+    language?: string;
+    is_returning?: boolean;
+    total_visits?: number;
+    last_visit?: string;
+    current_url?: string;
+    referrer_url?: string;
+  } | null>(null);
 
   useEffect(() => {
     const tab = searchParams.get("tab") ?? "chats";
