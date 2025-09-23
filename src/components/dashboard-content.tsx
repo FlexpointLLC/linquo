@@ -54,7 +54,7 @@ export const DashboardContent = memo(function DashboardContent() {
     setActiveId(cid);
   }, [searchParams]);
 
-  const { data: conversationRows, error: conversationError, refreshCustomerData } = useConversations();
+  const { data: conversationRows, error: conversationError } = useConversations();
   const { data: messageRows, error: messageError } = useMessages(currentTab === "chats" ? activeId : null);
   
   // Memoize conversation IDs to prevent infinite loops
@@ -133,25 +133,6 @@ export const DashboardContent = memo(function DashboardContent() {
         </div>
       )}
 
-      {/* Debug Panel - Temporary for troubleshooting */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="p-2 bg-yellow-50 border border-yellow-200">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-yellow-800">Debug:</span>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={refreshCustomerData}
-              className="text-xs h-6 px-2"
-            >
-              Refresh Customer Data
-            </Button>
-            <span className="text-xs text-yellow-600">
-              Conversations: {conversationRows?.length || 0}
-            </span>
-          </div>
-        </div>
-      )}
 
       {currentTab === "chats" && (
         <div 
