@@ -147,6 +147,13 @@ export function useDataCache() {
       return;
     }
 
+    // Check if we have recent cached data (5 minutes)
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+    if (globalCache.lastLoaded && Date.now() - globalCache.lastLoaded < CACHE_DURATION) {
+      console.log("🚀 Using cached data, skipping fetch");
+      return;
+    }
+
     globalCache.loading = true;
     globalCache.error = null;
     notifyListeners();
@@ -154,7 +161,7 @@ export function useDataCache() {
     try {
       console.log("🔍 Loading data for org_id:", agent.org_id);
       
-      // Load agents and customers in parallel
+      // Load only essential data first for faster initial load
       const [agentsResult, customersResult] = await Promise.all([
         client
           .from("agents")
@@ -165,62 +172,23 @@ export function useDataCache() {
           .from("customers")
           .select([
             "id",
-            "display_name",
+            "display_name", 
             "email",
             "status",
             "country",
             "created_at",
-            // Device & Browser Information
-            "user_agent",
             "browser_name",
-            "browser_version",
             "os_name",
-            "os_version",
             "device_type",
-            "screen_resolution",
             "timezone",
-            // Network & Location Information
-            "ip_address",
             "region",
             "city",
-            "postal_code",
-            "latitude",
-            "longitude",
-            "timezone_offset",
-            // Website Context
-            "current_url",
-            "page_title",
-            "referrer_url",
-            "utm_source",
-            "utm_campaign",
-            "utm_medium",
-            // Behavioral Data
-            "session_id",
-            "session_start",
             "is_returning",
-            "total_visits",
-            "last_visit",
-            "avg_session_duration",
-            // Technical Information
-            "connection_type",
-            "network_speed",
-            "page_load_time",
-            // Privacy & Consent
-            "gdpr_consent",
-            "cookie_consent",
-            "privacy_policy_accepted",
-            // Additional metadata
-            "device_fingerprint",
-            "language",
-            "color_depth",
-            "pixel_ratio",
+            "total_visits"
           ].join(","))
           .eq("org_id", agent.org_id)
           .order("display_name")
       ]);
-
-      console.log("🔍 Agents query result:", agentsResult);
-      console.log("🔍 Customers query result:", customersResult);
 
       if (agentsResult.error) {
         console.error("❌ Agents query error:", agentsResult.error);

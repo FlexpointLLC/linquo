@@ -20,7 +20,7 @@ export function useRealtimeMessages(conversationId: string | null) {
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Load initial messages
+  // Load initial messages with debouncing
   useEffect(() => {
     const client = getSupabaseBrowser();
     if (!conversationId || !client) {
@@ -29,7 +29,8 @@ export function useRealtimeMessages(conversationId: string | null) {
       return;
     }
 
-    async function loadInitialMessages() {
+    // Debounce message loading to prevent rapid requests
+    const timeoutId = setTimeout(async () => {
       try {
         console.log("🔍 Loading initial messages for conversation:", conversationId);
         
@@ -41,7 +42,8 @@ export function useRealtimeMessages(conversationId: string | null) {
           .from("messages")
           .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at")
           .eq("conversation_id", conversationId)
-          .order("created_at", { ascending: true });
+          .order("created_at", { ascending: true })
+          .limit(100); // Limit to 100 most recent messages for faster loading
         
         if (error) {
           console.error("❌ Error loading initial messages:", error);
@@ -56,9 +58,9 @@ export function useRealtimeMessages(conversationId: string | null) {
       } finally {
         setLoading(false);
       }
-    }
+    }, 100); // 100ms debounce
 
-    loadInitialMessages();
+    return () => clearTimeout(timeoutId);
   }, [conversationId]);
 
   // Set up realtime connection with fallback (client-side only)

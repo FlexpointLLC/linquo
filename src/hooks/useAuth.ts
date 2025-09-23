@@ -93,7 +93,7 @@ export function useAuth() {
     // Immediate timeout fallback
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 5000); // Reduced to 5 second timeout
+    }, 3000); // Reduced to 3 second timeout
 
     const supabase = getSupabaseBrowser();
     
@@ -104,6 +104,19 @@ export function useAuth() {
 
     const loadUserData = async (user: User, retryCount = 0) => {
       try {
+        // Check localStorage cache first
+        const cacheKey = `auth_${user.id}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const { agentData, orgData, timestamp } = JSON.parse(cached);
+          // Use cache if less than 2 minutes old
+          if (Date.now() - timestamp < 2 * 60 * 1000) {
+            setAuthUser({ user, agent: agentData, organization: orgData });
+            setLoading(false);
+            return;
+          }
+        }
+
         // Get agent data with timeout
         const agentPromise = supabase
           .from("agents")
@@ -121,7 +134,7 @@ export function useAuth() {
         const result = await Promise.race([
           agentPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Agent query timeout')), 5000)
+            setTimeout(() => reject(new Error('Agent query timeout')), 3000)
           )
         ]);
         
@@ -176,7 +189,7 @@ export function useAuth() {
             organization: null,
           });
         } else {
-          setAuthUser({
+          const authData = {
             user,
             agent: {
               id: agentData.id,
@@ -186,7 +199,16 @@ export function useAuth() {
               org_id: agentData.org_id,
             },
             organization: orgData,
-          });
+          };
+          
+          setAuthUser(authData);
+          
+          // Cache the auth data
+          localStorage.setItem(cacheKey, JSON.stringify({
+            agentData: authData.agent,
+            orgData: authData.organization,
+            timestamp: Date.now()
+          }));
         }
       } catch (error) {
         // Log the error for debugging but keep the user logged in

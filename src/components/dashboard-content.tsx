@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
 import { Composer } from "@/components/chat/composer";
@@ -15,13 +15,14 @@ import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+// import { useCustomerDetails } from "@/hooks/useCustomerDetails";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { toast } from "sonner";
 
-export function DashboardContent() {
+export const DashboardContent = memo(function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentTab, setCurrentTab] = useState("chats");
@@ -48,6 +49,7 @@ export function DashboardContent() {
 
   const { agents, customers } = useDataCache();
   const { agent } = useAuth();
+  // const { getCustomerDetails, loading: customerDetailsLoading } = useCustomerDetails();
 
   // Typing indicator for dashboard
   const { typingUsers: dashboardTypingUsers } = useTypingIndicator(
@@ -519,4 +521,4 @@ export function DashboardContent() {
       )}
     </div>
   );
-}
+});
