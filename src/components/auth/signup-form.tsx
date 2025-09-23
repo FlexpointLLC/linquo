@@ -141,6 +141,13 @@ export function SignupForm() {
           name: formData.organizationName,
           slug: formData.organizationSlug,
           brand_color: "#3B82F6", // Default brand color for new organizations
+          widget_text_line1: "Hello there", // Default widget text line 1
+          widget_text_line2: "How can we help?", // Default widget text line 2
+          widget_icon_alignment: "right", // Default icon alignment
+          widget_show_branding: true, // Default branding setting
+          chat_header_name: "Support Team", // Default chat header name
+          chat_header_subtitle: "Typically replies within 1 min", // Default chat header subtitle
+          widget_button_text: "Start Chat", // Default button text
         })
         .select()
         .single();

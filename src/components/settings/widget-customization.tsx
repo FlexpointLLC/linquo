@@ -44,10 +44,19 @@ export function WidgetCustomization() {
   // Fetch widget settings from organization data
   useEffect(() => {
     if (organization) {
+      // Check if the stored values are the old defaults and replace them
+      const storedLine1 = organization.widget_text_line1;
+      const storedLine2 = organization.widget_text_line2;
+      
+      // If the stored values are the old defaults, use the new defaults instead
+      const isOldDefault1 = storedLine1 === "Hi there! 👋 Need help with our services?" || 
+                           storedLine1 === "Hi there!  Need help with our services?";
+      const isOldDefault2 = storedLine2 === "Just ask here and we'll assist you!";
+      
       const newCustomization = {
         primaryColor: organization.brand_color || "#3B82F6",
-        textLine1: organization.widget_text_line1 || "Hello there",
-        textLine2: organization.widget_text_line2 || "How can we help?",
+        textLine1: (isOldDefault1 ? "Hello there" : storedLine1) || "Hello there",
+        textLine2: (isOldDefault2 ? "How can we help?" : storedLine2) || "How can we help?",
         iconAlignment: (organization.widget_icon_alignment as "left" | "right") || "right",
         showBranding: organization.widget_show_branding !== false, // default to true
         chatHeaderName: organization.chat_header_name || "Support Team",
