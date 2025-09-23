@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export function ResetPasswordForm() {
@@ -47,7 +47,7 @@ export function ResetPasswordForm() {
     }
 
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) {
         throw new Error("Supabase client not available");
       }

@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { CustomerData } from "@/lib/customer-data-collector";
 
 export type Customer = {
@@ -82,7 +82,7 @@ export function useCustomer() {
     setError(null);
 
     try {
-      const client = getSupabaseBrowser();
+      const client = createClient();
       if (!client) {
         console.log("❌ Supabase client not available");
         throw new Error("Supabase client not available");
@@ -216,7 +216,7 @@ export function useCustomer() {
 
     try {
       console.log("🔍 Getting Supabase client...");
-      const client = getSupabaseBrowser();
+      const client = createClient();
       if (!client) {
         console.log("❌ Supabase client not available");
         throw new Error("Supabase client not available");
@@ -517,7 +517,7 @@ export function useCustomer() {
   const createConversation = async (customer: Customer): Promise<string | null> => {
     try {
       console.log("🔄 Starting createConversation for customer:", customer);
-      const client = getSupabaseBrowser();
+      const client = createClient();
       if (!client) {
         console.log("❌ Supabase client not available for conversation creation");
         return null;

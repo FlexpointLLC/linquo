@@ -1,6 +1,6 @@
 "use client";
 
-import { getSupabaseBrowser } from "./supabase-browser";
+import { createClient } from "./supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface RealtimeMessage {
@@ -23,7 +23,7 @@ export interface RealtimeConnection {
 
 class RealtimeService {
   private channels: Map<string, RealtimeConnection> = new Map();
-  private supabase = getSupabaseBrowser();
+  private supabase = createClient();
   private reconnectAttempts: Map<string, number> = new Map();
   private maxReconnectAttempts = 5;
 

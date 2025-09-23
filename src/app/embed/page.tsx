@@ -102,7 +102,7 @@ function EmbedContent() {
     // Customer exists, check if they have an existing conversation
     const loadExistingConversation = async () => {
       try {
-        const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+        const client = (await import("@/lib/supabase/client")).createClient();
         if (!client) return;
         
         // Check for existing conversation
@@ -406,7 +406,7 @@ function EmbedContent() {
                          
                          // Send message logic
                          const sendMessage = async () => {
-                           const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                           const client = (await import("@/lib/supabase/client")).createClient();
                            if (!client || !customer || !cid) {
                              return;
                            }
@@ -453,7 +453,7 @@ function EmbedContent() {
                                  } else {
                                    console.log("✅ Unread count incremented for agents");
                                  }
-                               } catch (err) {
+                               } catch {
                                  console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
                                }
                                
@@ -488,7 +488,7 @@ function EmbedContent() {
                        
                        // Send message logic
                        const sendMessage = async () => {
-                         const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                         const client = (await import("@/lib/supabase/client")).createClient();
                          if (!client || !customer || !cid) {
                            return;
                          }
@@ -517,7 +517,7 @@ function EmbedContent() {
                                  })
                                  .eq("id", customer.id)
                                  .eq("org_id", customer.org_id);
-                             } catch (err) {
+                             } catch {
                                console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
                              }
                              

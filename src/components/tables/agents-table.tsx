@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { Plus, Loader2, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 type Agent = { id: string; display_name: string; email: string; online_status: string; is_active: boolean; role?: string };
@@ -58,7 +58,7 @@ export function AgentsTable({ data }: { data: Agent[] }) {
 
     setIsLoading(true);
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) {
         toast.error("Database connection failed");
         return;
@@ -96,7 +96,7 @@ export function AgentsTable({ data }: { data: Agent[] }) {
 
     setIsLoading(true);
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) {
         toast.error("Database connection failed");
         return;

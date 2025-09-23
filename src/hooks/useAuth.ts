@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 
 export type AuthUser = {
   user: User | null;
@@ -51,7 +51,7 @@ export function useAuth() {
 
   // Connection monitoring and auto-reconnection
   useEffect(() => {
-    const supabase = getSupabaseBrowser();
+    const supabase = createClient();
     if (!supabase) return;
 
     let reconnectTimeout: NodeJS.Timeout;
@@ -95,7 +95,7 @@ export function useAuth() {
       setLoading(false);
     }, 3000); // Reduced to 3 second timeout
 
-    const supabase = getSupabaseBrowser();
+    const supabase = createClient();
     
     if (!supabase) {
       setLoading(false);
@@ -289,7 +289,7 @@ export function useAuth() {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const supabase = getSupabaseBrowser();
+    const supabase = createClient();
     if (!supabase) throw new Error("Supabase client not available");
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -303,7 +303,7 @@ export function useAuth() {
     organizationName: string,
     organizationSlug: string
   ) => {
-    const supabase = getSupabaseBrowser();
+    const supabase = createClient();
     if (!supabase) throw new Error("Supabase client not available");
 
     const { data, error: authError } = await supabase.auth.signUp({
@@ -377,7 +377,7 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    const supabase = getSupabaseBrowser();
+    const supabase = createClient();
     if (supabase) {
       await supabase.auth.signOut();
     }

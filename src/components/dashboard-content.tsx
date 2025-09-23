@@ -36,7 +36,7 @@ import { useCustomerDetails } from "@/hooks/useCustomerDetails";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight } from "lucide-react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 export const DashboardContent = memo(function DashboardContent() {
@@ -146,10 +146,6 @@ export const DashboardContent = memo(function DashboardContent() {
   }, [activeId, messageRows, markMessagesAsRead]);
 
   // Get unread count from customer data
-  const getUnreadCount = useCallback((customerId: string) => {
-    const customer = customers?.find(c => c.id === customerId);
-    return customer?.unread_count_agent ?? 0;
-  }, [customers]);
 
   // Typing indicator for dashboard
   const { typingUsers: dashboardTypingUsers } = useTypingIndicator(
@@ -163,7 +159,7 @@ export const DashboardContent = memo(function DashboardContent() {
     try {
       setResolvingConversationId(conversationId);
       
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) {
         toast.error("Unable to connect to server");
         return;
@@ -373,7 +369,7 @@ export const DashboardContent = memo(function DashboardContent() {
                           return;
                         }
 
-                        const client = (await import("@/lib/supabase-browser")).getSupabaseBrowser();
+                        const client = (await import("@/lib/supabase/client")).createClient();
                         if (!client) {
                           console.log("❌ Supabase client not available");
                           return;

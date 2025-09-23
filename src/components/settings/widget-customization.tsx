@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Palette, Save, Loader2, Eye } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -90,7 +90,7 @@ export function WidgetCustomization() {
     setSaveSuccess(false);
 
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       
       if (!supabase) {
         throw new Error('Supabase client not available');

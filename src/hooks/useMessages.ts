@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PerformanceMonitor } from "@/lib/performance-utils";
 
@@ -49,7 +49,7 @@ export function useMessages(conversationId: string | null) {
       return;
     }
 
-    const client = getSupabaseBrowser();
+    const client = createClient();
     if (!conversationId) {
       setData([]);
       setLoading(false);
@@ -167,7 +167,7 @@ export function useMessages(conversationId: string | null) {
     if (!conversationId || !agent?.id || messageIds.length === 0) return;
 
     try {
-      const client = getSupabaseBrowser();
+      const client = createClient();
       if (!client) return;
 
       // Get customer ID from the first message
@@ -193,7 +193,7 @@ export function useMessages(conversationId: string | null) {
           .eq("sender_type", "CUSTOMER"); // Only mark customer messages as read
         
         messageError = error;
-      } catch (err) {
+      } catch {
         console.log("⚠️ Read status columns may not exist yet, skipping message read status update");
         messageError = null; // Don't treat this as an error
       }

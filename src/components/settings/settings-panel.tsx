@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { WidgetCustomization } from "./widget-customization";
 import { useAuth } from "@/hooks/useAuth";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { Loader2, Save, User, Building2 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -87,7 +87,7 @@ export function SettingsPanel() {
     
     setIsSavingPersonal(true);
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) throw new Error("Supabase client not available");
 
       const { error } = await supabase
@@ -114,7 +114,7 @@ export function SettingsPanel() {
     
     setIsSavingOrg(true);
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) throw new Error("Supabase client not available");
 
       const { error } = await supabase

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -53,7 +53,7 @@ export function SignupForm() {
     setError(null);
 
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) {
         throw new Error("Supabase client not available");
       }
@@ -95,7 +95,7 @@ export function SignupForm() {
     }
 
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) {
         throw new Error("Supabase client not available");
       }

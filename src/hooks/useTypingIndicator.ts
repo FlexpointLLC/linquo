@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
-import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { createClient } from '@/lib/supabase/client';
 
 interface TypingUser {
   id: string;
@@ -18,7 +18,7 @@ export function useTypingIndicator(conversationId: string | null, currentUserId:
     if (!conversationId) return;
 
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) return;
 
       const channel = supabase.channel(`typing:${conversationId}`);
@@ -77,7 +77,7 @@ export function useTypingIndicator(conversationId: string | null, currentUserId:
   useEffect(() => {
     if (!conversationId) return;
 
-    const supabase = getSupabaseBrowser();
+    const supabase = createClient();
     if (!supabase) return;
 
     const channel = supabase.channel(`typing:${conversationId}`);

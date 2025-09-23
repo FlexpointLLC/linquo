@@ -64,7 +64,7 @@ export function LoginForm() {
     setSuccess(null);
 
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) {
         throw new Error("Supabase client not available");
       }
@@ -91,7 +91,7 @@ export function LoginForm() {
     setSuccess(null);
 
     try {
-      const supabase = getSupabaseBrowser();
+      const supabase = createClient();
       if (!supabase) {
         throw new Error("Supabase client not available");
       }
