@@ -78,7 +78,7 @@ export const MessageThread = memo(function MessageThread({
           messages.map((m) => (
             <div key={m.id} className="flex gap-2">
               {m.author === "customer" && (
-                <Avatar className="h-6 w-6 flex-shrink-0">
+                <Avatar className="h-6 w-6 flex-shrink-0 ml-2">
                   <AvatarFallback className="text-xs bg-muted text-muted-foreground">
                     {m.name?.slice(0, 2).toUpperCase() || "U"}
                   </AvatarFallback>
@@ -112,7 +112,7 @@ export const MessageThread = memo(function MessageThread({
               </div>
               
               {m.author === "agent" && (
-                <Avatar className="h-6 w-6 flex-shrink-0">
+                <Avatar className="h-6 w-6 flex-shrink-0 mr-2">
                   <AvatarFallback 
                     className="text-xs"
                     style={{ backgroundColor: brandColor + '20', color: brandColor }}
@@ -131,7 +131,7 @@ export const MessageThread = memo(function MessageThread({
             {typingUsers.map((user) => (
               <div key={user.id} className="flex gap-2">
                 {user.type === "customer" && (
-                  <Avatar className="h-6 w-6 flex-shrink-0">
+                  <Avatar className="h-6 w-6 flex-shrink-0 ml-2">
                     <AvatarFallback className="text-xs bg-muted text-muted-foreground">
                       {user.name?.slice(0, 2).toUpperCase() || "U"}
                     </AvatarFallback>
@@ -163,7 +163,7 @@ export const MessageThread = memo(function MessageThread({
                 </div>
                 
                 {user.type === "agent" && (
-                  <Avatar className="h-6 w-6 flex-shrink-0">
+                  <Avatar className="h-6 w-6 flex-shrink-0 mr-2">
                     <AvatarFallback 
                       className="text-xs"
                       style={{ backgroundColor: brandColor + '20', color: brandColor }}
