@@ -82,6 +82,8 @@ export function useConversations() {
                 setData(parsed.conversations);
                 setLoading(false);
                 setHasLoaded(true);
+                // Still set up real-time subscriptions even with cached data
+                console.log("🔄 Setting up real-time subscriptions with cached data");
                 return;
               }
             }
@@ -330,6 +332,12 @@ export function useConversations() {
 
     console.log("🔄 Setting up real-time subscriptions (separate effect)");
     
+    // Clear any existing cache to ensure fresh data
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('linquo-conversations-cache');
+      console.log("🗑️ Cleared localStorage cache for fresh real-time data");
+    }
+    
     // Set up realtime subscription for messages to update conversation order
     const messageChannel = client
       .channel("message_changes_separate")
@@ -358,6 +366,21 @@ export function useConversations() {
                 updatedData.unshift(conversation);
                 
                 console.log("📈 Moved conversation to top (separate):", conversation.id);
+                
+                // Update localStorage cache with the updated conversation order
+                if (typeof window !== 'undefined') {
+                  try {
+                    const cacheData = {
+                      conversations: updatedData,
+                      lastLoaded: Date.now()
+                    };
+                    localStorage.setItem('linquo-conversations-cache', JSON.stringify(cacheData));
+                    console.log("💾 Updated localStorage with conversation order change");
+                  } catch (error) {
+                    console.warn('Failed to update localStorage with conversation order:', error);
+                  }
+                }
+                
                 return updatedData;
               }
               
@@ -418,6 +441,22 @@ export function useConversations() {
             }
             
             console.log("📈 New conversation added to top (separate):", newConversation.id);
+            
+            // Update localStorage cache with the new conversation
+            if (typeof window !== 'undefined') {
+              try {
+                const updatedData = [newConversation, ...prevData];
+                const cacheData = {
+                  conversations: updatedData,
+                  lastLoaded: Date.now()
+                };
+                localStorage.setItem('linquo-conversations-cache', JSON.stringify(cacheData));
+                console.log("💾 Updated localStorage with new conversation");
+              } catch (error) {
+                console.warn('Failed to update localStorage with new conversation:', error);
+              }
+            }
+            
             return [newConversation, ...prevData];
           });
         }
