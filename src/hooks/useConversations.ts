@@ -89,16 +89,62 @@ export function useConversations() {
         
         if (customerIds.length > 0) {
           console.log("🔍 Fetching customer data for IDs:", customerIds);
-          const { data: customers, error: customerError } = await client
-            .from("customers")
-            .select("id,display_name,email")
-            .in("id", customerIds);
           
-          if (customerError) {
-            console.error("❌ Error fetching customers:", customerError);
-          } else {
-            console.log("✅ Fetched customer data:", customers);
-            customerData = customers || [];
+          // Try to fetch customers with retry logic
+          let retryCount = 0;
+          const maxRetries = 3;
+          
+          while (retryCount < maxRetries) {
+            try {
+              const { data: customers, error: customerError } = await client
+                .from("customers")
+                .select("id,display_name,email")
+                .in("id", customerIds);
+              
+              if (customerError) {
+                console.error(`❌ Error fetching customers (attempt ${retryCount + 1}):`, customerError);
+                retryCount++;
+                if (retryCount < maxRetries) {
+                  await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+                  continue;
+                }
+              } else {
+                console.log("✅ Fetched customer data:", customers);
+                customerData = customers || [];
+                break;
+              }
+            } catch (err) {
+              console.error(`❌ Exception fetching customers (attempt ${retryCount + 1}):`, err);
+              retryCount++;
+              if (retryCount < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                continue;
+              }
+            }
+          }
+          
+          if (customerData.length === 0) {
+            console.warn("⚠️ No customer data fetched after all retries, trying individual fetches");
+            
+            // Try to fetch customers individually as fallback
+            for (const customerId of customerIds) {
+              try {
+                const { data: customer, error } = await client
+                  .from("customers")
+                  .select("id,display_name,email")
+                  .eq("id", customerId)
+                  .single();
+                
+                if (!error && customer) {
+                  customerData.push(customer);
+                  console.log(`✅ Fetched individual customer:`, customer);
+                } else {
+                  console.error(`❌ Failed to fetch individual customer ${customerId}:`, error);
+                }
+              } catch (err) {
+                console.error(`❌ Exception fetching individual customer ${customerId}:`, err);
+              }
+            }
           }
         } else {
           console.log("⚠️ No customer IDs found in conversations");
@@ -263,6 +309,7 @@ export function useConversations() {
   }, [agent?.org_id, hasLoaded]); // Only depend on org_id and hasLoaded, not data
 
   const refresh = useCallback(() => {
+    console.log("🔄 Manual refresh triggered");
     setHasLoaded(false);
     setLoading(true);
     // Clear cache to force reload
@@ -271,7 +318,43 @@ export function useConversations() {
     }
   }, []);
 
-  return { data, loading, error, refresh };
+  const refreshCustomerData = useCallback(async () => {
+    console.log("🔄 Refreshing customer data only");
+    if (!data || data.length === 0) return;
+    
+    const client = getSupabaseBrowser();
+    if (!client) return;
+    
+    const customerIds = data.map(c => c.customer_id).filter(Boolean);
+    if (customerIds.length === 0) return;
+    
+    try {
+      const { data: customers, error } = await client
+        .from("customers")
+        .select("id,display_name,email")
+        .in("id", customerIds);
+      
+      if (!error && customers) {
+        console.log("✅ Refreshed customer data:", customers);
+        
+        // Update the existing data with new customer info
+        setData(prevData => {
+          if (!prevData) return prevData;
+          
+          return prevData.map(conv => ({
+            ...conv,
+            customers: customers.find(c => c.id === conv.customer_id) || conv.customers
+          }));
+        });
+      } else {
+        console.error("❌ Failed to refresh customer data:", error);
+      }
+    } catch (err) {
+      console.error("❌ Exception refreshing customer data:", err);
+    }
+  }, [data]);
+
+  return { data, loading, error, refresh, refreshCustomerData };
 }
 
 
