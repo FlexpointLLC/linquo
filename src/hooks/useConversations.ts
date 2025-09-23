@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -21,6 +21,7 @@ export function useConversations() {
   const [data, setData] = useState<Conversation[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const { agent } = useAuth();
 
   // Load conversations from localStorage on mount
@@ -30,10 +31,12 @@ export function useConversations() {
         const stored = localStorage.getItem('linquo-conversations-cache');
         if (stored) {
           const parsed = JSON.parse(stored);
-          // Only use cached data if it's less than 5 minutes old
-          if (parsed.lastLoaded && Date.now() - parsed.lastLoaded < 300000) {
+          // Only use cached data if it's less than 10 minutes old
+          if (parsed.lastLoaded && Date.now() - parsed.lastLoaded < 600000) {
             setData(parsed.conversations);
             setLoading(false);
+            setHasLoaded(true);
+            return; // Don't fetch from server if we have recent cache
           }
         }
       } catch (error) {
@@ -56,6 +59,12 @@ export function useConversations() {
         
         // If agent is not available, don't clear data - keep existing conversations
         if (!agent?.org_id) {
+          setLoading(false);
+          return;
+        }
+
+        // Don't reload if we already have recent data
+        if (hasLoaded && data && data.length > 0) {
           setLoading(false);
           return;
         }
@@ -90,12 +99,12 @@ export function useConversations() {
         }
         
         // Combine the data
-        const data = conversations?.map(conv => ({
+        const combinedData = conversations?.map(conv => ({
           ...conv,
           customers: customerData.find(c => c.id === conv.customer_id) || null
         })) || [];
         // Set data even if it's an empty array (no conversations)
-        const conversationData = data as Conversation[] || [];
+        const conversationData = combinedData as Conversation[] || [];
         console.log("🔍 Conversations with customer data:", conversationData.map(c => ({
           id: c.id,
           customer_id: c.customer_id,
@@ -103,6 +112,7 @@ export function useConversations() {
           customer_email: c.customers?.email
         })));
         setData(conversationData);
+        setHasLoaded(true);
         
         // Save to localStorage for persistence
         if (typeof window !== 'undefined') {
@@ -116,7 +126,9 @@ export function useConversations() {
           }
         }
 
-        // Enable realtime subscription for conversation updates
+        // Disable realtime subscription temporarily to prevent reloading
+        // TODO: Implement more efficient realtime updates
+        /*
         const channel = client
           .channel("conv_changes")
           .on(
@@ -175,6 +187,7 @@ export function useConversations() {
         unsub = () => {
           client.removeChannel(channel);
         };
+        */
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to load conversations");
       } finally {
@@ -187,7 +200,16 @@ export function useConversations() {
     };
   }, [agent?.org_id]);
 
-  return { data, loading, error };
+  const refresh = useCallback(() => {
+    setHasLoaded(false);
+    setLoading(true);
+    // Clear cache to force reload
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('linquo-conversations-cache');
+    }
+  }, []);
+
+  return { data, loading, error, refresh };
 }
 
 
