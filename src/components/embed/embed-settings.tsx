@@ -16,8 +16,10 @@ export function EmbedSettings() {
   const generateEmbedCode = () => {
     if (!orgId) return "";
     
-    // Always use production URL for embed codes
-    const baseUrl = 'https://linquochat.vercel.app';
+    // Use current domain dynamically
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : 'https://linquochat.vercel.app'; // Fallback for SSR
     
     return `<script id="linquo" async="true" src="${baseUrl}/widget.js?id=${orgId}"></script>`;
   };
