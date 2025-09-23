@@ -70,6 +70,25 @@ export function useConversations() {
           setLoading(false);
           return;
         }
+
+        // Additional check: if we have data from localStorage, don't reload
+        if (typeof window !== 'undefined') {
+          try {
+            const stored = localStorage.getItem('linquo-conversations-cache');
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (parsed.lastLoaded && Date.now() - parsed.lastLoaded < 600000 && parsed.conversations?.length > 0) {
+                console.log("🚀 Skipping reload - using localStorage cache");
+                setData(parsed.conversations);
+                setLoading(false);
+                setHasLoaded(true);
+                return;
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to check localStorage cache:', error);
+          }
+        }
         
         // First get conversations
         const { data: conversations, error } = await client
@@ -191,110 +210,115 @@ export function useConversations() {
           }
         }
 
+        // Temporarily disable real-time subscriptions to prevent refresh issues
+        // TODO: Re-enable with proper optimization
+        console.log("🚫 Real-time subscriptions temporarily disabled to prevent refresh issues");
+        
         // Set up realtime subscription for messages to update conversation order
-        const messageChannel = client
-          .channel("message_changes")
-          .on(
-            "postgres_changes" as never,
-            { event: "INSERT", schema: "public", table: "messages" },
-            (payload) => {
-              console.log("🔄 New message detected:", payload);
-              
-              // Update the conversation's last_message_at timestamp
-              if (payload.new && payload.new.conversation_id) {
-                setData(prevData => {
-                  if (!prevData) return prevData;
-                  
-                  // Find the conversation and move it to the top
-                  const updatedData = [...prevData];
-                  const conversationIndex = updatedData.findIndex(
-                    conv => conv.id === payload.new.conversation_id
-                  );
-                  
-                  if (conversationIndex !== -1) {
-                    // Move conversation to top and update timestamp
-                    const conversation = updatedData[conversationIndex];
-                    conversation.last_message_at = payload.new.created_at;
-                    updatedData.splice(conversationIndex, 1);
-                    updatedData.unshift(conversation);
-                    
-                    console.log("📈 Moved conversation to top:", conversation.id);
-                    return updatedData;
-                  }
-                  
-                  return prevData;
-                });
-              }
-            }
-          )
-          .subscribe();
+        // const messageChannel = client
+        //   .channel("message_changes")
+        //   .on(
+        //     "postgres_changes" as never,
+        //     { event: "INSERT", schema: "public", table: "messages" },
+        //     (payload) => {
+        //       console.log("🔄 New message detected:", payload);
+        //       
+        //       // Update the conversation's last_message_at timestamp
+        //       if (payload.new && payload.new.conversation_id) {
+        //         setData(prevData => {
+        //           if (!prevData) return prevData;
+        //           
+        //           // Find the conversation and move it to the top
+        //           const updatedData = [...prevData];
+        //           const conversationIndex = updatedData.findIndex(
+        //             conv => conv.id === payload.new.conversation_id
+        //           );
+        //           
+        //           if (conversationIndex !== -1) {
+        //             // Move conversation to top and update timestamp
+        //             const conversation = updatedData[conversationIndex];
+        //             conversation.last_message_at = payload.new.created_at;
+        //             updatedData.splice(conversationIndex, 1);
+        //             updatedData.unshift(conversation);
+        //             
+        //             console.log("📈 Moved conversation to top:", conversation.id);
+        //             return updatedData;
+        //           }
+        //           
+        //           return prevData;
+        //         });
+        //       }
+        //     }
+        //   )
+        //   .subscribe();
 
         // Set up realtime subscription for conversation updates
-        const conversationChannel = client
-          .channel("conv_changes")
-          .on(
-            "postgres_changes" as never,
-            { event: "*", schema: "public", table: "conversations" },
-            (payload) => {
-              console.log("🔄 Conversation change detected:", payload);
-              
-              if (payload.eventType === "INSERT") {
-                // New conversation created - add to top of list
-                setData(prevData => {
-                  if (!prevData) return prevData;
-                  
-                  const newConversation = {
-                    id: payload.new.id,
-                    customer_id: payload.new.customer_id,
-                    last_message_at: payload.new.last_message_at,
-                    state: payload.new.state,
-                    created_at: payload.new.created_at,
-                    customers: null // Will be populated when customer data is fetched
-                  };
-                  
-                  // Fetch customer data for the new conversation
-                  if (payload.new.customer_id) {
-                    client
-                      .from("customers")
-                      .select("id,display_name,email")
-                      .eq("id", payload.new.customer_id)
-                      .single()
-                      .then(({ data: customerData }) => {
-                        if (customerData) {
-                          setData(prevData => {
-                            if (!prevData) return prevData;
-                            return prevData.map(conv => 
-                              conv.id === payload.new.id 
-                                ? { ...conv, customers: customerData }
-                                : conv
-                            );
-                          });
-                        }
-                      });
-                  }
-                  
-                  console.log("📈 New conversation added to top:", newConversation.id);
-                  return [newConversation, ...prevData];
-                });
-              } else if (payload.eventType === "UPDATE") {
-                // Conversation updated - refresh the list
-                setData(prevData => {
-                  if (!prevData) return prevData;
-                  
-                  return prevData.map(conv => 
-                    conv.id === payload.new.id 
-                      ? { ...conv, ...payload.new }
-                      : conv
-                  );
-                });
-              }
-            }
-          )
-          .subscribe();
+        // const conversationChannel = client
+        //   .channel("conv_changes")
+        //   .on(
+        //     "postgres_changes" as never,
+        //     { event: "*", schema: "public", table: "conversations" },
+        //     (payload) => {
+        //       console.log("🔄 Conversation change detected:", payload);
+        //       
+        //       if (payload.eventType === "INSERT") {
+        //         // New conversation created - add to top of list
+        //         setData(prevData => {
+        //           if (!prevData) return prevData;
+        //           
+        //           const newConversation = {
+        //             id: payload.new.id,
+        //             customer_id: payload.new.customer_id,
+        //             last_message_at: payload.new.last_message_at,
+        //             state: payload.new.state,
+        //             created_at: payload.new.created_at,
+        //             customers: null // Will be populated when customer data is fetched
+        //           };
+        //           
+        //           // Fetch customer data for the new conversation
+        //           if (payload.new.customer_id) {
+        //             client
+        //               .from("customers")
+        //               .select("id,display_name,email")
+        //               .eq("id", payload.new.customer_id)
+        //               .single()
+        //               .then(({ data: customerData }) => {
+        //                 if (customerData) {
+        //                   setData(prevData => {
+        //                     if (!prevData) return prevData;
+        //                     return prevData.map(conv => 
+        //                       conv.id === payload.new.id 
+        //                         ? { ...conv, customers: customerData }
+        //                         : conv
+        //                     );
+        //                   });
+        //                 }
+        //               });
+        //           }
+        //           
+        //           console.log("📈 New conversation added to top:", newConversation.id);
+        //           return [newConversation, ...prevData];
+        //         });
+        //       } else if (payload.eventType === "UPDATE") {
+        //         // Conversation updated - refresh the list
+        //         setData(prevData => {
+        //           if (!prevData) return prevData;
+        //           
+        //           return prevData.map(conv => 
+        //             conv.id === payload.new.id 
+        //               ? { ...conv, ...payload.new }
+        //               : conv
+        //           );
+        //         });
+        //       }
+        //     }
+        //   )
+        //   .subscribe();
 
         unsub = () => {
-          client.removeChannel(messageChannel);
-          client.removeChannel(conversationChannel);
+          // Channels are temporarily disabled
+          // client.removeChannel(messageChannel);
+          // client.removeChannel(conversationChannel);
         };
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Failed to load conversations");
@@ -306,7 +330,7 @@ export function useConversations() {
     return () => {
       if (unsub) unsub();
     };
-  }, [agent?.org_id, hasLoaded]); // Only depend on org_id and hasLoaded, not data
+  }, [agent?.org_id]); // Only depend on org_id to prevent unnecessary reloads
 
   const refresh = useCallback(() => {
     console.log("🔄 Manual refresh triggered");
