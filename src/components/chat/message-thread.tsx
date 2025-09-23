@@ -104,7 +104,7 @@ export const MessageThread = memo(function MessageThread({
                     }`}
                     style={m.author === "agent" ? { backgroundColor: brandColor } : {}}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">
                       {formatMessageText(m.text)}
                     </p>
                   </div>
@@ -154,7 +154,7 @@ export const MessageThread = memo(function MessageThread({
                           <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                           <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                         </div>
-                        <span className="text-xs opacity-70">
+                        <span className="text-xs opacity-70 break-words overflow-wrap-anywhere">
                           {user.name} is typing...
                         </span>
                       </div>

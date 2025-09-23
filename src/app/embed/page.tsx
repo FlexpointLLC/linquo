@@ -319,7 +319,7 @@ function EmbedContent() {
                      <span className="text-white text-sm font-medium">P</span>
                    </div>
                    <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
-                     <div className="text-sm">
+                     <div className="text-sm break-words overflow-wrap-anywhere">
                        Please share your email with us in case we can&apos;t get back to you right away.
                      </div>
                      <div className="text-xs text-gray-500 mt-1">Agent · 2:30 PM</div>
@@ -334,7 +334,7 @@ function EmbedContent() {
                      <span className="text-white text-sm font-medium">P</span>
                    </div>
                    <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
-                     <div className="text-sm">
+                     <div className="text-sm break-words overflow-wrap-anywhere">
                        Hi there! 👋 Need help with our services? Just ask here and we&apos;ll assist you!
                      </div>
                      <div className="text-xs text-gray-500 mt-1">Agent · 2:31 PM</div>
@@ -362,7 +362,7 @@ function EmbedContent() {
                        }`}
                        style={message.author === 'customer' ? { backgroundColor: brandColor } : {}}
                      >
-                       <div className="text-sm whitespace-pre-wrap">{message.text}</div>
+                       <div className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.text}</div>
                        <div className={`text-xs mt-1 ${message.author === 'agent' ? 'text-gray-500' : 'text-white opacity-80'}`}>
                          {message.author === 'agent' ? 'Agent' : 'You'} · {message.time}
                        </div>
@@ -390,7 +390,7 @@ function EmbedContent() {
                        <span className="text-white text-sm font-medium">A</span>
                      </div>
                      <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
-                       <div className="text-sm italic">
+                       <div className="text-sm italic break-words overflow-wrap-anywhere">
                          {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
                        </div>
                      </div>
