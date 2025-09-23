@@ -87,7 +87,7 @@ export const MessageThread = memo(function MessageThread({
               
               <div className={`flex-1 ${m.author === "agent" ? "flex justify-end" : ""}`}>
                 <div className={`${isSidebarOpen ? 'max-w-[45%]' : 'max-w-[70%]'} ${m.author === "agent" ? "text-right" : ""}`}>
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className={`flex items-center gap-2 mb-1 ${m.author === "agent" ? "justify-end" : ""}`}>
                     <span className="text-xs font-medium text-foreground">
                       {m.email || m.name}
                     </span>
