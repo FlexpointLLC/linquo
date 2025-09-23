@@ -67,7 +67,7 @@ export const ConversationList = memo(function ConversationList({
         <div className="flex items-center gap-4 text-sm">
           <button
             onClick={() => setActiveTab("open")}
-            className={`pb-2 px-1 font-medium transition-colors ${
+            className={`pb-2 px-1 font-medium transition-colors cursor-pointer ${
               activeTab === "open"
                 ? "border-b-2"
                 : "text-muted-foreground hover:text-foreground"
@@ -81,7 +81,7 @@ export const ConversationList = memo(function ConversationList({
           </button>
           <button
             onClick={() => setActiveTab("newest")}
-            className={`pb-2 px-1 font-medium transition-colors ${
+            className={`pb-2 px-1 font-medium transition-colors cursor-pointer ${
               activeTab === "newest"
                 ? "border-b-2"
                 : "text-muted-foreground hover:text-foreground"
@@ -95,7 +95,7 @@ export const ConversationList = memo(function ConversationList({
           </button>
           <button
             onClick={() => setActiveTab("resolved")}
-            className={`pb-2 px-1 font-medium transition-colors ${
+            className={`pb-2 px-1 font-medium transition-colors cursor-pointer ${
               activeTab === "resolved"
                 ? "border-b-2"
                 : "text-muted-foreground hover:text-foreground"
@@ -131,7 +131,7 @@ export const ConversationList = memo(function ConversationList({
               key={c.id}
               onClick={() => onSelect?.(c.id)}
               className={
-                "w-full text-left p-3 hover:bg-muted transition-colors " +
+                "w-full text-left p-3 hover:bg-muted transition-colors cursor-pointer " +
                 (activeId === c.id ? "border-r-2 bg-muted" : "")
               }
               style={activeId === c.id ? { borderRightColor: brandColor } : {}}
