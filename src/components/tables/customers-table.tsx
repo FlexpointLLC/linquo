@@ -1,7 +1,8 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Globe, Monitor, Smartphone, Tablet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Globe, Monitor, Smartphone, Tablet, Download } from "lucide-react";
 
 type Customer = { 
   id: string; 
@@ -26,13 +27,82 @@ type Customer = {
 };
 
 export function CustomersTable({ data }: { data: Customer[] }) {
+  const exportToCSV = () => {
+    if (data.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    // Define CSV headers
+    const headers = [
+      'ID',
+      'Name',
+      'Email',
+      'Status',
+      'Country',
+      'City',
+      'Region',
+      'Browser',
+      'OS',
+      'Device Type',
+      'Is Returning',
+      'Total Visits',
+      'Created At'
+    ];
+
+    // Convert data to CSV format
+    const csvContent = [
+      headers.join(','),
+      ...data.map(customer => [
+        customer.id,
+        `"${customer.display_name || ''}"`,
+        `"${customer.email || ''}"`,
+        customer.status || '',
+        `"${customer.country || ''}"`,
+        `"${customer.city || ''}"`,
+        `"${customer.region || ''}"`,
+        `"${customer.browser_name || ''}"`,
+        `"${customer.os_name || ''}"`,
+        customer.device_type || '',
+        customer.is_returning ? 'Yes' : 'No',
+        customer.total_visits || 0,
+        customer.created_at ? new Date(customer.created_at).toISOString() : ''
+      ].join(','))
+    ].join('\n');
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `customers-export-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Customers</h1>
-        <p className="text-muted-foreground">
-          View and manage your customer base and their conversation history
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Customers</h1>
+            <p className="text-muted-foreground">
+              View and manage your customer base and their conversation history
+            </p>
+          </div>
+          <Button 
+            onClick={exportToCSV}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+            disabled={data.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
       
       <div className="bg-card rounded-lg border border-border">
