@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { BrandColorProvider } from "@/contexts/brand-color-context";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { AuthProvider } from "@/components/auth/auth-provider";
 
 export const metadata: Metadata = {
   title: "Linquo",
@@ -21,8 +22,10 @@ export default function RootLayout({
         <Suspense fallback={<div>Loading...</div>}>
           <ThemeProvider>
             <BrandColorProvider>
-              {children}
-              <Toaster richColors position="top-right" />
+              <AuthProvider>
+                {children}
+                <Toaster richColors position="top-right" />
+              </AuthProvider>
             </BrandColorProvider>
           </ThemeProvider>
         </Suspense>

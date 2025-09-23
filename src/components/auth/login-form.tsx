@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -28,10 +28,7 @@ export function LoginForm() {
     setSuccess(null);
 
     try {
-      const supabase = getSupabaseBrowser();
-      if (!supabase) {
-        throw new Error("Supabase client not available");
-      }
+      const supabase = createClient();
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.email,
