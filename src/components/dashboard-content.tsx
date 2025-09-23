@@ -349,14 +349,14 @@ export function DashboardContent() {
                           <Section title="Location" icon={MapPin}>
                             {(customer.city || customer.region || customer.country) ? (
                               <>
-                                <div className="flex items-center justify-between py-1">
-                                  <span className="text-muted-foreground">Place</span>
-                                  <span className="text-foreground font-medium">{[customer.city, customer.region, customer.country].filter(Boolean).join(', ')}</span>
+                                <div className="flex items-start justify-between py-1 gap-4">
+                                  <span className="text-muted-foreground flex-shrink-0">Place</span>
+                                  <span className="text-foreground font-medium text-right break-words">{[customer.city, customer.region, customer.country].filter(Boolean).join(', ')}</span>
                                 </div>
                                 {customer.timezone && (
-                                  <div className="flex items-center justify-between py-1">
-                                    <span className="text-muted-foreground">Timezone</span>
-                                    <span className="text-foreground font-medium">{customer.timezone}</span>
+                                  <div className="flex items-start justify-between py-1 gap-4">
+                                    <span className="text-muted-foreground flex-shrink-0">Timezone</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customer.timezone}</span>
                                   </div>
                                 )}
                               </>
@@ -373,27 +373,27 @@ export function DashboardContent() {
                             {(customer.browser_name || customer.os_name || customer.device_type || customer.language) ? (
                               <>
                                 {customer.browser_name && (
-                                  <div className="flex items-center justify-between py-1">
-                                    <span className="text-muted-foreground">Browser</span>
-                                    <span className="text-foreground font-medium">{customer.browser_name}{customer.browser_version ? ` ${customer.browser_version}` : ''}</span>
+                                  <div className="flex items-start justify-between py-1 gap-4">
+                                    <span className="text-muted-foreground flex-shrink-0">Browser</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customer.browser_name}{customer.browser_version ? ` ${customer.browser_version}` : ''}</span>
                                   </div>
                                 )}
                                 {customer.os_name && (
-                                  <div className="flex items-center justify-between py-1">
-                                    <span className="text-muted-foreground">OS</span>
-                                    <span className="text-foreground font-medium">{customer.os_name}{customer.os_version ? ` ${customer.os_version}` : ''}</span>
+                                  <div className="flex items-start justify-between py-1 gap-4">
+                                    <span className="text-muted-foreground flex-shrink-0">OS</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customer.os_name}{customer.os_version ? ` ${customer.os_version}` : ''}</span>
                                   </div>
                                 )}
                                 {customer.device_type && (
-                                  <div className="flex items-center justify-between py-1">
-                                    <span className="text-muted-foreground">Device</span>
-                                    <span className="text-foreground font-medium">{customer.device_type}</span>
+                                  <div className="flex items-start justify-between py-1 gap-4">
+                                    <span className="text-muted-foreground flex-shrink-0">Device</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customer.device_type}</span>
                                   </div>
                                 )}
                                 {customer.language && (
-                                  <div className="flex items-center justify-between py-1">
-                                    <span className="text-muted-foreground">Language</span>
-                                    <span className="text-foreground font-medium">{customer.language}</span>
+                                  <div className="flex items-start justify-between py-1 gap-4">
+                                    <span className="text-muted-foreground flex-shrink-0">Language</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customer.language}</span>
                                   </div>
                                 )}
                               </>
@@ -418,15 +418,15 @@ export function DashboardContent() {
                                   </div>
                                 )}
                                 {typeof customer.total_visits !== 'undefined' && (
-                                  <div className="flex items-center justify-between py-1">
-                                    <span className="text-muted-foreground">Total visits</span>
-                                    <span className="text-foreground font-medium">{customer.total_visits}</span>
+                                  <div className="flex items-start justify-between py-1 gap-4">
+                                    <span className="text-muted-foreground flex-shrink-0">Total visits</span>
+                                    <span className="text-foreground font-medium text-right break-words">{customer.total_visits}</span>
                                   </div>
                                 )}
                                 {customer.last_visit && (
-                                  <div className="flex items-center justify-between py-1">
-                                    <span className="text-muted-foreground">Last visit</span>
-                                    <span className="text-foreground font-medium">{new Date(customer.last_visit).toLocaleDateString()}</span>
+                                  <div className="flex items-start justify-between py-1 gap-4">
+                                    <span className="text-muted-foreground flex-shrink-0">Last visit</span>
+                                    <span className="text-foreground font-medium text-right break-words">{new Date(customer.last_visit).toLocaleDateString()}</span>
                                   </div>
                                 )}
                               </>
@@ -475,13 +475,13 @@ export function DashboardContent() {
                                 {conversation?.state === 'CLOSED' ? 'Resolved' : 'Open'}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between py-1">
-                              <span className="text-muted-foreground">Created</span>
-                              <span className="text-foreground font-medium">{conversation?.created_at ? new Date(conversation.created_at).toLocaleDateString() : 'Unknown'}</span>
+                            <div className="flex items-start justify-between py-1 gap-4">
+                              <span className="text-muted-foreground flex-shrink-0">Created</span>
+                              <span className="text-foreground font-medium text-right break-words">{conversation?.created_at ? new Date(conversation.created_at).toLocaleDateString() : 'Unknown'}</span>
                             </div>
-                            <div className="flex items-center justify-between py-1">
-                              <span className="text-muted-foreground">Messages</span>
-                              <span className="text-foreground font-medium">{messageRows?.length || 0}</span>
+                            <div className="flex items-start justify-between py-1 gap-4">
+                              <span className="text-muted-foreground flex-shrink-0">Messages</span>
+                              <span className="text-foreground font-medium text-right break-words">{messageRows?.length || 0}</span>
                             </div>
                           </Section>
                         </div>
