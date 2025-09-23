@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
 import { useBrandColor } from "@/contexts/brand-color-context";
+import { collectCustomerData, CustomerData } from "@/lib/customer-data-collector";
 
 interface CustomerFormProps {
-  onSubmit: (data: { name: string; email: string }) => Promise<void>;
+  onSubmit: (data: { name: string; email: string; customerData?: CustomerData }) => Promise<void>;
   loading?: boolean;
 }
 
@@ -24,12 +25,21 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
       console.log("❌ Form validation failed - missing name or email");
       return;
     }
-    console.log("✅ Form validation passed, calling onSubmit");
+    
+    console.log("✅ Form validation passed, collecting customer data...");
     try {
-      await onSubmit(formData);
+      // Collect comprehensive customer data
+      const customerData = await collectCustomerData();
+      console.log("📊 Collected customer data:", customerData);
+      
+      await onSubmit({
+        ...formData,
+        customerData
+      });
     } catch (error) {
       console.error("❌ Error in form submission:", error);
-      // Don't break the form if there's an error
+      // Fallback to basic data if collection fails
+      await onSubmit(formData);
     }
   };
 

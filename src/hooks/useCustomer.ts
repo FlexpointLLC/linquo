@@ -10,6 +10,58 @@ export type Customer = {
   status: "ACTIVE" | "BLOCKED";
   created_at: string;
   org_id: string;
+  
+  // Device & Browser Information
+  user_agent?: string;
+  browser_name?: string;
+  browser_version?: string;
+  os_name?: string;
+  os_version?: string;
+  device_type?: 'Desktop' | 'Mobile' | 'Tablet';
+  screen_resolution?: string;
+  timezone?: string;
+  
+  // Network & Location Information
+  ip_address?: string;
+  country?: string;
+  region?: string;
+  city?: string;
+  postal_code?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone_offset?: string;
+  
+  // Website Context
+  current_url?: string;
+  page_title?: string;
+  referrer_url?: string;
+  utm_source?: string;
+  utm_campaign?: string;
+  utm_medium?: string;
+  
+  // Behavioral Data
+  session_id?: string;
+  session_start?: string;
+  is_returning?: boolean;
+  total_visits?: number;
+  last_visit?: string;
+  avg_session_duration?: number;
+  
+  // Technical Information
+  connection_type?: string;
+  network_speed?: string;
+  page_load_time?: number;
+  
+  // Privacy & Consent
+  gdpr_consent?: boolean;
+  cookie_consent?: boolean;
+  privacy_policy_accepted?: boolean;
+  
+  // Additional metadata
+  device_fingerprint?: string;
+  language?: string;
+  color_depth?: number;
+  pixel_ratio?: number;
 };
 
 export function useCustomer() {
