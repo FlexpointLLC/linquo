@@ -14,6 +14,7 @@ import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useLastMessages } from "@/hooks/useLastMessages";
 import { useAuth } from "@/hooks/useAuth";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight } from "lucide-react";
@@ -47,6 +48,13 @@ export function DashboardContent() {
 
   const { agents, customers } = useDataCache();
   const { agent } = useAuth();
+
+  // Typing indicator for dashboard
+  const { typingUsers: dashboardTypingUsers } = useTypingIndicator(
+    activeId || null,
+    agent?.id || '',
+    'agent'
+  );
 
   // Handle resolve/unresolve conversation
   const handleResolveConversation = async (conversationId: string, currentState: string) => {
@@ -236,6 +244,7 @@ export function DashboardContent() {
                           };
                         }) as ChatMessage[]}
                         isSidebarOpen={isInfoSidebarOpen}
+                        typingUsers={dashboardTypingUsers}
                       />
                   ) : (
                     <InstallationGuide />
