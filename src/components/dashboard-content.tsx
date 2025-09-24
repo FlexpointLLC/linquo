@@ -97,7 +97,7 @@ export const DashboardContent = memo(function DashboardContent() {
   };
 
   const { data: conversationRows, error: conversationError, resetUnreadCount } = useConversations();
-  const { data: messageRows, error: messageError, markMessagesAsRead, refreshMessages } = useMessages(currentTab === "chats" ? activeId : null);
+  const { data: messageRows, error: messageError, markMessagesAsRead, refresh: refreshMessages } = useMessages(currentTab === "chats" ? activeId : null);
   
   // Memoize conversation IDs to prevent infinite loops
   const conversationIds = useMemo(() => 
