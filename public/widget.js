@@ -1,7 +1,7 @@
 (function() {
   'use strict';
   
-  console.log('🎨 Linquo Widget v2.2 - Responsive height fix');
+  // Linquo Widget v2.2 - Responsive height fix
   
   // Get the script element to extract the org ID
   var script = document.currentScript || document.querySelector('script[id="linquo"]');
@@ -26,36 +26,28 @@
     retryCount = retryCount || 0;
     var maxRetries = 2;
     var baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://linquochat.vercel.app';
-    console.log('🎨 Fetching brand color for org:', orgId, 'from:', baseUrl, '(attempt ' + (retryCount + 1) + ')');
+    // Fetching brand color for org
     
     fetch(baseUrl + '/api/organization/' + encodeURIComponent(orgId))
       .then(function(response) {
-        console.log('🎨 API response status:', response.status);
+        // API response received
         if (!response.ok) {
           throw new Error('Network response was not ok: ' + response.status);
         }
         return response.json();
       })
       .then(function(data) {
-        console.log('🎨 API response data:', data);
         if (data.brand_color) {
           brandColor = data.brand_color;
-          console.log('🎨 Brand color updated to:', brandColor);
-        } else {
-          console.log('🎨 No brand_color in response, using default:', brandColor);
         }
         callback();
       })
       .catch(function(error) {
-        console.error('🎨 Error fetching brand color (attempt ' + (retryCount + 1) + '):', error);
-        
         if (retryCount < maxRetries) {
-          console.log('🎨 Retrying in 1 second...');
           setTimeout(function() {
             fetchBrandColor(orgId, callback, retryCount + 1);
           }, 1000);
         } else {
-          console.log('🎨 Max retries reached, using default brand color:', brandColor);
           callback(); // Continue with default color
         }
       });
@@ -66,7 +58,7 @@
     if (bubble) {
       bubble.style.backgroundColor = color;
       bubble.style.boxShadow = '0 4px 12px ' + color + '40';
-      console.log('🎨 Bubble color updated to:', color);
+      // Bubble color updated
     }
   }
 
@@ -78,8 +70,7 @@
       bubble.id = 'linquo-chat-bubble';
       bubble.style.cssText = 'position:fixed;bottom:24px;right:24px;width:68px;height:68px;border-radius:50%;background-color:' + brandColor + ';box-shadow:0 4px 12px ' + brandColor + '40;cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;';
       
-      console.log('🎨 Creating bubble with color:', brandColor);
-      console.log('🎨 Bubble CSS:', bubble.style.cssText);
+      // Creating bubble with brand color
       
       // Add hover effects
       bubble.addEventListener('mouseenter', function() {
@@ -107,11 +98,11 @@
       // Create widget container (initially hidden)
       var container = document.createElement('div');
       container.id = 'linquo-widget';
-      // Main Container: 400px width, 85% of screen height
+      // Main Container: 400px width, 85% of screen height, max 700px
       var viewportHeight = window.innerHeight;
-      var containerHeight = viewportHeight * 0.85; // 85% of viewport height
+      var containerHeight = Math.min(700, viewportHeight * 0.85); // 85% of viewport height, max 700px
       
-      console.log('📏 Viewport height:', viewportHeight, 'Container height:', containerHeight);
+      // Container height calculated
       
       container.style.cssText = 'position:fixed;bottom:100px;right:24px;width:400px;height:' + containerHeight + 'px;background:white;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.2);border:1px solid #e5e7eb;z-index:999998;display:none;';
       
@@ -153,39 +144,29 @@
       
       // Handle messages from iframe (close widget)
       window.addEventListener('message', function (e) {
-        console.log('🔴 Received message:', e.data);
-        console.log('🔴 Message origin:', e.origin);
-        console.log('🔴 Message source:', e.source);
-        
         if (!e || !e.data) {
-          console.log('🔴 No message data');
           return;
         }
         if (typeof e.data !== 'object') {
-          console.log('🔴 Message data is not an object:', typeof e.data);
           return;
         }
         
         // Handle close widget message
         if (e.data.type === 'close-widget') {
-          console.log('🔴 Closing widget via message');
           isOpen = false;
           container.style.display = 'none';
           // Change icon back to custom chat SVG
           bubble.innerHTML = '';
           bubble.appendChild(chatIcon);
-          console.log('🔴 Widget closed successfully');
-        } else {
-          console.log('🔴 Unknown message type:', e.data.type);
         }
       });
       
       // Add resize listener to update container height (70% of screen)
       window.addEventListener('resize', function() {
         var newViewportHeight = window.innerHeight;
-        var newContainerHeight = newViewportHeight * 0.85; // 85% of viewport height
+        var newContainerHeight = Math.min(700, newViewportHeight * 0.85); // 85% of viewport height, max 700px
         
-        console.log('📏 Resize - New viewport height:', newViewportHeight, 'New container height:', newContainerHeight);
+        // Container resized
         
         container.style.height = newContainerHeight + 'px';
       });
@@ -194,14 +175,7 @@
       document.body.appendChild(bubble);
       document.body.appendChild(container);
       
-      // Add a test function to manually resize (for debugging)
-      window.testWidgetResize = function() {
-        var testHeight = Math.random() * 500 + 300; // Random height between 300-800px
-        console.log('🧪 Manual test resize to:', testHeight + 'px');
-        container.style.height = testHeight + 'px';
-      };
-      
-      console.log('🧪 Test function available: window.testWidgetResize()');
+      // Widget loaded successfully
       
     } catch (err) {
       console.error('[Linquo Widget] failed to load', err);

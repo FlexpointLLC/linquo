@@ -15,36 +15,29 @@ export default function EmbedLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="light">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            html, body {
-              margin: 0;
-              padding: 0;
-              height: 100%;
-              overflow: hidden;
-              background: white;
-            }
-            #__next {
-              height: 100%;
-            }
-            [data-widget-container] {
-              /* Height will be controlled by JavaScript */
-            }
-          `
-        }} />
-      </head>
-      <body className="light">
-        <div style={{ height: '100%' }}>
-          <Suspense fallback={<GradientLoadingFallback />}>
-            <BrandColorProvider>
-              {children}
-            </BrandColorProvider>
-          </Suspense>
-        </div>
-      </body>
-    </html>
+    <div className="h-full w-full">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: white;
+          }
+          #__next {
+            height: 100%;
+          }
+          [data-widget-container] {
+            /* Height will be controlled by JavaScript */
+          }
+        `
+      }} />
+      <Suspense fallback={<GradientLoadingFallback />}>
+        <BrandColorProvider>
+          {children}
+        </BrandColorProvider>
+      </Suspense>
+    </div>
   )
 }
