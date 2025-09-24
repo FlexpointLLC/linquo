@@ -15,9 +15,6 @@ const CustomersTable = dynamic(() => import("@/components/tables/customers-table
   loading: () => <div className="p-4 text-center text-muted-foreground">Loading customers...</div>
 });
 
-const SettingsPanel = dynamic(() => import("@/components/settings/settings-panel").then(mod => ({ default: mod.SettingsPanel })), {
-  loading: () => <div className="p-4 text-center text-muted-foreground">Loading settings...</div>
-});
 
 const EmbedSettings = dynamic(() => import("@/components/embed/embed-settings").then(mod => ({ default: mod.EmbedSettings })), {
   loading: () => <div className="p-4 text-center text-muted-foreground">Loading embed settings...</div>
@@ -38,6 +35,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { OptimizedSettings } from "@/components/settings/optimized-settings";
 
 export const DashboardContent = memo(function DashboardContent() {
   const router = useRouter();
@@ -97,7 +95,7 @@ export const DashboardContent = memo(function DashboardContent() {
   };
 
   const { data: conversationRows, error: conversationError, resetUnreadCount } = useConversations();
-  const { data: messageRows, error: messageError, markMessagesAsRead, refresh: refreshMessages } = useMessages(currentTab === "chats" ? activeId : null);
+  const { data: messageRows, error: messageError, markMessagesAsRead, refresh } = useMessages(currentTab === "chats" ? activeId : null);
   
   // Memoize conversation IDs to prevent infinite loops
   const conversationIds = useMemo(() => 
@@ -215,11 +213,11 @@ export const DashboardContent = memo(function DashboardContent() {
 
   // Refresh messages when switching conversations to ensure read status is up-to-date
   useEffect(() => {
-    if (activeId && refreshMessages) {
+    if (activeId && refresh) {
       console.log("🔄 Conversation changed, refreshing messages for:", activeId);
-      refreshMessages();
+      refresh();
     }
-  }, [activeId, refreshMessages]);
+  }, [activeId, refresh]);
 
   // Mark customer messages as read when conversation is viewed
   useEffect(() => {
@@ -732,10 +730,11 @@ export const DashboardContent = memo(function DashboardContent() {
       )}
 
       {currentTab === "settings" && (
-        <div className="h-full">
-          <SettingsPanel />
-        </div>
+        <OptimizedSettings />
       )}
     </div>
   );
 });
+
+
+export default DashboardContent;

@@ -125,9 +125,35 @@ export function useCustomer() {
         unread_count_customer: 0,
       };
 
-      // Add customer data if provided
+      // Add customer data if provided, with validation for numeric fields
       if (customerData) {
-        Object.assign(customerInsertData, customerData);
+        const sanitizedCustomerData = { ...customerData };
+        
+        // Validate numeric fields to prevent overflow (precision 5, scale 2 = max 999.99)
+        if (typeof sanitizedCustomerData.latitude === 'number') {
+          sanitizedCustomerData.latitude = Math.max(-90, Math.min(90, sanitizedCustomerData.latitude));
+        }
+        if (typeof sanitizedCustomerData.longitude === 'number') {
+          sanitizedCustomerData.longitude = Math.max(-180, Math.min(180, sanitizedCustomerData.longitude));
+        }
+        if (typeof sanitizedCustomerData.page_load_time === 'number') {
+          // Cap page load time at 999.99 seconds (convert from ms and limit)
+          sanitizedCustomerData.page_load_time = Math.min(999.99, sanitizedCustomerData.page_load_time / 1000);
+        }
+        if (typeof sanitizedCustomerData.pixel_ratio === 'number') {
+          sanitizedCustomerData.pixel_ratio = Math.min(99.99, sanitizedCustomerData.pixel_ratio);
+        }
+        if (typeof sanitizedCustomerData.color_depth === 'number') {
+          sanitizedCustomerData.color_depth = Math.min(99, sanitizedCustomerData.color_depth);
+        }
+        if (typeof sanitizedCustomerData.total_visits === 'number') {
+          sanitizedCustomerData.total_visits = Math.min(99999, sanitizedCustomerData.total_visits);
+        }
+        if (typeof sanitizedCustomerData.avg_session_duration === 'number') {
+          sanitizedCustomerData.avg_session_duration = Math.min(999.99, sanitizedCustomerData.avg_session_duration);
+        }
+        
+        Object.assign(customerInsertData, sanitizedCustomerData);
       }
 
       const { data: newCustomer, error: createError } = await client

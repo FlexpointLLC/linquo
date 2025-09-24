@@ -228,12 +228,13 @@ export function useDataCache() {
 
   // Load data when agent becomes available
   useEffect(() => {
-    if (agent?.org_id) {
+    const orgId = agent?.org_id || null; // Ensure consistent type
+    if (orgId) {
       // Force reload every time to get fresh data
       globalCache.lastLoaded = null;
       loadAllData();
     }
-  }, [agent?.org_id, loadAllData]);
+  }, [agent?.org_id || null, loadAllData]); // Ensure dependency is always defined
 
   // Refresh function
   const refresh = useCallback(() => {

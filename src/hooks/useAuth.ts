@@ -45,47 +45,26 @@ export function useAuth() {
   useEffect(() => {
     const globalTimeout = setTimeout(() => {
       setLoading(false);
-    }, 8000); // Reduced to 8 second global timeout
+    }, 2000); // Reduced to 2 second global timeout
 
     return () => clearTimeout(globalTimeout);
   }, []);
 
-  // Connection monitoring and auto-reconnection
+  // Simple auth state monitoring
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) return;
 
-    let reconnectTimeout: NodeJS.Timeout;
-    const healthCheckInterval: NodeJS.Timeout = setInterval(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          setConnectionStatus('connected');
-        } else {
-          setConnectionStatus('disconnected');
-        }
-      } catch {
-        setConnectionStatus('disconnected');
-        // Attempt to reconnect
-        setConnectionStatus('reconnecting');
-        reconnectTimeout = setTimeout(() => {
-          window.location.reload();
-        }, 5000);
-      }
-    }, 30000);
-
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+      if (event === 'SIGNED_OUT') {
         setConnectionStatus('disconnected');
-      } else if (event === 'SIGNED_IN') {
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setConnectionStatus('connected');
       }
     });
 
     return () => {
-      clearTimeout(reconnectTimeout);
-      clearInterval(healthCheckInterval);
       subscription.unsubscribe();
     };
   }, []);
@@ -94,7 +73,7 @@ export function useAuth() {
     // Immediate timeout fallback
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 3000); // Reduced to 3 second timeout
+    }, 1000); // Reduced to 1 second timeout
 
     const supabase = createClient();
     
@@ -141,7 +120,7 @@ export function useAuth() {
         const result = await Promise.race([
           agentPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Agent query timeout')), 3000)
+            setTimeout(() => reject(new Error('Agent query timeout')), 1000)
           )
         ]);
         
@@ -176,7 +155,7 @@ export function useAuth() {
         const orgResult = await Promise.race([
           orgPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Organization query timeout')), 5000)
+            setTimeout(() => reject(new Error('Organization query timeout')), 1000)
           )
         ]);
         
@@ -239,7 +218,7 @@ export function useAuth() {
         const sessionResult = await Promise.race([
           sessionPromise,
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Session query timeout')), 10000)
+            setTimeout(() => reject(new Error('Session query timeout')), 2000)
           )
         ]);
         

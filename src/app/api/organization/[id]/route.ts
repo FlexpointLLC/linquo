@@ -12,10 +12,13 @@ export async function GET(
     
     const supabase = createClient(supabaseUrl, supabaseKey)
     
+    // Check if the id is a UUID or a slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    
     const { data: organization, error } = await supabase
       .from('organizations')
       .select('id, name, slug, brand_color, widget_text_line1, widget_text_line2, widget_icon_alignment, widget_show_branding, widget_open_on_load, chat_header_name, chat_header_subtitle, widget_button_text')
-      .eq('id', id)
+      .eq(isUUID ? 'id' : 'slug', id)
       .single()
 
     if (error) {

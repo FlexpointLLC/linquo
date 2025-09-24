@@ -24,6 +24,7 @@ function EmbedContent() {
   const [, setWidgetColor] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const baseTitleRef = useRef<string>('Linquo');
+  const conversationCreationInProgress = useRef<boolean>(false);
 
   const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
   const { data: messageRows, isConnected: realtimeConnected } = useRealtimeMessages(cid);
@@ -155,16 +156,39 @@ function EmbedContent() {
     loadExistingConversation();
   }, [customer, createConversation]);
 
+  // Unified function to ensure conversation exists
+  const ensureConversation = async (): Promise<string | null> => {
+    if (cid) return cid; // Already have conversation
+    if (!customer) return null; // No customer yet
+    if (conversationCreationInProgress.current) {
+      // Wait for ongoing creation
+      let attempts = 0;
+      while (conversationCreationInProgress.current && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      return cid; // Return whatever was set during the wait
+    }
+
+    conversationCreationInProgress.current = true;
+    try {
+      console.log("🔄 Creating conversation for customer:", customer.id);
+      const conversationId = await createConversation(customer);
+      console.log("✅ Conversation created:", conversationId);
+      
+      if (conversationId) {
+        setCid(conversationId);
+        return conversationId;
+      }
+      return null;
+    } finally {
+      conversationCreationInProgress.current = false;
+    }
+  };
+
   const handleCustomerSubmit = async (data: { name: string; email: string; customerData?: CustomerData }) => {
     try {
       console.log("🚀 Starting customer creation:", { name: data.name, email: data.email, site, orgId });
-      console.log("🔍 Site parameter details:", {
-        site: site,
-        siteType: typeof site,
-        siteLength: site?.length,
-        isLocalhost: site?.includes('localhost')
-      });
-      console.log("🔍 Using method:", orgId ? "createOrGetCustomerWithOrgId" : "createOrGetCustomer");
       
       // If we have an orgId from the widget, use it directly
       // Otherwise fall back to the old method using site/website
@@ -173,42 +197,77 @@ function EmbedContent() {
         : await createOrGetCustomer(data.name, data.email, site);
       
       console.log("✅ Customer created/found:", newCustomer);
-      console.log("🔍 Customer details:", {
-        id: newCustomer?.id,
-        name: newCustomer?.display_name,
-        email: newCustomer?.email,
-        org_id: newCustomer?.org_id,
-        status: newCustomer?.status
-      });
       
       if (newCustomer) {
         console.log("🔄 Customer creation successful, hiding form...");
-        console.log("🔍 New customer object:", newCustomer);
         setShowForm(false);
         
-        // Create conversation for this customer
-        console.log("🔄 Creating conversation for customer:", newCustomer.id);
-        const conversationId = await createConversation(newCustomer);
-        console.log("✅ Conversation created:", conversationId);
-        
-        if (conversationId) {
-          console.log("🔄 Setting conversation ID:", conversationId);
-          setCid(conversationId);
-          console.log("✅ Widget state updated - should show chat interface now");
-        } else {
-          console.log("❌ Failed to create conversation, but customer was created");
-          // Still show the chat interface even if conversation creation fails
-          setShowForm(false);
-        }
+        // Create conversation for this customer using the unified function
+        await ensureConversation();
       } else {
         console.log("❌ Failed to create customer - newCustomer is null/undefined");
-        // Don't change the form state if customer creation fails
       }
     } catch (error) {
       console.error("❌ Error in handleCustomerSubmit:", error);
-      console.error("❌ Error details:", error);
-      console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
-      // Don't change the form state if there's an error
+    }
+  };
+
+  // Unified message sending function
+  const sendMessage = async (text: string) => {
+    if (!customer || !text.trim()) return;
+
+    const client = (await import("@/lib/supabase/client")).createClient();
+    if (!client) return;
+
+    // Ensure conversation exists
+    const convId = await ensureConversation();
+    if (!convId) {
+      console.error("❌ Failed to ensure conversation exists");
+      return;
+    }
+
+    try {
+      console.log("🚀 Sending message:", { conversation_id: convId, customer_id: customer.id, org_id: customer.org_id, text });
+      
+      const { data: messageData, error: messageError } = await client.from("messages").insert({ 
+        conversation_id: convId, 
+        sender_type: "CUSTOMER",
+        customer_id: customer.id,
+        org_id: customer.org_id,
+        body_text: text
+      }).select().single();
+      
+      if (messageError) {
+        console.log("❌ Error sending message:", messageError);
+      } else {
+        console.log("✅ Message sent successfully:", messageData);
+        
+        // Update conversation last_message_at
+        const { error: updateError } = await client.from("conversations").update({ 
+          last_message_at: new Date().toISOString() 
+        }).eq("id", convId);
+        
+        if (updateError) {
+          console.log("❌ Error updating conversation:", updateError);
+        }
+
+        // Increment unread count for agents
+        try {
+          await client
+            .from("customers")
+            .update({ 
+              unread_count_agent: (customer.unread_count_agent || 0) + 1
+            })
+            .eq("id", customer.id)
+            .eq("org_id", customer.org_id);
+        } catch {
+          console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
+        }
+        
+        console.log("🔄 Message sent successfully");
+      }
+    } catch (sendError) {
+      console.log("❌ Exception sending message:", sendError);
     }
   };
 
@@ -431,78 +490,11 @@ function EmbedContent() {
             style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
+                e.preventDefault(); // Prevent double-triggering
                 const text = inputValue.trim();
                 if (text) {
-                  // Stop typing indicator
                   handleTypingStop();
-                  
-                  // Send message logic
-                  const sendMessage = async () => {
-                    const client = (await import("@/lib/supabase/client")).createClient();
-                    if (!client || !customer) {
-                      return;
-                    }
-                    // Ensure conversation exists
-                    let convId = cid;
-                    if (!convId) {
-                      convId = await createConversation(customer);
-                      if (convId) setCid(convId);
-                      else return;
-                    }
-                    
-                    try {
-                      console.log("🚀 Sending message:", { conversation_id: cid, customer_id: customer.id, org_id: customer.org_id, text });
-                      
-                      const { data: messageData, error: messageError } = await client.from("messages").insert({ 
-                        conversation_id: convId, 
-                        sender_type: "CUSTOMER",
-                        customer_id: customer.id,
-                        org_id: customer.org_id,
-                        body_text: text
-                      }).select().single();
-                      
-                      if (messageError) {
-                        console.log("❌ Error sending message:", messageError);
-                      } else {
-                        console.log("✅ Message sent successfully:", messageData);
-                        
-                        // Update conversation last_message_at
-                        const { error: updateError } = await client.from("conversations").update({ 
-                          last_message_at: new Date().toISOString() 
-                        }).eq("id", convId);
-                        
-                        if (updateError) {
-                          console.log("❌ Error updating conversation:", updateError);
-                        } else {
-                          console.log("✅ Conversation updated successfully");
-                        }
-
-                        // Increment unread count for agents (if column exists)
-                        try {
-                          const { error: unreadError } = await client
-                            .from("customers")
-                            .update({ 
-                              unread_count_agent: (customer.unread_count_agent || 0) + 1
-                            })
-                            .eq("id", customer.id)
-                            .eq("org_id", customer.org_id);
-
-                          if (unreadError) {
-                            console.log("❌ Error updating unread count:", unreadError);
-                          } else {
-                            console.log("✅ Unread count incremented for agents");
-                          }
-                        } catch {
-                          console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
-                        }
-                        
-                        console.log("🔄 Message sent successfully, should appear in chat now");
-                      }
-                    } catch (sendError) {
-                      console.log("❌ Exception sending message:", sendError);
-                    }
-                  };
-                  sendMessage();
+                  sendMessage(text);
                   setInputValue("");
                 }
               }
@@ -521,59 +513,8 @@ function EmbedContent() {
             onClick={() => {
               const text = inputValue.trim();
               if (text) {
-                // Stop typing indicator
                 handleTypingStop();
-                
-                // Send message logic
-                const sendMessage = async () => {
-                  const client = (await import("@/lib/supabase/client")).createClient();
-                  if (!client || !customer) {
-                    return;
-                  }
-                  // Ensure conversation exists
-                  let convId = cid;
-                  if (!convId) {
-                    convId = await createConversation(customer);
-                    if (convId) setCid(convId);
-                    else return;
-                  }
-                  
-                  try {
-                    const { error: messageError } = await client.from("messages").insert({ 
-                      conversation_id: convId, 
-                      sender_type: "CUSTOMER",
-                      customer_id: customer.id,
-                      org_id: customer.org_id,
-                      body_text: text
-                    }).select().single();
-                    
-                    if (!messageError) {
-                      // Update conversation last_message_at
-                      await client.from("conversations").update({ 
-                        last_message_at: new Date().toISOString() 
-                      }).eq("id", convId);
-
-                      // Increment unread count for agents (if column exists)
-                      try {
-                        await client
-                          .from("customers")
-                          .update({ 
-                            unread_count_agent: (customer.unread_count_agent || 0) + 1
-                          })
-                          .eq("id", customer.id)
-                          .eq("org_id", customer.org_id);
-                      } catch {
-                        console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
-                      }
-                      
-                      // Force refresh messages to ensure they appear immediately
-                      console.log("🔄 Message sent successfully, should appear in chat now");
-                    }
-                  } catch {
-                    // Error sending message
-                  }
-                };
-                sendMessage();
+                sendMessage(text);
                 setInputValue("");
               }
             }}

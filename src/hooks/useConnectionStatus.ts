@@ -10,48 +10,17 @@ export function useConnectionStatus() {
   const previousStatus = useRef<ConnectionStatus>("connected");
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  // Use connection status from useAuth and also check agent data
+  // Simplified connection status - just use auth status without complex logic
   useEffect(() => {
     if (!loading) {
-      // Check both connection status and agent data
-      if (connectionStatus === 'connected' && agent && agent.display_name && agent.email) {
+      // Simple check: if we have connectionStatus from useAuth, use it
+      if (connectionStatus === 'connected') {
         setStatus("connected");
-      } else {
-        // If connection is lost or agent data is missing, show disconnected
+      } else if (connectionStatus === 'disconnected') {
         setStatus("disconnected");
       }
     }
-  }, [agent, loading, connectionStatus]);
-
-  // Auto reconnection when status changes to disconnected
-  useEffect(() => {
-    // Only trigger reconnection if status changed from connected to disconnected
-    if (previousStatus.current === "connected" && status === "disconnected") {
-      console.log("🔄 Connection lost, attempting automatic reconnection...");
-      
-      // Clear any existing timeout
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current);
-      }
-      
-      // Simple reconnection: just reload the page after a short delay
-      // This is more reliable than trying to refresh the auth state
-      reconnectTimeout.current = setTimeout(() => {
-        console.log("🔄 Reloading page to restore connection...");
-        window.location.reload();
-      }, 2000);
-    }
-    
-    // Update previous status
-    previousStatus.current = status;
-    
-    // Cleanup timeout on unmount
-    return () => {
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current);
-      }
-    };
-  }, [status]);
+  }, [loading, connectionStatus]); // Fixed: ensure both dependencies are always defined
 
   // Manual refresh function for when user clicks the badge
   const refresh = () => {
@@ -62,6 +31,15 @@ export function useConnectionStatus() {
     // Immediate reload when user clicks
     window.location.reload();
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+      }
+    };
+  }, []);
 
   return {
     status,

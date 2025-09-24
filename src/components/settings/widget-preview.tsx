@@ -24,7 +24,7 @@ export function WidgetPreview({
   chatHeaderSubtitle,
   buttonText
 }: WidgetPreviewProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [showForm, setShowForm] = useState(true);
 
   const getBubblePosition = () => {
