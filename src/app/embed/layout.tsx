@@ -20,21 +20,30 @@ export default function EmbedLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style dangerouslySetInnerHTML={{
           __html: `
-            body {
+            html, body {
               margin: 0;
               padding: 0;
+              height: 100%;
               overflow: hidden;
               background: white;
+            }
+            #__next {
+              height: 100%;
+            }
+            [data-widget-container] {
+              /* Height will be controlled by JavaScript */
             }
           `
         }} />
       </head>
       <body className="light">
-        <Suspense fallback={<GradientLoadingFallback />}>
-          <BrandColorProvider>
-            {children}
-          </BrandColorProvider>
-        </Suspense>
+        <div style={{ height: '100%' }}>
+          <Suspense fallback={<GradientLoadingFallback />}>
+            <BrandColorProvider>
+              {children}
+            </BrandColorProvider>
+          </Suspense>
+        </div>
       </body>
     </html>
   )

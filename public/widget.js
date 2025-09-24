@@ -1,7 +1,7 @@
 (function() {
   'use strict';
   
-  console.log('🎨 Linquo Widget v2.1 - Brand color fix');
+  console.log('🎨 Linquo Widget v2.2 - Responsive height fix');
   
   // Get the script element to extract the org ID
   var script = document.currentScript || document.querySelector('script[id="linquo"]');
@@ -107,7 +107,13 @@
       // Create widget container (initially hidden)
       var container = document.createElement('div');
       container.id = 'linquo-widget';
-      container.style.cssText = 'position:fixed;bottom:100px;right:24px;width:400px;height:700px;background:white;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.2);border:1px solid #e5e7eb;z-index:999998;display:none;';
+      // Main Container: 400px width, 85% of screen height
+      var viewportHeight = window.innerHeight;
+      var containerHeight = viewportHeight * 0.85; // 85% of viewport height
+      
+      console.log('📏 Viewport height:', viewportHeight, 'Container height:', containerHeight);
+      
+      container.style.cssText = 'position:fixed;bottom:100px;right:24px;width:400px;height:' + containerHeight + 'px;background:white;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.2);border:1px solid #e5e7eb;z-index:999998;display:none;';
       
       // Create iframe
       var iframe = document.createElement('iframe');
@@ -174,9 +180,28 @@
         }
       });
       
+      // Add resize listener to update container height (70% of screen)
+      window.addEventListener('resize', function() {
+        var newViewportHeight = window.innerHeight;
+        var newContainerHeight = newViewportHeight * 0.85; // 85% of viewport height
+        
+        console.log('📏 Resize - New viewport height:', newViewportHeight, 'New container height:', newContainerHeight);
+        
+        container.style.height = newContainerHeight + 'px';
+      });
+      
       // Add to page
       document.body.appendChild(bubble);
       document.body.appendChild(container);
+      
+      // Add a test function to manually resize (for debugging)
+      window.testWidgetResize = function() {
+        var testHeight = Math.random() * 500 + 300; // Random height between 300-800px
+        console.log('🧪 Manual test resize to:', testHeight + 'px');
+        container.style.height = testHeight + 'px';
+      };
+      
+      console.log('🧪 Test function available: window.testWidgetResize()');
       
     } catch (err) {
       console.error('[Linquo Widget] failed to load', err);

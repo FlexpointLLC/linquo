@@ -25,7 +25,7 @@ export default function DemoPage() {
     
     // Use production URL for external platforms, localhost for development
     const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://linquochat.vercel.app';
-    const script = `${baseUrl}/widget.js?id=${encodeURIComponent(orgId)}`;
+    const script = `${baseUrl}/widget.js?id=${encodeURIComponent(orgId)}&v=${Date.now()}`;
     setWidgetScript(script);
     
     // Remove existing widget

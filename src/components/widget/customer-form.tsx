@@ -99,9 +99,9 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
       </div>
       
       {/* Content */}
-      <div className="relative z-10 h-full flex flex-col justify-between p-6">
-        {/* Header Text */}
-        <div style={{ paddingTop: 'calc(var(--spacing) * 24)', paddingLeft: '16px', paddingRight: '16px' }}>
+      <div className="relative z-10 h-full flex flex-col p-6">
+        {/* Header Text - Fixed at top */}
+        <div className="flex-shrink-0" style={{ paddingTop: 'calc(var(--spacing) * 24)', paddingLeft: '16px', paddingRight: '16px' }}>
           <h1 className="text-white font-semibold" style={{ fontSize: '28px', opacity: 0.7, lineHeight: '120%' }}>
             {widgetTextLine1}
           </h1>
@@ -110,8 +110,8 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
           </h2>
         </div>
         
-        {/* Form */}
-        <div className="space-y-4">
+        {/* Form - Fill the whole middle space */}
+        <div className="flex-1 flex flex-col justify-start space-y-4">
           <Input
             id="name"
             type="text"
@@ -161,8 +161,8 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
           />
         </div>
         
-        {/* Submit Button and Powered by Text */}
-        <div className="space-y-3" style={{ paddingTop: 'calc(var(--spacing) * 68)' }}>
+        {/* Submit Button and Powered by Text - Fixed at bottom */}
+        <div className="flex-shrink-0 space-y-3 pt-8 sm:pt-12 md:pt-16">
           <form onSubmit={handleSubmit}>
             <Button 
               type="submit" 

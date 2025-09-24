@@ -28,6 +28,8 @@ function EmbedContent() {
     setIsHydrated(true);
   }, []);
 
+  // No resize handler needed - internal components handle their own heights
+
   // No caching - removed for better reliability
 
   // Set site and orgId after hydration to avoid mismatch
@@ -226,9 +228,12 @@ function EmbedContent() {
   }
 
   return (
-    <div className="h-full w-full bg-white text-gray-900 flex flex-col max-h-[100vh]">
-      {/* Header */}
-      <div className="bg-white bg-opacity-80 backdrop-blur-sm border-b border-gray-200 p-2 sm:p-3 flex items-center justify-between flex-shrink-0">
+    <div 
+      className="w-full h-full bg-white text-gray-900 flex flex-col" 
+      data-widget-container
+    >
+      {/* Header - Fixed height */}
+      <div className="bg-white bg-opacity-80 backdrop-blur-sm border-b border-gray-200 p-2 sm:p-3 flex items-center justify-between" style={{ height: '60px' }}>
         <div className="flex items-center gap-3">
           <button 
             className="text-gray-600 hover:text-gray-800 cursor-pointer"
@@ -285,8 +290,8 @@ function EmbedContent() {
         </div>
       </div>
 
-      {/* Content area with messages */}
-      <div className="overflow-y-auto p-3 sm:p-4 pb-4 sm:pb-6 h-[50vh] xs:h-[55vh] sm:h-[60vh] md:h-[65vh] lg:h-[564px]">
+      {/* Message Body - Fill the whole middle space */}
+      <div className="overflow-y-auto px-3 sm:px-4 pt-4 sm:pt-6 pb-4 sm:pb-6 flex-1">
         <div className="space-y-4">
                  {/* Hardcoded welcome messages */}
                  <div className="flex items-start gap-3">
@@ -380,8 +385,8 @@ function EmbedContent() {
                </div>
              </div>
       
-      {/* Message input box */}
-      <div className="flex-shrink-0 border-t border-gray-200 bg-white bg-opacity-80 backdrop-blur-sm p-2 sm:p-3 sticky bottom-0">
+      {/* Footer - Stay at the bottom */}
+      <div className="border-t border-gray-200 bg-white bg-opacity-80 backdrop-blur-sm p-2 sm:p-3 flex-shrink-0">
         <div className="relative">
                  <input
                    type="text"
