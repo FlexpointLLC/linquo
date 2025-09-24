@@ -68,7 +68,7 @@
       // Create chat bubble
       var bubble = document.createElement('div');
       bubble.id = 'linquo-chat-bubble';
-      bubble.style.cssText = 'position:fixed;bottom:24px;right:24px;width:68px;height:68px;border-radius:50%;background-color:' + brandColor + ';box-shadow:0 4px 12px ' + brandColor + '40;cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;';
+      bubble.style.cssText = 'position:fixed;bottom:24px;right:24px;width:68px;height:68px;border-radius:50%;background-color:' + brandColor + ';box-shadow:0 4px 12px ' + brandColor + '40;cursor:pointer;z-index:2147483647;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;';
       
       // Creating bubble with brand color
       
@@ -104,7 +104,7 @@
       
       // Container height calculated
       
-      container.style.cssText = 'position:fixed;bottom:100px;right:24px;width:400px;height:' + containerHeight + 'px;background:white;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.2);border:1px solid #e5e7eb;z-index:999998;display:none;';
+      container.style.cssText = 'position:fixed;bottom:100px;right:24px;width:400px;height:' + containerHeight + 'px;background:white;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.2);border:1px solid #e5e7eb;z-index:2147483646;display:none;';
       
       // Create iframe
       var iframe = document.createElement('iframe');
