@@ -109,12 +109,6 @@ export const MessageThread = memo(function MessageThread({
                     </p>
                   </div>
                   
-                  {/* Unread indicator for customer messages */}
-                  {m.author === "customer" && m.read_by_agent === false && (
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" title="Unread message"></div>
-                    </div>
-                  )}
                 </div>
               </div>
 

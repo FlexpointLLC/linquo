@@ -96,8 +96,8 @@ export const DashboardContent = memo(function DashboardContent() {
     router.push(url.pathname + "?" + url.searchParams.toString());
   };
 
-  const { data: conversationRows, error: conversationError } = useConversations();
-  const { data: messageRows, error: messageError, markMessagesAsRead } = useMessages(currentTab === "chats" ? activeId : null);
+  const { data: conversationRows, error: conversationError, resetUnreadCount } = useConversations();
+  const { data: messageRows, error: messageError, markMessagesAsRead, refreshMessages } = useMessages(currentTab === "chats" ? activeId : null);
   
   // Memoize conversation IDs to prevent infinite loops
   const conversationIds = useMemo(() => 
@@ -131,9 +131,17 @@ export const DashboardContent = memo(function DashboardContent() {
     }
   }, [isInfoSidebarOpen, activeId, conversationRows, getCustomerDetails]);
 
+  // Refresh messages when switching conversations to ensure read status is up-to-date
+  useEffect(() => {
+    if (activeId && refreshMessages) {
+      console.log("🔄 Conversation changed, refreshing messages for:", activeId);
+      refreshMessages();
+    }
+  }, [activeId, refreshMessages]);
+
   // Mark customer messages as read when conversation is viewed
   useEffect(() => {
-    if (activeId && messageRows && markMessagesAsRead) {
+    if (activeId && messageRows && markMessagesAsRead && resetUnreadCount) {
       const unreadCustomerMessages = messageRows
         .filter(m => m.sender_type === "CUSTOMER" && m.read_by_agent === false)
         .map(m => m.id);
@@ -141,9 +149,10 @@ export const DashboardContent = memo(function DashboardContent() {
       if (unreadCustomerMessages.length > 0) {
         console.log("📖 Marking customer messages as read:", unreadCustomerMessages.length);
         markMessagesAsRead(unreadCustomerMessages);
+        resetUnreadCount(activeId); // Optimistically update unread count
       }
     }
-  }, [activeId, messageRows, markMessagesAsRead]);
+  }, [activeId, messageRows, markMessagesAsRead, resetUnreadCount]);
 
   // Get unread count from customer data
 
@@ -377,29 +386,39 @@ export const DashboardContent = memo(function DashboardContent() {
 
                         try {
                           console.log("📝 Inserting message to Supabase...");
-                          const { error: messageError } = await client.from("messages").insert({
+                          const { data: messageData, error: messageError } = await client.from("messages").insert({
                             conversation_id: activeId,
                             sender_type: "AGENT",
                             agent_id: agent.id,
                             org_id: agent.org_id,
                             body_text: text,
-                          });
+                          }).select().single();
 
                           if (messageError) {
                             console.log("❌ Error inserting message:", messageError);
+                            toast.error("Failed to send message");
                             return;
                           }
 
-                          console.log("✅ Message inserted successfully");
+                          console.log("✅ Message inserted successfully:", messageData?.id);
                           
-                          await client
+                          // Update conversation timestamp
+                          const { error: conversationError } = await client
                             .from("conversations")
                             .update({ last_message_at: new Date().toISOString() })
                             .eq("id", activeId);
                           
-                          console.log("✅ Conversation timestamp updated");
+                          if (conversationError) {
+                            console.log("⚠️ Error updating conversation timestamp:", conversationError);
+                          } else {
+                            console.log("✅ Conversation timestamp updated");
+                          }
+
+                          // Show success toast
+                          toast.success("Message sent successfully");
                         } catch (error) {
                           console.log("❌ Error sending message:", error);
+                          toast.error("Failed to send message");
                         }
                       }}
                     />

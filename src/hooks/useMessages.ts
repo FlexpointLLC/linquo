@@ -24,6 +24,7 @@ export function useMessages(conversationId: string | null) {
   const [data, setData] = useState<DbMessage[] | null>(null);
   const [loading, setLoading] = useState(Boolean(conversationId));
   const [error, setError] = useState<string | null>(null);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
   const { agent } = useAuth();
 
   // Check cache first
@@ -89,7 +90,7 @@ export function useMessages(conversationId: string | null) {
             async () => {
               const { data, error } = await client
                 .from("messages")
-                .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at")
+                .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at,read_by_agent,read_at")
                 .eq("conversation_id", conversationId)
                 .eq("org_id", agent.org_id)
                 .order("created_at", { ascending: true })
@@ -109,36 +110,125 @@ export function useMessages(conversationId: string | null) {
           );
           
           setData(messages);
+          setLastMessageCount(messages.length);
           cacheMessages(conversationId, messages);
           console.log("✅ Loaded and cached messages:", messages.length);
         }
 
         // Enable realtime subscription for message syncing (only if not already subscribed)
         if (!unsub) {
+          console.log("🔄 Setting up real-time subscription for conversation:", conversationId);
+          
           const channel = client
-            .channel(`msg_changes_${conversationId}`)
+            .channel(`msg_changes_${conversationId}_${Date.now()}`) // Add timestamp to ensure unique channel
             .on(
               "postgres_changes" as never,
               { event: "insert", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
               (payload: { new: DbMessage }) => {
-                console.log("📨 New message via realtime:", payload.new.id);
+                console.log("📨 New message via realtime:", payload.new.id, "Sender:", payload.new.sender_type);
+                
+                // Add default values for read status fields
+                const newMessage = {
+                  ...payload.new,
+                  read_by_agent: payload.new.read_by_agent ?? false,
+                  read_at: payload.new.read_at ?? null
+                };
+                
                 setData((prev) => {
-                  if (!prev) return [payload.new];
+                  if (!prev) return [newMessage];
                   
                   // Check for duplicates
-                  const exists = prev.some(msg => msg.id === payload.new.id);
-                  if (exists) return prev;
+                  const exists = prev.some(msg => msg.id === newMessage.id);
+                  if (exists) {
+                    console.log("⚠️ Duplicate message detected, skipping:", newMessage.id);
+                    return prev;
+                  }
                   
-                  const updated = [...prev, payload.new];
+                  const updated = [...prev, newMessage];
                   // Update cache
                   cacheMessages(conversationId, updated);
+                  setLastMessageCount(updated.length);
+                  console.log("✅ Message added to state, total messages:", updated.length);
                   return updated;
                 });
               }
             )
-            .subscribe();
-          unsub = () => client.removeChannel(channel);
+            .on(
+              "postgres_changes" as never,
+              { event: "update", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
+              (payload: { new: DbMessage }) => {
+                console.log("📝 Message updated via realtime:", payload.new.id, "Read by agent:", payload.new.read_by_agent);
+                
+                setData((prev) => {
+                  if (!prev) return prev;
+                  
+                  const updated = prev.map(msg => 
+                    msg.id === payload.new.id 
+                      ? { ...msg, read_by_agent: payload.new.read_by_agent ?? false, read_at: payload.new.read_at ?? null }
+                      : msg
+                  );
+                  
+                  // Update cache
+                  cacheMessages(conversationId, updated);
+                  console.log("✅ Message read status updated in state");
+                  return updated;
+                });
+              }
+            )
+            .subscribe((status) => {
+              console.log("🔌 Message subscription status:", status, "for conversation:", conversationId);
+              if (status === 'SUBSCRIBED') {
+                console.log("✅ Message subscription active for conversation:", conversationId);
+              } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                console.log("❌ Message subscription error for conversation:", conversationId, "Status:", status);
+              }
+            });
+          unsub = () => {
+            console.log("🧹 Cleaning up message subscription for conversation:", conversationId);
+            client.removeChannel(channel);
+          };
         }
+
+        // Fallback polling mechanism - check for new messages every 5 seconds
+        const pollInterval = setInterval(async () => {
+          if (!conversationId || !agent?.org_id) return;
+          
+          try {
+            const { data: latestMessages, error } = await client
+              .from("messages")
+              .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at,read_by_agent,read_at")
+              .eq("conversation_id", conversationId)
+              .eq("org_id", agent.org_id)
+              .order("created_at", { ascending: true })
+              .limit(100);
+            
+            if (error) {
+              console.log("⚠️ Polling error:", error);
+              return;
+            }
+            
+            if (latestMessages && (latestMessages.length > lastMessageCount || latestMessages.some(msg => msg.read_by_agent !== data?.find(d => d.id === msg.id)?.read_by_agent))) {
+              console.log("🔄 Polling detected changes:", latestMessages.length - lastMessageCount, "new messages or read status changes");
+              const messagesWithDefaults = latestMessages.map(msg => ({
+                ...msg,
+                read_by_agent: msg.read_by_agent ?? false,
+                read_at: msg.read_at ?? null
+              }));
+              setData(messagesWithDefaults);
+              setLastMessageCount(messagesWithDefaults.length);
+              cacheMessages(conversationId, messagesWithDefaults);
+            }
+          } catch (pollError) {
+            console.log("⚠️ Polling error:", pollError);
+          }
+        }, 5000); // Poll every 5 seconds
+
+        // Clean up polling on unmount
+        const originalUnsub = unsub;
+        unsub = () => {
+          if (originalUnsub) originalUnsub();
+          clearInterval(pollInterval);
+        };
       } catch (e: unknown) {
         console.error("❌ Error loading messages:", e);
         setError(e instanceof Error ? e.message : "Failed to load messages");
@@ -241,12 +331,52 @@ export function useMessages(conversationId: string | null) {
       }
 
       console.log("✅ Marked messages as read and updated customer unread count:", messageIds.length);
+      
+      // Clear cache to ensure fresh data is fetched
+      clearCache(conversationId);
     } catch (error) {
       console.error("❌ Failed to mark messages as read:", error);
     }
-  }, [conversationId, agent?.id, agent?.org_id, data]);
+  }, [conversationId, agent?.id, agent?.org_id, data, clearCache]);
 
-  return { data, loading, error, clearCache, markMessagesAsRead };
+  // Function to force refresh messages (bypass cache)
+  const refreshMessages = useCallback(async () => {
+    if (!conversationId || !agent?.org_id) return;
+    
+    try {
+      console.log("🔄 Force refreshing messages for conversation:", conversationId);
+      clearCache(conversationId);
+      
+      const client = createClient();
+      const { data: messages, error } = await client
+        .from("messages")
+        .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at,read_by_agent,read_at")
+        .eq("conversation_id", conversationId)
+        .eq("org_id", agent.org_id)
+        .order("created_at", { ascending: true })
+        .limit(100);
+      
+      if (error) {
+        console.error("❌ Error refreshing messages:", error);
+        return;
+      }
+      
+      const messagesWithDefaults = (messages as DbMessage[]).map(msg => ({
+        ...msg,
+        read_by_agent: msg.read_by_agent ?? false,
+        read_at: msg.read_at ?? null
+      }));
+      
+      setData(messagesWithDefaults);
+      setLastMessageCount(messagesWithDefaults.length);
+      cacheMessages(conversationId, messagesWithDefaults);
+      console.log("✅ Messages refreshed:", messagesWithDefaults.length);
+    } catch (error) {
+      console.error("❌ Failed to refresh messages:", error);
+    }
+  }, [conversationId, agent?.org_id, clearCache, cacheMessages]);
+
+  return { data, loading, error, clearCache, markMessagesAsRead, refreshMessages };
 }
 
 

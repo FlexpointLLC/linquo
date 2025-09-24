@@ -222,15 +222,15 @@ export function useConversations() {
         
         // Set up realtime subscription for messages to update conversation order and unread count
         const messageChannel = client
-          .channel("message_changes")
+          .channel(`message_changes_${Date.now()}`) // Add timestamp to ensure unique channel
           .on(
             "postgres_changes" as never,
             { event: "INSERT", schema: "public", table: "messages" },
             (payload) => {
-              console.log("📨 New message detected:", payload.new.id, "Sender:", payload.new.sender_type);
+              console.log("📨 New message detected:", payload.new.id, "Sender:", payload.new.sender_type, "Conversation:", payload.new.conversation_id);
               
-              // Update the conversation's last_message_at timestamp and unread count
-              if (payload.new && payload.new.conversation_id) {
+              // Only process messages for the current organization
+              if (payload.new && payload.new.conversation_id && agent?.org_id) {
                 setData(prevData => {
                   if (!prevData) return prevData;
                   
@@ -257,6 +257,8 @@ export function useConversations() {
                     
                     console.log("📈 Moved conversation to top:", conversation.id);
                     return updatedData;
+                  } else {
+                    console.log("⚠️ Conversation not found in list:", payload.new.conversation_id);
                   }
                   
                   return prevData;
@@ -264,6 +266,14 @@ export function useConversations() {
               }
             }
           )
+          .subscribe((status) => {
+            console.log("🔌 Conversation message subscription status:", status);
+            if (status === 'SUBSCRIBED') {
+              console.log("✅ Conversation message subscription active");
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              console.log("❌ Conversation message subscription error, status:", status);
+            }
+          })
           .on(
             "postgres_changes" as never,
             { event: "UPDATE", schema: "public", table: "messages" },
