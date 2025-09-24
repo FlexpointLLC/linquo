@@ -1,38 +1,58 @@
+'use server';
+
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { CookieOptions } from '@supabase/ssr';
 
-export function createClient() {
+export async function createClient() {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
+        async get(name: string) {
           try {
-            // @ts-ignore - cookies() type is incorrect
-            return cookies().get(name)?.value;
+            const cookieStore = await cookies();
+            const cookie = cookieStore.get(name);
+            return cookie?.value;
           } catch {
             return undefined;
           }
         },
-        set(name: string, value: string, options: CookieOptions) {
+        async set(name: string, value: string, options: CookieOptions) {
           try {
-            // @ts-ignore - cookies() type is incorrect
-            cookies().set({ name, value, ...options });
+            const cookieStore = await cookies();
+            cookieStore.set({
+              name,
+              value,
+              ...options,
+              // Ensure these are always set
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              path: '/'
+            });
           } catch {
-            // Ignore errors when running in middleware
+            // Ignore errors in middleware
           }
         },
-        remove(name: string, options: CookieOptions) {
+        async remove(name: string, options: CookieOptions) {
           try {
-            // @ts-ignore - cookies() type is incorrect
-            cookies().set({ name, value: '', ...options });
+            const cookieStore = await cookies();
+            cookieStore.delete({
+              name,
+              ...options,
+              // Ensure these are always set
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              path: '/'
+            });
           } catch {
-            // Ignore errors when running in middleware
+            // Ignore errors in middleware
           }
-        },
-      },
+        }
+      }
     }
   );
 }
