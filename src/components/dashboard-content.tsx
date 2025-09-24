@@ -230,7 +230,7 @@ export const DashboardContent = memo(function DashboardContent() {
       
       if (unreadCustomerMessages.length > 0) {
         console.log("📖 Marking customer messages as read:", unreadCustomerMessages.length);
-        markMessagesAsRead(unreadCustomerMessages);
+        markMessagesAsRead();
         resetUnreadCount(activeId); // Optimistically update unread count
       }
     }
