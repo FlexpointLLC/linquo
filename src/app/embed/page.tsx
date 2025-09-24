@@ -24,22 +24,21 @@ function EmbedContent() {
   const [, setWidgetColor] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const baseTitleRef = useRef<string>('Linquo');
-  // removed unread dot logic
-  // const [hasUnread, setHasUnread] = useState(false);
-  // const lastMsgIdRef = useRef<string | null>(null);
+
+  const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
+  const { data: messageRows, isConnected: realtimeConnected } = useRealtimeMessages(cid);
+  const { typingUsers, handleTypingStart, handleTypingStop } = useTypingIndicator(
+    cid, 
+    customer?.id || '', 
+    'customer'
+  );
 
   // Handle hydration
   useEffect(() => {
     setIsHydrated(true);
-  }, [createConversation]);
+  }, []);
 
-  // No resize handler needed - internal components handle their own heights
-
-  // No caching - removed for better reliability
-
-  // reverted: no widget unread dot
-
-  // Set site and orgId after hydration to avoid mismatch
+  // Set site and orgId after hydration
   useEffect(() => {
     if (!isHydrated) return;
     
@@ -52,7 +51,6 @@ function EmbedContent() {
     if (siteParam) {
       setSite(siteParam);
     } else if (typeof window !== 'undefined') {
-      // Use the full URL for the site parameter
       setSite(window.location.origin);
     }
     
@@ -69,13 +67,6 @@ function EmbedContent() {
     }
   }, [params, isHydrated]);
 
-  const { customer, loading, createOrGetCustomer, createOrGetCustomerWithOrgId, createConversation } = useCustomer();
-  const { data: messageRows, isConnected: realtimeConnected } = useRealtimeMessages(cid);
-  const { typingUsers, handleTypingStart, handleTypingStop } = useTypingIndicator(
-    cid, 
-    customer?.id || '', 
-    'customer'
-  );
   // Notify parent page (widget.js) to update tab title when agent sends a new message
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -96,6 +87,7 @@ function EmbedContent() {
       }
     }
   }, [cid, messageRows]);
+
   // Widget tab title: show New Message when latest is an agent reply
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -111,8 +103,7 @@ function EmbedContent() {
       document.title = base;
     }
   }, [cid, messageRows]);
-  // reverted
-  
+
   // Auto-scroll to bottom when new messages arrive or typing indicator changes
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -122,20 +113,6 @@ function EmbedContent() {
       });
     }
   }, [messageRows, typingUsers]);
-  
-  // Debug conversation ID and messages
-  console.log("🔍 Widget state:", { 
-    cid, 
-    customer: customer?.id, 
-    customerName: customer?.display_name,
-    customerEmail: customer?.email,
-    messageRows: messageRows?.length || 0,
-    showForm,
-    loading,
-    site,
-    orgId,
-    realtimeConnected
-  });
 
   // Check if customer exists and load existing conversation
   useEffect(() => {
@@ -176,7 +153,7 @@ function EmbedContent() {
     };
     
     loadExistingConversation();
-  }, [customer]);
+  }, [customer, createConversation]);
 
   const handleCustomerSubmit = async (data: { name: string; email: string; customerData?: CustomerData }) => {
     try {
@@ -235,33 +212,33 @@ function EmbedContent() {
     }
   };
 
-         // Process messages for display
-         const processedMessages = useMemo(() => {
-           console.log("🔍 Widget message processing:", { messageRows, cid, messageCount: messageRows?.length });
-           
-           if (!messageRows || !cid) {
-             console.log("❌ No messages or cid:", { messageRows, cid });
-             return [];
-           }
-           
-           // Check for duplicate message IDs
-           const messageIds = messageRows.map(m => m.id);
-           const uniqueIds = new Set(messageIds);
-           if (messageIds.length !== uniqueIds.size) {
-             console.warn("⚠️ Duplicate message IDs detected:", messageIds);
-           }
-           
-           const processedMessages = messageRows.map((m: { id: string; sender_type: string; body_text: string; created_at: string }) => ({
-             id: m.id,
-             author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
-             name: m.sender_type === "AGENT" ? "Agent" : "Customer",
-             text: m.body_text,
-             time: new Date(m.created_at).toLocaleTimeString(),
-           }));
-           
-           console.log("✅ Processed messages:", processedMessages);
-           return processedMessages;
-         }, [messageRows, cid]);
+  // Process messages for display
+  const processedMessages = useMemo(() => {
+    console.log("🔍 Widget message processing:", { messageRows, cid, messageCount: messageRows?.length });
+    
+    if (!messageRows || !cid) {
+      console.log("❌ No messages or cid:", { messageRows, cid });
+      return [];
+    }
+    
+    // Check for duplicate message IDs
+    const messageIds = messageRows.map(m => m.id);
+    const uniqueIds = new Set(messageIds);
+    if (messageIds.length !== uniqueIds.size) {
+      console.warn("⚠️ Duplicate message IDs detected:", messageIds);
+    }
+    
+    const processedMessages = messageRows.map((m: { id: string; sender_type: string; body_text: string; created_at: string }) => ({
+      id: m.id,
+      author: m.sender_type === "AGENT" ? "agent" : "customer" as ChatMessage["author"],
+      name: m.sender_type === "AGENT" ? "Agent" : "Customer",
+      text: m.body_text,
+      time: new Date(m.created_at).toLocaleTimeString(),
+    }));
+    
+    console.log("✅ Processed messages:", processedMessages);
+    return processedMessages;
+  }, [messageRows, cid]);
 
   // Show nothing during hydration
   if (!isHydrated) {
@@ -293,18 +270,18 @@ function EmbedContent() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-                 <div className="relative">
-                   <div 
-                     className="w-8 h-8 rounded-full flex items-center justify-center"
-                     style={{ backgroundColor: brandColor }}
-                   >
-                     <span className="text-white text-sm font-medium">S</span>
-                   </div>
-                   <div 
-                     className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${realtimeConnected ? 'bg-green-400' : 'bg-red-400'}`}
-                     title={realtimeConnected ? 'Connected' : 'Disconnected'}
-                   ></div>
-                 </div>
+          <div className="relative">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: brandColor }}
+            >
+              <span className="text-white text-sm font-medium">S</span>
+            </div>
+            <div 
+              className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${realtimeConnected ? 'bg-green-400' : 'bg-red-400'}`}
+              title={realtimeConnected ? 'Connected' : 'Disconnected'}
+            ></div>
+          </div>
           <div>
             <div className="font-semibold text-sm text-gray-900">{chatHeaderName}</div>
             <div className="text-xs text-gray-500">
@@ -314,7 +291,6 @@ function EmbedContent() {
             </div>
           </div>
         </div>
-        {/* no widget unread dot */}
         <div className="flex items-center gap-2">
           <button className="text-gray-600 hover:text-gray-800 cursor-pointer">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,196 +319,195 @@ function EmbedContent() {
       {/* Message Body - Fill the whole middle space */}
       <div className="overflow-y-auto px-3 sm:px-4 pt-4 sm:pt-6 pb-4 sm:pb-6 flex-1">
         <div className="space-y-4">
-                 {/* Hardcoded welcome messages */}
-                 <div className="flex items-start gap-3">
-                   <div 
-                     className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                     style={{ backgroundColor: brandColor }}
-                   >
-                     <span className="text-white text-sm font-medium">P</span>
-                   </div>
-                   <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
-                     <div className="text-sm break-words overflow-wrap-anywhere">
-                       Please share your email with us in case we can&apos;t get back to you right away.
-                     </div>
-                     <div className="text-xs text-gray-500 mt-1">Agent · 2:30 PM</div>
-                   </div>
-                 </div>
-                 
-                 <div className="flex items-start gap-3">
-                   <div 
-                     className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                     style={{ backgroundColor: brandColor }}
-                   >
-                     <span className="text-white text-sm font-medium">P</span>
-                   </div>
-                   <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
-                     <div className="text-sm break-words overflow-wrap-anywhere">
-                       Hello there! How can we help?
-                     </div>
-                     <div className="text-xs text-gray-500 mt-1">Agent · 2:31 PM</div>
-                   </div>
-                 </div>
+          {/* Hardcoded welcome messages */}
+          <div className="flex items-start gap-3">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: brandColor }}
+            >
+              <span className="text-white text-sm font-medium">P</span>
+            </div>
+            <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
+              <div className="text-sm break-words overflow-wrap-anywhere">
+                Please share your email with us in case we can&apos;t get back to you right away.
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Agent · 2:30 PM</div>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-3">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: brandColor }}
+            >
+              <span className="text-white text-sm font-medium">P</span>
+            </div>
+            <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
+              <div className="text-sm break-words overflow-wrap-anywhere">
+                Hello there! How can we help?
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Agent · 2:31 PM</div>
+            </div>
+          </div>
 
           {/* Dynamic messages from database */}
           {processedMessages.length > 0 ? (
             <div className="space-y-4">
-                 {processedMessages.map((message, index) => (
-                   <div key={`${message.id}-${index}`} className={`flex items-start gap-3 ${message.author === 'customer' ? 'justify-end' : ''}`}>
-                     {message.author === 'agent' && (
-                       <div 
-                         className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                         style={{ backgroundColor: brandColor }}
-                       >
-                         <span className="text-white text-sm font-medium">P</span>
-                       </div>
-                     )}
-                     <div 
-                       className={`rounded-lg p-3 max-w-xs ${
-                         message.author === 'agent' 
-                           ? 'bg-gray-100 text-gray-900' 
-                           : 'text-white'
-                       }`}
-                       style={message.author === 'customer' ? { backgroundColor: brandColor } : {}}
-                     >
-                       <div className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.text}</div>
-                       <div className={`text-xs mt-1 ${message.author === 'agent' ? 'text-gray-500' : 'text-white opacity-80'}`}>
-                         {message.author === 'agent' ? 'Agent' : 'You'} · {message.time}
-                       </div>
-                     </div>
-                     {message.author === 'customer' && (
-                       <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                         <span className="text-gray-600 text-sm font-medium">Y</span>
-                       </div>
-                     )}
-                   </div>
-                 ))}
+              {processedMessages.map((message, index) => (
+                <div key={`${message.id}-${index}`} className={`flex items-start gap-3 ${message.author === 'customer' ? 'justify-end' : ''}`}>
+                  {message.author === 'agent' && (
+                    <div 
+                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: brandColor }}
+                    >
+                      <span className="text-white text-sm font-medium">P</span>
+                    </div>
+                  )}
+                  <div 
+                    className={`rounded-lg p-3 max-w-xs ${
+                      message.author === 'agent' 
+                        ? 'bg-gray-100 text-gray-900' 
+                        : 'text-white'
+                    }`}
+                    style={message.author === 'customer' ? { backgroundColor: brandColor } : {}}
+                  >
+                    <div className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.text}</div>
+                    <div className={`text-xs mt-1 ${message.author === 'agent' ? 'text-gray-500' : 'text-white opacity-80'}`}>
+                      {message.author === 'agent' ? 'Agent' : 'You'} · {message.time}
+                    </div>
+                  </div>
+                  {message.author === 'customer' && (
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-gray-600 text-sm font-medium">Y</span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-center text-gray-500 text-sm py-4">
               {cid ? "" : "Conversation will start when you send a message."}
             </div>
           )}
-                 {/* Typing indicator */}
-                 {typingUsers.length > 0 && (
-                   <div className="flex items-start gap-3">
-                     <div 
-                       className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                       style={{ backgroundColor: brandColor }}
-                     >
-                       <span className="text-white text-sm font-medium">A</span>
-                     </div>
-                     <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
-                       <div className="text-sm italic break-words overflow-wrap-anywhere">
-                         {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
-                       </div>
-                     </div>
-                   </div>
-                 )}
-                 
-                 {/* Invisible element to scroll to */}
-                 <div ref={messagesEndRef} />
-               </div>
-             </div>
+
+          {/* Typing indicator */}
+          {typingUsers.length > 0 && (
+            <div className="flex items-start gap-3">
+              <div 
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: brandColor }}
+              >
+                <span className="text-white text-sm font-medium">A</span>
+              </div>
+              <div className="bg-gray-100 text-gray-900 rounded-lg p-3 max-w-xs">
+                <div className="text-sm italic break-words overflow-wrap-anywhere">
+                  {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Invisible element to scroll to */}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
       
       {/* Footer - Stay at the bottom */}
       <div className="border-t border-gray-200 bg-white bg-opacity-80 backdrop-blur-sm p-2 sm:p-3 flex-shrink-0">
         <div className="relative">
-                 <input
-                   type="text"
-                   placeholder="Message..."
-                   value={inputValue}
-                  onChange={(e) => {
-                     setInputValue(e.target.value);
-                     if (e.target.value.trim()) {
-                       handleTypingStart();
-                     } else {
-                       handleTypingStop();
-                     }
-                   }}
+          <input
+            type="text"
+            placeholder="Message..."
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              if (e.target.value.trim()) {
+                handleTypingStart();
+              } else {
+                handleTypingStop();
+              }
+            }}
+            className="w-full pl-8 sm:pl-10 pr-16 sm:pr-20 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent break-words overflow-wrap-anywhere text-sm sm:text-base"
+            style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const text = inputValue.trim();
+                if (text) {
+                  // Stop typing indicator
+                  handleTypingStop();
                   
-                   className="w-full pl-8 sm:pl-10 pr-16 sm:pr-20 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent break-words overflow-wrap-anywhere text-sm sm:text-base"
-                   style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
-                   onKeyDown={(e) => {
-                     if (e.key === "Enter") {
-                       const text = inputValue.trim();
-                       if (text) {
-                         // Stop typing indicator
-                         handleTypingStop();
-                         
-                         // Send message logic
-                         const sendMessage = async () => {
-                          const client = (await import("@/lib/supabase/client")).createClient();
-                          if (!client || !customer) {
-                             return;
-                           }
-                          // Ensure conversation exists
-                          let convId = cid;
-                          if (!convId) {
-                            convId = await createConversation(customer);
-                            if (convId) setCid(convId);
-                            else return;
-                          }
-                           
-                           try {
-                             console.log("🚀 Sending message:", { conversation_id: cid, customer_id: customer.id, org_id: customer.org_id, text });
-                             
-                             const { data: messageData, error: messageError } = await client.from("messages").insert({ 
-                              conversation_id: convId, 
-                               sender_type: "CUSTOMER",
-                               customer_id: customer.id,
-                               org_id: customer.org_id,
-                               body_text: text
-                             }).select().single();
-                             
-                             if (messageError) {
-                               console.log("❌ Error sending message:", messageError);
-                             } else {
-                               console.log("✅ Message sent successfully:", messageData);
-                               
-                               // Update conversation last_message_at
-                              const { error: updateError } = await client.from("conversations").update({ 
-                                 last_message_at: new Date().toISOString() 
-                              }).eq("id", convId);
-                               
-                               if (updateError) {
-                                 console.log("❌ Error updating conversation:", updateError);
+                  // Send message logic
+                  const sendMessage = async () => {
+                    const client = (await import("@/lib/supabase/client")).createClient();
+                    if (!client || !customer) {
+                      return;
+                    }
+                    // Ensure conversation exists
+                    let convId = cid;
+                    if (!convId) {
+                      convId = await createConversation(customer);
+                      if (convId) setCid(convId);
+                      else return;
+                    }
+                    
+                    try {
+                      console.log("🚀 Sending message:", { conversation_id: cid, customer_id: customer.id, org_id: customer.org_id, text });
+                      
+                      const { data: messageData, error: messageError } = await client.from("messages").insert({ 
+                        conversation_id: convId, 
+                        sender_type: "CUSTOMER",
+                        customer_id: customer.id,
+                        org_id: customer.org_id,
+                        body_text: text
+                      }).select().single();
+                      
+                      if (messageError) {
+                        console.log("❌ Error sending message:", messageError);
+                      } else {
+                        console.log("✅ Message sent successfully:", messageData);
+                        
+                        // Update conversation last_message_at
+                        const { error: updateError } = await client.from("conversations").update({ 
+                          last_message_at: new Date().toISOString() 
+                        }).eq("id", convId);
+                        
+                        if (updateError) {
+                          console.log("❌ Error updating conversation:", updateError);
                         } else {
-                                 console.log("✅ Conversation updated successfully");
-                               }
+                          console.log("✅ Conversation updated successfully");
+                        }
 
-                               // Increment unread count for agents (if column exists)
-                               try {
-                                 const { error: unreadError } = await client
-                                   .from("customers")
-                                   .update({ 
-                                     unread_count_agent: (customer.unread_count_agent || 0) + 1
-                                   })
-                                   .eq("id", customer.id)
-                                   .eq("org_id", customer.org_id);
+                        // Increment unread count for agents (if column exists)
+                        try {
+                          const { error: unreadError } = await client
+                            .from("customers")
+                            .update({ 
+                              unread_count_agent: (customer.unread_count_agent || 0) + 1
+                            })
+                            .eq("id", customer.id)
+                            .eq("org_id", customer.org_id);
 
-                                 if (unreadError) {
-                                   console.log("❌ Error updating unread count:", unreadError);
-                                 } else {
-                                   console.log("✅ Unread count incremented for agents");
-                                 }
-                               } catch {
-                                 console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
-                               }
-                               
-                               console.log("🔄 Message sent successfully, should appear in chat now");
-                             }
-                           } catch (sendError) {
-                             console.log("❌ Exception sending message:", sendError);
-                           }
-                         };
-                         sendMessage();
-                        setInputValue("");
-                        // No caching - removed for better reliability
-                       }
-                     }
-                   }}
-                 />
+                          if (unreadError) {
+                            console.log("❌ Error updating unread count:", unreadError);
+                          } else {
+                            console.log("✅ Unread count incremented for agents");
+                          }
+                        } catch {
+                          console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
+                        }
+                        
+                        console.log("🔄 Message sent successfully, should appear in chat now");
+                      }
+                    } catch (sendError) {
+                      console.log("❌ Exception sending message:", sendError);
+                    }
+                  };
+                  sendMessage();
+                  setInputValue("");
+                }
+              }
+            }}
+          />
           
           {/* Emoji button */}
           <button className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -542,79 +517,78 @@ function EmbedContent() {
           </button>
           
           {/* Send button */}
-                 <button
-                   onClick={() => {
-                     const text = inputValue.trim();
-                     if (text) {
-                       // Stop typing indicator
-                       handleTypingStop();
-                       
-                       // Send message logic
-                       const sendMessage = async () => {
-                         const client = (await import("@/lib/supabase/client")).createClient();
-                         if (!client || !customer) {
-                           return;
-                         }
-                         // Ensure conversation exists
-                         let convId = cid;
-                         if (!convId) {
-                           convId = await createConversation(customer);
-                           if (convId) setCid(convId);
-                           else return;
-                         }
-                         
-                         try {
-                           const { error: messageError } = await client.from("messages").insert({ 
-                             conversation_id: convId, 
-                             sender_type: "CUSTOMER",
-                             customer_id: customer.id,
-                             org_id: customer.org_id,
-                             body_text: text
-                           }).select().single();
-                           
-                           if (!messageError) {
-                             // Update conversation last_message_at
-                             await client.from("conversations").update({ 
-                               last_message_at: new Date().toISOString() 
-                             }).eq("id", convId);
+          <button
+            onClick={() => {
+              const text = inputValue.trim();
+              if (text) {
+                // Stop typing indicator
+                handleTypingStop();
+                
+                // Send message logic
+                const sendMessage = async () => {
+                  const client = (await import("@/lib/supabase/client")).createClient();
+                  if (!client || !customer) {
+                    return;
+                  }
+                  // Ensure conversation exists
+                  let convId = cid;
+                  if (!convId) {
+                    convId = await createConversation(customer);
+                    if (convId) setCid(convId);
+                    else return;
+                  }
+                  
+                  try {
+                    const { error: messageError } = await client.from("messages").insert({ 
+                      conversation_id: convId, 
+                      sender_type: "CUSTOMER",
+                      customer_id: customer.id,
+                      org_id: customer.org_id,
+                      body_text: text
+                    }).select().single();
+                    
+                    if (!messageError) {
+                      // Update conversation last_message_at
+                      await client.from("conversations").update({ 
+                        last_message_at: new Date().toISOString() 
+                      }).eq("id", convId);
 
-                             // Increment unread count for agents (if column exists)
-                             try {
-                               await client
-                                 .from("customers")
-                                 .update({ 
-                                   unread_count_agent: (customer.unread_count_agent || 0) + 1
-                                 })
-                                 .eq("id", customer.id)
-                                 .eq("org_id", customer.org_id);
-                             } catch {
-                               console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
-                             }
-                             
-                             // Force refresh messages to ensure they appear immediately
-                             console.log("🔄 Message sent successfully, should appear in chat now");
-                           }
-                         } catch {
-                           // Error sending message
-                         }
-                       };
-                       sendMessage();
-                       setInputValue("");
-                        // No caching - removed for better reliability
-                     }
-                   }}
-                   disabled={!inputValue.trim()}
-                   className={`absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors ${
-                     inputValue.trim() 
-                       ? 'cursor-pointer' 
-                       : 'bg-gray-100 cursor-not-allowed'
-                   }`}
-                   style={inputValue.trim() ? { backgroundColor: brandColor } : {}}
-                 >
-                   <svg className={`w-3 h-3 sm:w-4 sm:h-4 ${inputValue.trim() ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                   </svg>
-                 </button>
+                      // Increment unread count for agents (if column exists)
+                      try {
+                        await client
+                          .from("customers")
+                          .update({ 
+                            unread_count_agent: (customer.unread_count_agent || 0) + 1
+                          })
+                          .eq("id", customer.id)
+                          .eq("org_id", customer.org_id);
+                      } catch {
+                        console.log("⚠️ Unread count column may not exist yet, skipping unread count update");
+                      }
+                      
+                      // Force refresh messages to ensure they appear immediately
+                      console.log("🔄 Message sent successfully, should appear in chat now");
+                    }
+                  } catch {
+                    // Error sending message
+                  }
+                };
+                sendMessage();
+                setInputValue("");
+              }
+            }}
+            disabled={!inputValue.trim()}
+            className={`absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors ${
+              inputValue.trim() 
+                ? 'cursor-pointer' 
+                : 'bg-gray-100 cursor-not-allowed'
+            }`}
+            style={inputValue.trim() ? { backgroundColor: brandColor } : {}}
+          >
+            <svg className={`w-3 h-3 sm:w-4 sm:h-4 ${inputValue.trim() ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
