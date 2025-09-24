@@ -176,7 +176,7 @@ export function useMessages(conversationId: string | null) {
                 .eq("conversation_id", conversationId)
                 .eq("org_id", agent.org_id)
                 .order("created_at", { ascending: true })
-                .limit(100); // Limit to 100 most recent messages for faster loading
+                .limit(200); // pull more history to avoid missing context
               
               if (error) {
                 throw error;
@@ -288,7 +288,7 @@ export function useMessages(conversationId: string | null) {
               .eq("conversation_id", conversationId)
               .eq("org_id", agent.org_id)
               .order("created_at", { ascending: true })
-              .limit(100);
+              .limit(200);
             
             if (error) {
               console.log("⚠️ Polling error:", error);
@@ -457,7 +457,7 @@ export function useMessages(conversationId: string | null) {
         .eq("conversation_id", conversationId)
         .eq("org_id", agent.org_id)
         .order("created_at", { ascending: true })
-        .limit(100);
+        .limit(200);
       
       if (error) {
         console.error("❌ Error refreshing messages:", error);

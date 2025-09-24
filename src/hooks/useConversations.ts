@@ -11,6 +11,8 @@ export type Conversation = {
   state?: "OPEN" | "CLOSED";
   created_at?: string;
   unread?: number;
+  // Cached for fast list rendering without extra queries
+  last_body_text?: string;
   customers: {
     id: string;
     display_name: string;
@@ -244,6 +246,8 @@ export function useConversations() {
                     // Move conversation to top and update timestamp
                     const conversation = updatedData[conversationIndex];
                     conversation.last_message_at = payload.new.created_at;
+                    // Cache last message body for fast UI updates
+                    conversation.last_body_text = payload.new.body_text;
                     
                     // If it's a customer message, increment unread count
                     if (payload.new.sender_type === "CUSTOMER") {
@@ -416,6 +420,8 @@ export function useConversations() {
                 // Move conversation to top and update timestamp
                 const conversation = updatedData[conversationIndex];
                 conversation.last_message_at = payload.new.created_at;
+                // Cache last message body as well
+                conversation.last_body_text = payload.new.body_text;
                 
                 // If it's a customer message, increment unread count
                 if (payload.new.sender_type === "CUSTOMER") {

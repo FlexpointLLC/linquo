@@ -310,14 +310,14 @@ export const DashboardContent = memo(function DashboardContent() {
           style={{ overflow: 'hidden' }}
         >
               <ConversationList
-                conversations={(conversationRows ?? []).map((c) => {
-                  const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
+                    conversations={(conversationRows ?? []).map((c) => {
+                      const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
                   
                   return {
                     id: c.id,
                     name: c.customers?.display_name || c.customers?.email || "Unknown Customer",
                     email: c.customers?.email,
-                    lastMessage: lastMessage?.body_text || "No messages yet",
+                        lastMessage: c.last_body_text || lastMessage?.body_text || "No messages yet",
                     unread: c.unread ?? 0, // Use nullish coalescing instead of logical OR
                     status: "ACTIVE" as const,
                     state: c.state || "OPEN",
