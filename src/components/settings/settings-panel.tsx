@@ -1,4 +1,5 @@
 "use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -9,41 +10,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { WidgetCustomization } from "./widget-customization";
-import { useAuth } from "@/hooks/useAuth";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Save, User, Building2 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type PersonalInfo = {
+  id: string;
+  user_id: string;
   display_name: string;
   email: string;
   online_status: string;
+  org_id: string;
+  role: string;
 };
 
 type OrganizationInfo = {
+  id: string;
   name: string;
   slug: string;
   brand_color: string;
 };
 
 export function SettingsPanel() {
-  const { agent, organization } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("general");
   
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
-    display_name: "",
-    email: "",
-    online_status: "OFFLINE",
-  });
-  const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo>({
-    name: "",
-    slug: "",
-    brand_color: "#3B82F6",
-  });
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
+  const [organizationInfo, setOrganizationInfo] = useState<OrganizationInfo | null>(null);
   const [isSavingPersonal, setIsSavingPersonal] = useState(false);
   const [isSavingOrg, setIsSavingOrg] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Handle tab state from URL parameters
   useEffect(() => {
@@ -63,43 +60,80 @@ export function SettingsPanel() {
 
   // Load initial data
   useEffect(() => {
-    if (agent) {
-      setPersonalInfo({
-        display_name: agent.display_name || "",
-        email: agent.email || "",
-        online_status: agent.online_status || "OFFLINE",
-      });
-    }
-  }, [agent]);
+    const loadData = async () => {
+      try {
+        const supabase = createClient();
+        if (!supabase) throw new Error("Supabase client not available");
 
-  useEffect(() => {
-    if (organization) {
-      setOrganizationInfo({
-        name: organization.name || "",
-        slug: organization.slug || "",
-        brand_color: organization.brand_color || "#3B82F6",
-      });
-    }
-  }, [organization]);
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
 
+        // Get agent data
+        const { data: agentData, error: agentError } = await supabase
+          .from("agents")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
+
+        if (agentError) throw agentError;
+        if (!agentData) throw new Error("Agent not found");
+
+        setPersonalInfo(agentData);
+
+        // Get organization data
+        const { data: orgData, error: orgError } = await supabase
+          .from("organizations")
+          .select("*")
+          .eq("id", agentData.org_id)
+          .single();
+
+        if (orgError) throw orgError;
+        if (!orgData) throw new Error("Organization not found");
+
+        setOrganizationInfo(orgData);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast.error("Failed to load settings");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Save personal info
   const savePersonalInfo = async () => {
-    if (!agent) return;
+    if (!personalInfo) return;
     
     setIsSavingPersonal(true);
     try {
       const supabase = createClient();
       if (!supabase) throw new Error("Supabase client not available");
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from("agents")
         .update({
           display_name: personalInfo.display_name,
           online_status: personalInfo.online_status,
+          updated_at: new Date().toISOString()
         })
-        .eq("id", agent.id);
+        .eq("id", personalInfo.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
+      // Verify update
+      const { data: updated, error: verifyError } = await supabase
+        .from("agents")
+        .select("*")
+        .eq("id", personalInfo.id)
+        .single();
+
+      if (verifyError) throw verifyError;
+      if (!updated) throw new Error("Failed to verify update");
+
+      setPersonalInfo(updated);
       toast.success("Personal information updated successfully!");
     } catch (error) {
       console.error("Error updating personal info:", error);
@@ -109,25 +143,38 @@ export function SettingsPanel() {
     }
   };
 
+  // Save organization info
   const saveOrganizationInfo = async () => {
-    if (!organization) return;
+    if (!organizationInfo) return;
     
     setIsSavingOrg(true);
     try {
       const supabase = createClient();
       if (!supabase) throw new Error("Supabase client not available");
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from("organizations")
         .update({
           name: organizationInfo.name,
           slug: organizationInfo.slug,
           brand_color: organizationInfo.brand_color,
+          updated_at: new Date().toISOString()
         })
-        .eq("id", organization.id);
+        .eq("id", organizationInfo.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
+      // Verify update
+      const { data: updated, error: verifyError } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("id", organizationInfo.id)
+        .single();
+
+      if (verifyError) throw verifyError;
+      if (!updated) throw new Error("Failed to verify update");
+
+      setOrganizationInfo(updated);
       toast.success("Organization information updated successfully!");
     } catch (error) {
       console.error("Error updating organization info:", error);
@@ -136,6 +183,22 @@ export function SettingsPanel() {
       setIsSavingOrg(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!personalInfo || !organizationInfo) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Failed to load settings. Please refresh the page.
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -146,14 +209,14 @@ export function SettingsPanel() {
         </p>
       </div>
       
-             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-               <TabsList className="grid w-full grid-cols-5">
-                 <TabsTrigger value="general">General</TabsTrigger>
-                 <TabsTrigger value="widget">Widget Settings</TabsTrigger>
-                 <TabsTrigger value="billing">Billing</TabsTrigger>
-                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                 <TabsTrigger value="security">Security</TabsTrigger>
-               </TabsList>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="widget">Widget Settings</TabsTrigger>
+          <TabsTrigger value="billing">Billing</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+        </TabsList>
 
         <TabsContent value="general" className="mt-6">
           <div className="grid md:grid-cols-2 gap-6">
@@ -375,5 +438,3 @@ export function SettingsPanel() {
     </div>
   );
 }
-
-

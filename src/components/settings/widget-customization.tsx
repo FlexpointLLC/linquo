@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Palette, Save, Loader2, Eye } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -11,117 +10,139 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { WidgetPreview } from "./widget-preview";
+import { toast } from "sonner";
+
+type WidgetSettings = {
+  id: string;
+  brand_color: string;
+  widget_text_line1: string;
+  widget_text_line2: string;
+  widget_icon_alignment: "left" | "right";
+  widget_show_branding: boolean;
+  chat_header_name: string;
+  chat_header_subtitle: string;
+  widget_button_text: string;
+};
 
 export function WidgetCustomization() {
-  const { organization, loading } = useAuth();
-  const [customization, setCustomization] = useState({
-    primaryColor: "#3B82F6",
-    textLine1: "Hello there",
-    textLine2: "How can we help?",
-    iconAlignment: "right" as "left" | "right",
-    showBranding: true,
-    chatHeaderName: "Support Team",
-    chatHeaderSubtitle: "Typically replies within 1 min",
-    buttonText: "Start Chat",
-  });
-  const [originalCustomization, setOriginalCustomization] = useState({
-    primaryColor: "#3B82F6",
-    textLine1: "Hello there",
-    textLine2: "How can we help?",
-    iconAlignment: "right" as "left" | "right",
-    showBranding: true,
-    chatHeaderName: "Support Team",
-    chatHeaderSubtitle: "Typically replies within 1 min",
-    buttonText: "Start Chat",
-  });
+  const [settings, setSettings] = useState<WidgetSettings | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const orgId = organization?.id;
-
-  // Fetch widget settings from organization data
+  // Load widget settings
   useEffect(() => {
-    if (organization) {
-      // Check if the stored values are the old defaults and replace them
-      const storedLine1 = organization.widget_text_line1;
-      const storedLine2 = organization.widget_text_line2;
-      
-      // If the stored values are the old defaults, use the new defaults instead
-      const isOldDefault1 = storedLine1 === "Hi there! 👋 Need help with our services?" || 
-                           storedLine1 === "Hi there!  Need help with our services?";
-      const isOldDefault2 = storedLine2 === "Just ask here and we'll assist you!";
-      
-      const newCustomization = {
-        primaryColor: organization.brand_color || "#3B82F6",
-        textLine1: (isOldDefault1 ? "Hello there" : storedLine1) || "Hello there",
-        textLine2: (isOldDefault2 ? "How can we help?" : storedLine2) || "How can we help?",
-        iconAlignment: (organization.widget_icon_alignment as "left" | "right") || "right",
-        showBranding: organization.widget_show_branding !== false, // default to true
-        chatHeaderName: organization.chat_header_name || "Support Team",
-        chatHeaderSubtitle: organization.chat_header_subtitle || "Typically replies within 1 min",
-        buttonText: organization.widget_button_text || "Start Chat",
-      };
-      setCustomization(newCustomization);
-      setOriginalCustomization(newCustomization);
-    }
-  }, [organization]);
+    const loadSettings = async () => {
+      try {
+        const supabase = createClient();
+        if (!supabase) throw new Error("Supabase client not available");
 
-  // Check for unsaved changes
-  useEffect(() => {
-    const hasChanges = JSON.stringify(customization) !== JSON.stringify(originalCustomization);
-    setHasUnsavedChanges(hasChanges);
-  }, [customization, originalCustomization]);
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
 
-  const handleCustomizationChange = (key: string, value: string | boolean) => {
-    setCustomization(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
+        // Get agent's organization
+        const { data: agent, error: agentError } = await supabase
+          .from("agents")
+          .select("org_id")
+          .eq("user_id", user.id)
+          .single();
 
-  // Save all widget settings
-  const saveWidgetSettings = async () => {
-    if (!orgId) return;
-    
+        if (agentError) throw agentError;
+        if (!agent) throw new Error("Agent not found");
+
+        // Get organization settings
+        const { data: org, error: orgError } = await supabase
+          .from("organizations")
+          .select(`
+            id,
+            brand_color,
+            widget_text_line1,
+            widget_text_line2,
+            widget_icon_alignment,
+            widget_show_branding,
+            chat_header_name,
+            chat_header_subtitle,
+            widget_button_text
+          `)
+          .eq("id", agent.org_id)
+          .single();
+
+        if (orgError) throw orgError;
+        if (!org) throw new Error("Organization not found");
+
+        setSettings({
+          id: org.id,
+          brand_color: org.brand_color || "#3B82F6",
+          widget_text_line1: org.widget_text_line1 || "Hello there",
+          widget_text_line2: org.widget_text_line2 || "How can we help?",
+          widget_icon_alignment: org.widget_icon_alignment || "right",
+          widget_show_branding: org.widget_show_branding ?? true,
+          chat_header_name: org.chat_header_name || "Support Team",
+          chat_header_subtitle: org.chat_header_subtitle || "Typically replies within 1 min",
+          widget_button_text: org.widget_button_text || "Start Chat"
+        });
+      } catch (error) {
+        console.error("Error loading widget settings:", error);
+        toast.error("Failed to load widget settings");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  const saveSettings = async () => {
+    if (!settings) return;
+
     setIsSaving(true);
-    setSaveError(null);
-    setSaveSuccess(false);
-
     try {
       const supabase = createClient();
-      
-      if (!supabase) {
-        throw new Error('Supabase client not available');
-      }
-      
-      const { error } = await supabase
-        .from('organizations')
-        .update({ 
-          brand_color: customization.primaryColor,
-          widget_text_line1: customization.textLine1,
-          widget_text_line2: customization.textLine2,
-          widget_icon_alignment: customization.iconAlignment,
-          widget_show_branding: customization.showBranding,
-          chat_header_name: customization.chatHeaderName,
-          chat_header_subtitle: customization.chatHeaderSubtitle,
-          widget_button_text: customization.buttonText,
+      if (!supabase) throw new Error("Supabase client not available");
+
+      const { error: updateError } = await supabase
+        .from("organizations")
+        .update({
+          brand_color: settings.brand_color,
+          widget_text_line1: settings.widget_text_line1,
+          widget_text_line2: settings.widget_text_line2,
+          widget_icon_alignment: settings.widget_icon_alignment,
+          widget_show_branding: settings.widget_show_branding,
+          chat_header_name: settings.chat_header_name,
+          chat_header_subtitle: settings.chat_header_subtitle,
+          widget_button_text: settings.widget_button_text,
+          updated_at: new Date().toISOString()
         })
-        .eq('id', orgId);
+        .eq("id", settings.id);
 
-      if (error) {
-        throw error;
-      }
+      if (updateError) throw updateError;
 
-      setOriginalCustomization(customization);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-      
+      // Verify update
+      const { data: updated, error: verifyError } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("id", settings.id)
+        .single();
+
+      if (verifyError) throw verifyError;
+      if (!updated) throw new Error("Failed to verify update");
+
+      setSettings({
+        ...settings,
+        brand_color: updated.brand_color,
+        widget_text_line1: updated.widget_text_line1,
+        widget_text_line2: updated.widget_text_line2,
+        widget_icon_alignment: updated.widget_icon_alignment,
+        widget_show_branding: updated.widget_show_branding,
+        chat_header_name: updated.chat_header_name,
+        chat_header_subtitle: updated.chat_header_subtitle,
+        widget_button_text: updated.widget_button_text
+      });
+
+      toast.success("Widget settings updated successfully!");
     } catch (error) {
-      console.error('Error saving widget settings:', error);
-      setSaveError('Failed to save widget settings. Please try again.');
-      setTimeout(() => setSaveError(null), 5000);
+      console.error("Error saving widget settings:", error);
+      toast.error("Failed to save widget settings");
     } finally {
       setIsSaving(false);
     }
@@ -129,46 +150,22 @@ export function WidgetCustomization() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Widget Customization
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="h-4 bg-muted rounded w-24 mb-2 animate-pulse"></div>
-            <div className="h-10 bg-muted rounded w-full animate-pulse"></div>
-            <div className="h-4 bg-muted rounded w-20 mb-2 animate-pulse"></div>
-            <div className="h-10 bg-muted rounded w-full animate-pulse"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 
-  if (!organization) {
+  if (!settings) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Widget Customization
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-yellow-700">You need to be part of an organization to customize widget settings.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="p-6 text-center text-muted-foreground">
+        Failed to load widget settings. Please refresh the page.
+      </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Left Side - Customization Controls */}
+    <div className="grid lg:grid-cols-2 gap-6">
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -177,74 +174,54 @@ export function WidgetCustomization() {
               Widget Customization
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Brand Color */}
-            <div>
-              <Label className="block text-sm font-medium text-foreground mb-2">
-                Brand Color
-              </Label>
-              <div className="flex items-center gap-3">
-                <input
+          <CardContent className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="brandColor">Brand Color</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="brandColor"
                   type="color"
-                  value={customization.primaryColor}
-                  onChange={(e) => handleCustomizationChange('primaryColor', e.target.value)}
-                  className="w-12 h-10 rounded border border-border cursor-pointer"
+                  value={settings.brand_color}
+                  onChange={(e) => setSettings({ ...settings, brand_color: e.target.value })}
+                  className="w-16 h-10 p-1"
                 />
                 <Input
-                  type="text"
-                  value={customization.primaryColor}
-                  onChange={(e) => handleCustomizationChange('primaryColor', e.target.value)}
-                  className="flex-1 font-mono"
+                  value={settings.brand_color}
+                  onChange={(e) => setSettings({ ...settings, brand_color: e.target.value })}
                   placeholder="#3B82F6"
+                  className="flex-1"
                 />
               </div>
             </div>
 
-            {/* Text Lines */}
-            <div>
-              <Label className="block text-sm font-medium text-foreground mb-2">
-                Welcome Messages
-              </Label>
-              <div className="space-y-3">
-                <Input
-                  value={customization.textLine1}
-                  onChange={(e) => handleCustomizationChange('textLine1', e.target.value)}
-                  placeholder="First welcome message..."
-                  className="w-full"
-                />
-                <Input
-                  value={customization.textLine2}
-                  onChange={(e) => handleCustomizationChange('textLine2', e.target.value)}
-                  placeholder="Second welcome message..."
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            {/* Button Text */}
-            <div>
-              <Label className="block text-sm font-medium text-foreground mb-2">
-                Button Text
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="textLine1">Welcome Message (Line 1)</Label>
               <Input
-                value={customization.buttonText}
-                onChange={(e) => handleCustomizationChange('buttonText', e.target.value)}
-                placeholder="Start Chat"
-                className="w-full"
+                id="textLine1"
+                value={settings.widget_text_line1}
+                onChange={(e) => setSettings({ ...settings, widget_text_line1: e.target.value })}
+                placeholder="Hello there"
               />
             </div>
 
-            {/* Icon Alignment */}
-            <div>
-              <Label className="block text-sm font-medium text-foreground mb-2">
-                Icon Alignment
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="textLine2">Welcome Message (Line 2)</Label>
+              <Input
+                id="textLine2"
+                value={settings.widget_text_line2}
+                onChange={(e) => setSettings({ ...settings, widget_text_line2: e.target.value })}
+                placeholder="How can we help?"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="iconAlignment">Icon Alignment</Label>
               <Select
-                value={customization.iconAlignment}
-                onValueChange={(value) => handleCustomizationChange('iconAlignment', value)}
+                value={settings.widget_icon_alignment}
+                onValueChange={(value: "left" | "right") => setSettings({ ...settings, widget_icon_alignment: value })}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select alignment" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="left">Left</SelectItem>
@@ -253,100 +230,93 @@ export function WidgetCustomization() {
               </Select>
             </div>
 
-            {/* Powered by Linquo */}
             <div className="flex items-center justify-between">
               <div>
-                <Label className="font-medium">Show &quot;Powered by Linquo&quot; branding</Label>
-                <div className="text-muted-foreground" style={{ fontSize: '12px' }}>Display our branding on your widget</div>
+                <Label>Show Branding</Label>
+                <p className="text-sm text-muted-foreground">Display "Powered by Linquo" in widget</p>
               </div>
               <Switch
-                checked={customization.showBranding}
-                onCheckedChange={(checked) => handleCustomizationChange('showBranding', checked)}
+                checked={settings.widget_show_branding}
+                onCheckedChange={(checked) => setSettings({ ...settings, widget_show_branding: checked })}
               />
-            </div>
-
-            {/* Chat Header */}
-            <div className="pt-4 border-t border-border">
-              <Label className="block text-sm font-medium text-foreground mb-2">
-                Chat Header
-              </Label>
-              <div className="space-y-3">
-                <Input
-                  value={customization.chatHeaderName}
-                  onChange={(e) => handleCustomizationChange('chatHeaderName', e.target.value)}
-                  placeholder="Support Team"
-                  className="w-full"
-                />
-                <Input
-                  value={customization.chatHeaderSubtitle}
-                  onChange={(e) => handleCustomizationChange('chatHeaderSubtitle', e.target.value)}
-                  placeholder="Typically replies within 1 min"
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            {/* Save Button */}
-            <div className="pt-4">
-              <Button 
-                onClick={saveWidgetSettings}
-                disabled={!hasUnsavedChanges || isSaving}
-                className="w-full"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Widget Settings
-                  </>
-                )}
-              </Button>
-              
-              {saveSuccess && (
-                <p className="mt-2 text-sm text-green-600 text-center">✅ Widget settings saved successfully!</p>
-              )}
-              {saveError && (
-                <p className="mt-2 text-sm text-red-600 text-center">❌ {saveError}</p>
-              )}
-              {hasUnsavedChanges && (
-                <p className="mt-2 text-sm text-orange-600 text-center">⚠️ You have unsaved changes</p>
-              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Widget Customization Info */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <h3 className="font-semibold text-amber-900 mb-2">🎨 Widget Customization</h3>
-          <p className="text-amber-800 text-sm">
-            Customize your widget appearance including colors, welcome messages, icon alignment, and branding. Changes are saved to your organization and will be applied to all embedded widgets.
-          </p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Chat Header</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="headerName">Header Name</Label>
+              <Input
+                id="headerName"
+                value={settings.chat_header_name}
+                onChange={(e) => setSettings({ ...settings, chat_header_name: e.target.value })}
+                placeholder="Support Team"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="headerSubtitle">Header Subtitle</Label>
+              <Input
+                id="headerSubtitle"
+                value={settings.chat_header_subtitle}
+                onChange={(e) => setSettings({ ...settings, chat_header_subtitle: e.target.value })}
+                placeholder="Typically replies within 1 min"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="buttonText">Button Text</Label>
+              <Input
+                id="buttonText"
+                value={settings.widget_button_text}
+                onChange={(e) => setSettings({ ...settings, widget_button_text: e.target.value })}
+                placeholder="Start Chat"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button 
+          onClick={saveSettings} 
+          disabled={isSaving}
+          className="w-full"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Save Widget Settings
+            </>
+          )}
+        </Button>
       </div>
 
-      {/* Right Side - Live Preview */}
-      <div className="space-y-4">
+      <div className="lg:sticky lg:top-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
-              Live Preview
+              Widget Preview
             </CardTitle>
           </CardHeader>
           <CardContent>
             <WidgetPreview
-              brandColor={customization.primaryColor}
-              textLine1={customization.textLine1}
-              textLine2={customization.textLine2}
-              iconAlignment={customization.iconAlignment}
-              showPoweredBy={customization.showBranding}
-              chatHeaderName={customization.chatHeaderName}
-              chatHeaderSubtitle={customization.chatHeaderSubtitle}
-              buttonText={customization.buttonText}
+              brandColor={settings.brand_color}
+              textLine1={settings.widget_text_line1}
+              textLine2={settings.widget_text_line2}
+              iconAlignment={settings.widget_icon_alignment}
+              showPoweredBy={settings.widget_show_branding}
+              chatHeaderName={settings.chat_header_name}
+              chatHeaderSubtitle={settings.chat_header_subtitle}
+              buttonText={settings.widget_button_text}
             />
           </CardContent>
         </Card>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 
 export type Agent = {
   id: string;

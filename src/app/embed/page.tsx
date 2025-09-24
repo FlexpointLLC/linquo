@@ -163,6 +163,12 @@ function EmbedContent() {
         
         if (existingConv) {
           setCid(existingConv.id);
+        } else {
+          // Create a new conversation immediately so the first message can send
+          const newId = await createConversation(customer);
+          if (newId) {
+            setCid(newId);
+          }
         }
       } catch {
         // Error loading existing conversation
@@ -456,16 +462,23 @@ function EmbedContent() {
                          
                          // Send message logic
                          const sendMessage = async () => {
-                           const client = (await import("@/lib/supabase/client")).createClient();
-                           if (!client || !customer || !cid) {
+                          const client = (await import("@/lib/supabase/client")).createClient();
+                          if (!client || !customer) {
                              return;
                            }
+                          // Ensure conversation exists
+                          let convId = cid;
+                          if (!convId) {
+                            convId = await createConversation(customer);
+                            if (convId) setCid(convId);
+                            else return;
+                          }
                            
                            try {
                              console.log("🚀 Sending message:", { conversation_id: cid, customer_id: customer.id, org_id: customer.org_id, text });
                              
                              const { data: messageData, error: messageError } = await client.from("messages").insert({ 
-                               conversation_id: cid, 
+                              conversation_id: convId, 
                                sender_type: "CUSTOMER",
                                customer_id: customer.id,
                                org_id: customer.org_id,
@@ -478,9 +491,9 @@ function EmbedContent() {
                                console.log("✅ Message sent successfully:", messageData);
                                
                                // Update conversation last_message_at
-                               const { error: updateError } = await client.from("conversations").update({ 
+                              const { error: updateError } = await client.from("conversations").update({ 
                                  last_message_at: new Date().toISOString() 
-                               }).eq("id", cid);
+                              }).eq("id", convId);
                                
                                if (updateError) {
                                  console.log("❌ Error updating conversation:", updateError);
@@ -539,13 +552,20 @@ function EmbedContent() {
                        // Send message logic
                        const sendMessage = async () => {
                          const client = (await import("@/lib/supabase/client")).createClient();
-                         if (!client || !customer || !cid) {
+                         if (!client || !customer) {
                            return;
+                         }
+                         // Ensure conversation exists
+                         let convId = cid;
+                         if (!convId) {
+                           convId = await createConversation(customer);
+                           if (convId) setCid(convId);
+                           else return;
                          }
                          
                          try {
                            const { error: messageError } = await client.from("messages").insert({ 
-                             conversation_id: cid, 
+                             conversation_id: convId, 
                              sender_type: "CUSTOMER",
                              customer_id: customer.id,
                              org_id: customer.org_id,
@@ -556,7 +576,7 @@ function EmbedContent() {
                              // Update conversation last_message_at
                              await client.from("conversations").update({ 
                                last_message_at: new Date().toISOString() 
-                             }).eq("id", cid);
+                             }).eq("id", convId);
 
                              // Increment unread count for agents (if column exists)
                              try {

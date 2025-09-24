@@ -51,5 +51,3 @@ export function getSupabaseBrowser(): SupabaseClient | null {
     return null;
   }
 }
-
-

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import { requestDeduplicator } from "@/lib/request-deduplication";
 import { useAuth } from "@/hooks/useAuth";
 

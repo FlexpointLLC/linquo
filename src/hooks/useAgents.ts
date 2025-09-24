@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 import { useAuth } from "@/hooks/useAuth";
 
 export type Agent = { id: string; display_name: string; email: string; online_status: string; is_active: boolean };

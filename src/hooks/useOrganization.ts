@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 
 export type Organization = {
   id: string;

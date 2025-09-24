@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 
 export type DbMessage = {
   id: string;

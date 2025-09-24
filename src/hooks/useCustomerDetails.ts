@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
-import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { getSupabaseBrowser } from "@/lib/supabase/browser";
 
 export type CustomerDetails = {
   id: string;

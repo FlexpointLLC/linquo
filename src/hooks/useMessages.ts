@@ -4,9 +4,17 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PerformanceMonitor } from "@/lib/performance-utils";
 
-// Cache for messages to prevent re-fetching
-const messageCache = new Map<string, { data: DbMessage[]; timestamp: number }>();
-const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes cache
+// Enhanced cache with LRU and pagination support
+type CacheEntry = {
+  pages: Map<number, DbMessage[]>;
+  lastUpdated: number;
+  totalCount: number;
+};
+
+const messageCache = new Map<string, CacheEntry>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+const PAGE_SIZE = 50; // Messages per page
+const MAX_CACHED_PAGES = 10; // Maximum number of cached pages per conversation
 
 export type DbMessage = {
   id: string;
@@ -21,17 +29,20 @@ export type DbMessage = {
 };
 
 export function useMessages(conversationId: string | null) {
-  const [data, setData] = useState<DbMessage[] | null>(null);
+  const [messages, setMessages] = useState<DbMessage[]>([]);
   const [loading, setLoading] = useState(Boolean(conversationId));
   const [error, setError] = useState<string | null>(null);
-  const [lastMessageCount, setLastMessageCount] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const { agent } = useAuth();
 
-  // Single AudioContext reused (initialized on user gesture to satisfy autoplay policies)
+  // Audio context for notifications
   const audioCtxRef = useRef<AudioContext | null>(null);
   const canPlayRef = useRef<boolean>(false);
   const notifyEnabledRef = useRef<boolean>(false);
+  const loadingRef = useRef(false);
 
+  // Initialize audio context
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const init = async () => {
@@ -67,419 +78,267 @@ export function useMessages(conversationId: string | null) {
     };
   }, []);
 
-  // Lightweight notification sound using Web Audio API
+  // Notification sound
   const playNotificationSound = useCallback(async () => {
-    if (typeof window === 'undefined') return;
+    if (!canPlayRef.current || !audioCtxRef.current) return;
+    
     try {
-      const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AC) return;
-      if (!audioCtxRef.current) {
-        // Only create if we already have user interaction
-        if (!canPlayRef.current) return;
-        audioCtxRef.current = new AC();
-      }
-      if (audioCtxRef.current.state === 'suspended') {
-        await audioCtxRef.current.resume();
-      }
-
       const ctx = audioCtxRef.current;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = 1200; // brighter beep
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+      
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.27);
+      
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 0.01);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
+      
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.2);
     } catch {
       // ignore
     }
   }, []);
 
-  const showSystemNotification = useCallback((messagePreview?: string) => {
-    try {
-      if (!('Notification' in window)) return;
-      if (!notifyEnabledRef.current) return;
-      const title = 'New message';
-      const body = (messagePreview || '').slice(0, 120);
-      new Notification(title, { body });
-    } catch {}
-  }, []);
-
-  // Check cache first
-  const getCachedMessages = useCallback((convId: string): DbMessage[] | null => {
-    const cached = messageCache.get(convId);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      return cached.data;
-    }
-    return null;
-  }, []);
-
-  // Cache messages
-  const cacheMessages = useCallback((convId: string, messages: DbMessage[]) => {
-    messageCache.set(convId, {
-      data: messages,
-      timestamp: Date.now()
-    });
-  }, []);
-
-  useEffect(() => {
-    // Ensure we're on the client side
-    if (typeof window === 'undefined') {
-      return;
-    }
-
+  // Load messages for a specific page
+  const loadPage = useCallback(async (page: number) => {
+    if (!conversationId || !agent?.org_id || loadingRef.current) return;
+    
+    loadingRef.current = true;
     const client = createClient();
-    if (!conversationId) {
-      setData([]);
-      setLoading(false);
-      return;
-    }
-    
-    let unsub: (() => void) | undefined;
-
-    async function load() {
-      try {
-        if (!client || !conversationId) {
-          setData([]);
-          setLoading(false);
-          return;
-        }
-        
-        // Check cache first
-        const cachedMessages = getCachedMessages(conversationId);
-        if (cachedMessages) {
-          setData(cachedMessages);
-          setLoading(false);
-          console.log("📦 Using cached messages for conversation:", conversationId);
-        }
-        
-        // If agent is not available, don't clear data - keep existing messages
-        if (!agent?.org_id) {
-          setLoading(false);
-          return;
-        }
-        
-        // Only fetch if not cached
-        if (!cachedMessages) {
-          console.log("🔍 Fetching messages from database for conversation:", conversationId);
-          
-          const messages = await PerformanceMonitor.measureAsync(
-            `fetch-messages-${conversationId}`,
-            async () => {
-              const { data, error } = await client
-                .from("messages")
-                .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at,read_by_agent,read_at")
-                .eq("conversation_id", conversationId)
-                .eq("org_id", agent.org_id)
-                .order("created_at", { ascending: true })
-                .limit(200); // pull more history to avoid missing context
-              
-              if (error) {
-                throw error;
-              }
-              
-              // Add default values for read status fields if they don't exist
-              return (data as DbMessage[]).map(msg => ({
-                ...msg,
-                read_by_agent: msg.read_by_agent ?? false,
-                read_at: msg.read_at ?? null
-              }));
-            }
-          );
-          
-          setData(messages);
-          setLastMessageCount(messages.length);
-          cacheMessages(conversationId, messages);
-          console.log("✅ Loaded and cached messages:", messages.length);
-        }
-
-        // Enable realtime subscription for message syncing (only if not already subscribed)
-        if (!unsub) {
-          console.log("🔄 Setting up real-time subscription for conversation:", conversationId);
-          
-          const channel = client
-            .channel(`msg_changes_${conversationId}_${Date.now()}`) // Add timestamp to ensure unique channel
-            .on(
-              "postgres_changes" as never,
-              { event: "insert", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-              (payload: { new: DbMessage }) => {
-                console.log("📨 New message via realtime:", payload.new.id, "Sender:", payload.new.sender_type);
-                
-                // Add default values for read status fields
-                const newMessage = {
-                  ...payload.new,
-                  read_by_agent: payload.new.read_by_agent ?? false,
-                  read_at: payload.new.read_at ?? null
-                };
-                
-                // Play sound only for incoming customer messages
-                if (newMessage.sender_type === "CUSTOMER") {
-                  playNotificationSound();
-                  showSystemNotification(newMessage.body_text);
-                }
-
-                setData((prev) => {
-                  if (!prev) return [newMessage];
-                  
-                  // Check for duplicates
-                  const exists = prev.some(msg => msg.id === newMessage.id);
-                  if (exists) {
-                    console.log("⚠️ Duplicate message detected, skipping:", newMessage.id);
-                    return prev;
-                  }
-                  
-                  const updated = [...prev, newMessage];
-                  // Update cache
-                  cacheMessages(conversationId, updated);
-                  setLastMessageCount(updated.length);
-                  console.log("✅ Message added to state, total messages:", updated.length);
-                  return updated;
-                });
-              }
-            )
-            .on(
-              "postgres_changes" as never,
-              { event: "update", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-              (payload: { new: DbMessage }) => {
-                console.log("📝 Message updated via realtime:", payload.new.id, "Read by agent:", payload.new.read_by_agent);
-                
-                setData((prev) => {
-                  if (!prev) return prev;
-                  
-                  const updated = prev.map(msg => 
-                    msg.id === payload.new.id 
-                      ? { ...msg, read_by_agent: payload.new.read_by_agent ?? false, read_at: payload.new.read_at ?? null }
-                      : msg
-                  );
-                  
-                  // Update cache
-                  cacheMessages(conversationId, updated);
-                  console.log("✅ Message read status updated in state");
-                  return updated;
-                });
-              }
-            )
-            .subscribe((status) => {
-              console.log("🔌 Message subscription status:", status, "for conversation:", conversationId);
-              if (status === 'SUBSCRIBED') {
-                console.log("✅ Message subscription active for conversation:", conversationId);
-              } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                console.log("❌ Message subscription error for conversation:", conversationId, "Status:", status);
-              }
-            });
-          unsub = () => {
-            console.log("🧹 Cleaning up message subscription for conversation:", conversationId);
-            client.removeChannel(channel);
-          };
-        }
-
-        // Fallback polling mechanism - check for new messages every 5 seconds
-        const pollInterval = setInterval(async () => {
-          if (!conversationId || !agent?.org_id) return;
-          
-          try {
-            const { data: latestMessages, error } = await client
-              .from("messages")
-              .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at,read_by_agent,read_at")
-              .eq("conversation_id", conversationId)
-              .eq("org_id", agent.org_id)
-              .order("created_at", { ascending: true })
-              .limit(200);
-            
-            if (error) {
-              console.log("⚠️ Polling error:", error);
-              return;
-            }
-            
-            // Determine current cached length to detect new arrivals regardless of stale closures
-            const cachedLen = (messageCache.get(conversationId)?.data?.length) ?? 0;
-            const hasLenIncrease = latestMessages && latestMessages.length > cachedLen;
-            if (latestMessages && (hasLenIncrease || latestMessages.some(msg => msg.read_by_agent !== data?.find(d => d.id === msg.id)?.read_by_agent))) {
-              console.log("🔄 Polling detected changes:", latestMessages.length - lastMessageCount, "new messages or read status changes");
-
-              // If there are new messages, and any of the new ones are from customer, play sound
-              if (hasLenIncrease) {
-                const delta = latestMessages.length - cachedLen;
-                const newSlice = latestMessages.slice(-Math.max(0, delta));
-                const anyCustomer = newSlice.find(m => m.sender_type === 'CUSTOMER');
-                if (anyCustomer) {
-                  playNotificationSound();
-                  showSystemNotification(anyCustomer.body_text);
-                }
-              }
-              const messagesWithDefaults = latestMessages.map(msg => ({
-                ...msg,
-                read_by_agent: msg.read_by_agent ?? false,
-                read_at: msg.read_at ?? null
-              }));
-              setData(messagesWithDefaults);
-              setLastMessageCount(messagesWithDefaults.length);
-              cacheMessages(conversationId, messagesWithDefaults);
-            }
-          } catch (pollError) {
-            console.log("⚠️ Polling error:", pollError);
-          }
-        }, 5000); // Poll every 5 seconds
-
-        // Clean up polling on unmount
-        const originalUnsub = unsub;
-        unsub = () => {
-          if (originalUnsub) originalUnsub();
-          clearInterval(pollInterval);
-        };
-      } catch (e: unknown) {
-        console.error("❌ Error loading messages:", e);
-        setError(e instanceof Error ? e.message : "Failed to load messages");
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    load();
-    return () => {
-      if (unsub) unsub();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, agent?.org_id, getCachedMessages, cacheMessages]);
-
-  // Function to clear cache for a specific conversation
-  const clearCache = useCallback((convId?: string) => {
-    if (convId) {
-      messageCache.delete(convId);
-    } else {
-      messageCache.clear();
-    }
-  }, []);
-
-  // Function to mark messages as read
-  const markMessagesAsRead = useCallback(async (messageIds: string[]) => {
-    if (!conversationId || !agent?.id || messageIds.length === 0) return;
+    if (!client) return;
 
     try {
-      const client = createClient();
-      if (!client) return;
-
-      // Get customer ID from the first message
-      const firstMessage = data?.find(m => messageIds.includes(m.id));
-      const customerId = firstMessage?.customer_id;
-      
-      if (!customerId) {
-        console.error("❌ No customer ID found for messages");
-        return;
-      }
-
-      // Mark messages as read (only if read_by_agent column exists)
-      let messageError = null;
-      try {
-        const { error } = await client
-          .from("messages")
-          .update({ 
-            read_by_agent: true, 
-            read_at: new Date().toISOString() 
-          })
-          .in("id", messageIds)
-          .eq("conversation_id", conversationId)
-          .eq("sender_type", "CUSTOMER"); // Only mark customer messages as read
-        
-        messageError = error;
-      } catch {
-        console.log("⚠️ Read status columns may not exist yet, skipping message read status update");
-        messageError = null; // Don't treat this as an error
-      }
-
-      if (messageError) {
-        console.error("❌ Error marking messages as read:", messageError);
-        return;
-      }
-
-      // Update customer's unread count
-      console.log("🔄 Updating customer unread count to 0 for customer:", customerId);
-      const { error: customerError } = await client
-        .from("customers")
-        .update({ 
-          unread_count_agent: 0 // Reset to 0 since all messages are now read
-        })
-        .eq("id", customerId)
-        .eq("org_id", agent.org_id);
-
-      if (customerError) {
-        console.error("❌ Error updating customer unread count:", customerError);
-      } else {
-        console.log("✅ Successfully updated customer unread count to 0");
-      }
-
-      // Update local state
-      setData(prev => {
-        if (!prev) return prev;
-        return prev.map(msg => 
-          messageIds.includes(msg.id) && msg.sender_type === "CUSTOMER"
-            ? { ...msg, read_by_agent: true, read_at: new Date().toISOString() }
-            : msg
-        );
-      });
-
-      // Update cache
+      // Check cache first
       const cached = messageCache.get(conversationId);
-      if (cached) {
-        const updatedMessages = cached.data.map(msg => 
-          messageIds.includes(msg.id) && msg.sender_type === "CUSTOMER"
-            ? { ...msg, read_by_agent: true, read_at: new Date().toISOString() }
-            : msg
-        );
-        messageCache.set(conversationId, { ...cached, data: updatedMessages });
+      const cachedPage = cached?.pages.get(page);
+      
+      if (cachedPage && Date.now() - cached.lastUpdated < CACHE_DURATION) {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          cachedPage.forEach(msg => {
+            const index = newMessages.findIndex(m => m.id === msg.id);
+            if (index === -1) {
+              newMessages.push(msg);
+            }
+          });
+          return newMessages.sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+        });
+        setHasMore(page * PAGE_SIZE < (cached.totalCount || 0));
+        loadingRef.current = false;
+        return;
       }
 
-      console.log("✅ Marked messages as read and updated customer unread count:", messageIds.length);
+      // Fetch from database
+      console.log(`🔍 Fetching page ${page} for conversation:`, conversationId);
       
-      // Clear cache to ensure fresh data is fetched
-      clearCache(conversationId);
-    } catch (error) {
-      console.error("❌ Failed to mark messages as read:", error);
-    }
-  }, [conversationId, agent?.id, agent?.org_id, data, clearCache]);
-
-  // Function to force refresh messages (bypass cache)
-  const refreshMessages = useCallback(async () => {
-    if (!conversationId || !agent?.org_id) return;
-    
-    try {
-      console.log("🔄 Force refreshing messages for conversation:", conversationId);
-      clearCache(conversationId);
-      
-      const client = createClient();
-      const { data: messages, error } = await client
+      const offset = (page - 1) * PAGE_SIZE;
+      const { data: pageData, error: pageError, count } = await client
         .from("messages")
-        .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at,read_by_agent,read_at")
+        .select("id,conversation_id,sender_type,agent_id,customer_id,body_text,created_at,read_by_agent,read_at", { count: 'exact' })
         .eq("conversation_id", conversationId)
         .eq("org_id", agent.org_id)
         .order("created_at", { ascending: true })
-        .limit(200);
-      
-      if (error) {
-        console.error("❌ Error refreshing messages:", error);
-        return;
-      }
-      
-      const messagesWithDefaults = (messages as DbMessage[]).map(msg => ({
+        .range(offset, offset + PAGE_SIZE - 1);
+
+      if (pageError) throw pageError;
+
+      const messages = (pageData as DbMessage[]).map(msg => ({
         ...msg,
         read_by_agent: msg.read_by_agent ?? false,
         read_at: msg.read_at ?? null
       }));
-      
-      setData(messagesWithDefaults);
-      setLastMessageCount(messagesWithDefaults.length);
-      cacheMessages(conversationId, messagesWithDefaults);
-      console.log("✅ Messages refreshed:", messagesWithDefaults.length);
+
+      // Update cache
+      if (!cached) {
+        messageCache.set(conversationId, {
+          pages: new Map([[page, messages]]),
+          lastUpdated: Date.now(),
+          totalCount: count || 0
+        });
+      } else {
+        cached.pages.set(page, messages);
+        cached.lastUpdated = Date.now();
+        cached.totalCount = count || 0;
+
+        // Limit cache size
+        if (cached.pages.size > MAX_CACHED_PAGES) {
+          const oldestPage = Math.min(...cached.pages.keys());
+          cached.pages.delete(oldestPage);
+        }
+      }
+
+      setMessages(prev => {
+        const newMessages = [...prev];
+        messages.forEach(msg => {
+          const index = newMessages.findIndex(m => m.id === msg.id);
+          if (index === -1) {
+            newMessages.push(msg);
+          }
+        });
+        return newMessages.sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
+      setHasMore(Boolean(count && offset + PAGE_SIZE < count));
+
     } catch (error) {
-      console.error("❌ Failed to refresh messages:", error);
+      console.error("Error loading messages:", error);
+      setError(error instanceof Error ? error.message : "Failed to load messages");
+    } finally {
+      loadingRef.current = false;
+      setLoading(false);
     }
-  }, [conversationId, agent?.org_id, clearCache, cacheMessages]);
+  }, [conversationId, agent?.org_id]);
 
-  return { data, loading, error, clearCache, markMessagesAsRead, refreshMessages };
+  // Load initial page
+  useEffect(() => {
+    if (conversationId) {
+      setMessages([]);
+      setCurrentPage(1);
+      setHasMore(true);
+      loadPage(1);
+    }
+  }, [conversationId, loadPage]);
+
+  // Load more messages
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      setCurrentPage(prev => prev + 1);
+      loadPage(currentPage + 1);
+    }
+  }, [loading, hasMore, currentPage, loadPage]);
+
+  // Real-time updates
+  useEffect(() => {
+    if (!conversationId || !agent?.org_id) return;
+
+    const client = createClient();
+    if (!client) return;
+
+    // Subscribe to new messages
+    const subscription = client
+      .channel(`messages:${conversationId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${conversationId}`
+      }, async payload => {
+        const newMessage = payload.new as DbMessage;
+        
+        // Play notification for new messages from others
+        if (newMessage.sender_type === 'CUSTOMER') {
+          await playNotificationSound();
+        }
+
+        setMessages(prev => {
+          const exists = prev.some(msg => msg.id === newMessage.id);
+          if (exists) return prev;
+          return [...prev, newMessage].sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+        });
+
+        // Update cache
+        const cached = messageCache.get(conversationId);
+        if (cached) {
+          cached.totalCount = (cached.totalCount || 0) + 1;
+          cached.lastUpdated = Date.now();
+          
+          // Add to latest page
+          const latestPage = Math.max(...cached.pages.keys());
+          const pageMessages = cached.pages.get(latestPage) || [];
+          if (pageMessages.length < PAGE_SIZE) {
+            cached.pages.set(latestPage, [...pageMessages, newMessage]);
+          }
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [conversationId, agent?.org_id, playNotificationSound]);
+
+  // Mark messages as read
+  const markMessagesAsRead = useCallback(async () => {
+    if (!conversationId || !agent?.org_id || !messages.length) return;
+
+    const client = createClient();
+    if (!client) return;
+
+    const unreadMessages = messages.filter(msg => 
+      !msg.read_by_agent && msg.sender_type === 'CUSTOMER'
+    );
+
+    if (!unreadMessages.length) return;
+
+    try {
+      const { error } = await client
+        .from("messages")
+        .update({
+          read_by_agent: true,
+          read_at: new Date().toISOString()
+        })
+        .in('id', unreadMessages.map(msg => msg.id));
+
+      if (error) throw error;
+
+      // Update local state and cache
+      setMessages(prev => 
+        prev.map(msg => 
+          unreadMessages.some(u => u.id === msg.id)
+            ? { ...msg, read_by_agent: true, read_at: new Date().toISOString() }
+            : msg
+        )
+      );
+
+      const cached = messageCache.get(conversationId);
+      if (cached) {
+        cached.pages.forEach((pageMessages, pageNum) => {
+          cached.pages.set(
+            pageNum,
+            pageMessages.map(msg =>
+              unreadMessages.some(u => u.id === msg.id)
+                ? { ...msg, read_by_agent: true, read_at: new Date().toISOString() }
+                : msg
+            )
+          );
+        });
+      }
+
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  }, [conversationId, agent?.org_id, messages]);
+
+  // Refresh messages
+  const refresh = useCallback(() => {
+    if (!conversationId) return;
+    
+    // Clear cache for this conversation
+    messageCache.delete(conversationId);
+    
+    // Reset state and reload
+    setMessages([]);
+    setCurrentPage(1);
+    setHasMore(true);
+    loadPage(1);
+  }, [conversationId, loadPage]);
+
+  return {
+    data: messages,
+    loading,
+    error,
+    hasMore,
+    loadMore,
+    markMessagesAsRead,
+    refresh,
+    playNotificationSound
+  };
 }
-
-
