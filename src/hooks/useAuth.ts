@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
@@ -38,6 +38,7 @@ export function useAuth() {
   });
   const [loading, setLoading] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
+  const lastUserIdRef = useRef<string | null>(null);
 
 
   // Global fallback to prevent infinite loading
@@ -103,6 +104,12 @@ export function useAuth() {
     }
 
     const loadUserData = async (user: User, retryCount = 0) => {
+      // Guard: avoid reloading same user repeatedly
+      if (lastUserIdRef.current === user.id && retryCount === 0) {
+        setLoading(false);
+        return;
+      }
+      lastUserIdRef.current = user.id;
       try {
         // Check localStorage cache first
         const cacheKey = `auth_${user.id}`;
@@ -253,7 +260,9 @@ export function useAuth() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             if (session?.user) {
-              await loadUserData(session.user);
+              if (lastUserIdRef.current !== session.user.id) {
+                await loadUserData(session.user);
+              }
             } else {
               setAuthUser({
                 user: null,
@@ -261,6 +270,7 @@ export function useAuth() {
                 organization: null,
               });
               setLoading(false);
+              lastUserIdRef.current = null;
             }
           }
         );

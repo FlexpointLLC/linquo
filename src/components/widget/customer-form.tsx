@@ -65,7 +65,7 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
       `}</style>
       {/* Gradient Background */}
       <div 
-        className="absolute inset-0 bg-gradient-to-b to-white"
+        className="absolute inset-0 bg-gradient-to-b to-white pointer-events-none"
         style={{ background: `linear-gradient(to bottom, ${brandColor}, white)` }}
       ></div>
       
