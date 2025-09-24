@@ -182,8 +182,15 @@ export function useDataCache() {
               "email",
               "status",
               "created_at",
+              // Device & OS visible in table
               "browser_name",
+              "os_name",
               "device_type",
+              // Location fields visible in table
+              "country",
+              "city",
+              "region",
+              // Behavioral / counters
               "is_returning",
               "unread_count_agent",
               "unread_count_customer"
