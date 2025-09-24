@@ -114,7 +114,7 @@ export function useMessages(conversationId: string | null) {
       const cached = messageCache.get(conversationId);
       const cachedPage = cached?.pages.get(page);
       
-      if (cachedPage && Date.now() - cached.lastUpdated < CACHE_DURATION) {
+      if (cached && cachedPage && Date.now() - cached.lastUpdated < CACHE_DURATION) {
         setMessages(prev => {
           const newMessages = [...prev];
           cachedPage.forEach(msg => {
