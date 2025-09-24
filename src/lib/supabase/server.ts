@@ -10,7 +10,8 @@ export function createClient() {
       cookies: {
         get(name: string) {
           try {
-            return cookies().get(name)?.value;
+            const cookieStore = cookies();
+            return cookieStore.get(name)?.value;
           } catch {
             // Ignore errors when running in middleware
             return undefined;
@@ -18,14 +19,16 @@ export function createClient() {
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
-            cookies().set({ name, value, ...options });
+            const cookieStore = cookies();
+            cookieStore.set({ name, value, ...options });
           } catch {
             // Ignore errors when running in middleware
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
-            cookies().set({ name, value: '', ...options });
+            const cookieStore = cookies();
+            cookieStore.set({ name, value: '', ...options });
           } catch {
             // Ignore errors when running in middleware
           }
