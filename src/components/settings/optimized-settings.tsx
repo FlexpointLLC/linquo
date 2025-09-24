@@ -5,6 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -43,10 +53,12 @@ interface OrganizationInfo {
 let settingsCache: {
   personalInfo: PersonalInfo | null;
   organizationInfo: OrganizationInfo | null;
+  conversationCount: number;
   lastLoaded: number | null;
 } = {
   personalInfo: null,
   organizationInfo: null,
+  conversationCount: 0,
   lastLoaded: null,
 };
 
@@ -64,7 +76,22 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
     personal: false,
     organization: false,
     widget: false,
+    password: false,
   });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordErrors, setPasswordErrors] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // Handle tab state from URL parameters
   useEffect(() => {
@@ -90,8 +117,10 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
         settingsCache.personalInfo && 
         settingsCache.organizationInfo) {
       console.log('📦 Using cached settings data');
+      console.log('📊 Cached conversation count:', settingsCache.conversationCount);
       setPersonalInfo(settingsCache.personalInfo);
       setOrganizationInfo(settingsCache.organizationInfo);
+      setConversationCount(settingsCache.conversationCount);
       setLoading(false);
       return;
     }
@@ -131,11 +160,13 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
       }
 
       const totalConversations = conversations?.length || 0;
+      console.log('📊 Conversation count loaded:', totalConversations);
 
       // Update cache and state
       settingsCache = {
         personalInfo: agentResult.data,
         organizationInfo: orgData,
+        conversationCount: totalConversations,
         lastLoaded: Date.now(),
       };
 
@@ -252,6 +283,173 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
       setSaving(prev => ({ ...prev, widget: false }));
     }
   }, [organizationInfo]);
+
+  // Change password function
+  const changePassword = useCallback(async () => {
+    // Clear previous errors
+    setPasswordErrors({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
+
+    // Validate required fields
+    let hasErrors = false;
+    if (!passwordForm.currentPassword) {
+      setPasswordErrors(prev => ({ ...prev, currentPassword: 'Current password is required' }));
+      hasErrors = true;
+    }
+    if (!passwordForm.newPassword) {
+      setPasswordErrors(prev => ({ ...prev, newPassword: 'New password is required' }));
+      hasErrors = true;
+    }
+    if (!passwordForm.confirmPassword) {
+      setPasswordErrors(prev => ({ ...prev, confirmPassword: 'Please confirm your new password' }));
+      hasErrors = true;
+    }
+    if (hasErrors) return;
+
+    // Validate password match
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordErrors(prev => ({ ...prev, confirmPassword: 'Passwords do not match' }));
+      return;
+    }
+
+    // Validate password length
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordErrors(prev => ({ ...prev, newPassword: 'Password must be at least 6 characters' }));
+      return;
+    }
+
+    setSaving(prev => ({ ...prev, password: true }));
+    
+    try {
+      const supabase = createClient();
+      if (!supabase) throw new Error("Supabase client not available");
+
+      // First verify current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: personalInfo?.email || '',
+        password: passwordForm.currentPassword,
+      });
+
+      if (signInError) {
+        setPasswordErrors(prev => ({ ...prev, currentPassword: 'Current password is incorrect' }));
+        return;
+      }
+
+      // Update password using Supabase auth
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword
+      });
+
+      if (error) {
+        if (error.message.includes('auth')) {
+          setPasswordErrors(prev => ({ ...prev, currentPassword: 'Authentication failed. Please try again.' }));
+        } else if (error.message.includes('password')) {
+          setPasswordErrors(prev => ({ ...prev, newPassword: error.message }));
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      toast.success("Password updated successfully!");
+      
+      // Clear the form and errors
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setPasswordErrors({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setSaving(prev => ({ ...prev, password: false }));
+    }
+  }, [passwordForm]);
+
+  // Delete account function
+  const handleDeleteAccount = useCallback(async () => {
+    if (deleteConfirmation !== 'DELETE' || !deletePassword) return;
+    
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const supabase = createClient();
+      if (!supabase) throw new Error("Supabase client not available");
+
+      // First verify user's session and password
+      const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+      if (sessionError) {
+        setDeleteError('Please sign in again to delete your account');
+        return;
+      }
+      if (!user) {
+        setDeleteError('You must be signed in to delete your account');
+        return;
+      }
+
+      // Verify password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: personalInfo?.email || '',
+        password: deletePassword
+      });
+
+      if (signInError) {
+        setDeleteError('Incorrect password. Please try again.');
+        return;
+      }
+
+      // Delete agent record first
+      const { error: agentError } = await supabase
+        .from("agents")
+        .delete()
+        .eq("id", personalInfo?.id)
+        .eq("user_id", user.id); // Extra safety check
+
+      if (agentError) {
+        if (agentError.code === "42501") { // Permission denied
+          setDeleteError('You do not have permission to delete this account');
+        } else if (agentError.code === "23503") { // Foreign key violation
+          setDeleteError('Please delete all associated data first');
+        } else {
+          setDeleteError(agentError.message || 'Failed to delete account data');
+        }
+        return;
+      }
+
+      // Delete auth user
+      const { error: deleteUserError } = await supabase.auth.updateUser({
+        password: crypto.randomUUID() // Set a random password to prevent login
+      });
+
+      if (deleteUserError) {
+        setDeleteError('Failed to secure account. Please contact support.');
+        return;
+      }
+
+      // Sign out
+      await supabase.auth.signOut();
+
+      // Show success message and redirect
+      toast.success("Account deleted successfully");
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      setDeleteError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteConfirmation, deletePassword, personalInfo]);
 
   // Optimized input handlers
   const updatePersonalInfo = useCallback((field: keyof PersonalInfo, value: string) => {
@@ -694,12 +892,220 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
 
         <TabsContent value="security" className="mt-6">
           <Card>
-            <CardContent className="flex flex-col items-center justify-center text-center py-16">
-              <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
-              <p className="text-muted-foreground">
-                Security settings will be available in a future update.
-              </p>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Security Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Change Password Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Change Password</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Update your account password to keep your account secure.
+                </p>
+                
+                <div className="max-w-md space-y-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      placeholder="Enter current password"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => {
+                        setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }));
+                        setPasswordErrors(prev => ({ ...prev, currentPassword: '' }));
+                      }}
+                      className={passwordErrors.currentPassword ? "border-red-500" : ""}
+                    />
+                    {passwordErrors.currentPassword && (
+                      <p className="text-sm text-red-500 mt-1">{passwordErrors.currentPassword}</p>
+                    )}
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      placeholder="Enter new password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => {
+                        setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }));
+                        setPasswordErrors(prev => ({ ...prev, newPassword: '' }));
+                      }}
+                      className={passwordErrors.newPassword ? "border-red-500" : ""}
+                    />
+                    {passwordErrors.newPassword && (
+                      <p className="text-sm text-red-500 mt-1">{passwordErrors.newPassword}</p>
+                    )}
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Confirm new password"
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => {
+                        setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }));
+                        setPasswordErrors(prev => ({ ...prev, confirmPassword: '' }));
+                      }}
+                      className={passwordErrors.confirmPassword ? "border-red-500" : ""}
+                    />
+                    {passwordErrors.confirmPassword && (
+                      <p className="text-sm text-red-500 mt-1">{passwordErrors.confirmPassword}</p>
+                    )}
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Button 
+                      className="w-full" 
+                      onClick={changePassword}
+                      disabled={saving.password}
+                    >
+                      {saving.password ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="h-4 w-4 mr-2" />
+                          Update Password
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Additional Security Options */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Account Security</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Two-Factor Authentication</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Add an extra layer of security to your account
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" disabled>
+                        Enable 2FA
+                      </Button>
+                      <span className="text-xs text-muted-foreground">Coming soon</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Login Sessions</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Manage your active login sessions
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" disabled>
+                        View Sessions
+                      </Button>
+                      <span className="text-xs text-muted-foreground">Coming soon</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Account Deletion</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Permanently delete your account and data
+                      </p>
+                    </div>
+                    <Dialog onOpenChange={(open) => {
+                      if (!open) {
+                        setDeleteConfirmation('');
+                        setDeletePassword('');
+                        setDeleteError('');
+                      }
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          Delete Account
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Delete Account</DialogTitle>
+                          <DialogDescription>
+                            <div className="space-y-3">
+                              <div className="text-sm text-muted-foreground">
+                                Are you sure you want to delete your account? This action cannot be undone
+                                and all your data will be permanently deleted.
+                              </div>
+                              <div className="space-y-4">
+                                <div className="grid gap-2">
+                                  <Label htmlFor="deletePassword" className="text-sm">Enter your password</Label>
+                                  <Input
+                                    id="deletePassword"
+                                    type="password"
+                                    placeholder="Enter your password to confirm"
+                                    value={deletePassword}
+                                    onChange={(e) => setDeletePassword(e.target.value)}
+                                  />
+                                </div>
+
+                                <div className="p-4" style={{ backgroundColor: 'oklch(0.21 0 0)', borderRadius: 'calc(var(--radius) - 0px)' }}>
+                                  <div className="text-sm font-medium text-white">
+                                    Type <span className="font-mono text-red-400">DELETE</span> to confirm
+                                  </div>
+                                  <Input
+                                    className="mt-2 bg-transparent border-white/20 text-white placeholder:text-white/50"
+                                    placeholder="Type DELETE to confirm"
+                                    value={deleteConfirmation}
+                                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                              {deleteError && (
+                                <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-md">
+                                  <div className="text-sm">{deleteError}</div>
+                                </div>
+                              )}
+                            </div>
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="gap-2 sm:gap-0">
+                          <DialogClose asChild>
+                            <Button variant="ghost">
+                              Cancel
+                            </Button>
+                          </DialogClose>
+                          <Button
+                            variant="destructive"
+                            disabled={deleteConfirmation !== 'DELETE' || deleting}
+                            onClick={handleDeleteAccount}
+                          >
+                            {deleting ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Deleting...
+                              </>
+                            ) : (
+                              'Delete Account'
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
