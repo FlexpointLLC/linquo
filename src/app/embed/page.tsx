@@ -5,6 +5,7 @@ import { type ChatMessage } from "@/components/chat/message-thread";
 import { CustomerForm } from "@/components/widget/customer-form";
 import { useSearchParams } from "next/navigation";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
+import type { DbMessage as WidgetDbMessage } from "@/hooks/useRealtimeMessages";
 import { useCustomer } from "@/hooks/useCustomer";
 import { CustomerData } from "@/lib/customer-data-collector";
 import { useBrandColor } from "@/contexts/brand-color-context";
@@ -84,8 +85,8 @@ function EmbedContent() {
       }
       return;
     }
-    const last = messageRows[messageRows.length - 1];
-    if ((last as any)?.sender_type === 'AGENT') {
+    const last = messageRows[messageRows.length - 1] as WidgetDbMessage;
+    if (last?.sender_type === 'AGENT') {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({ type: 'widget-new-message' }, '*');
       }
@@ -103,8 +104,8 @@ function EmbedContent() {
       document.title = base;
       return;
     }
-    const last = messageRows[messageRows.length - 1];
-    if ((last as any)?.sender_type === 'AGENT') {
+    const last = messageRows[messageRows.length - 1] as WidgetDbMessage;
+    if (last?.sender_type === 'AGENT') {
       document.title = `New Message - ${base}`;
     } else {
       document.title = base;

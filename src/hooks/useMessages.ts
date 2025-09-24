@@ -343,7 +343,7 @@ export function useMessages(conversationId: string | null) {
     return () => {
       if (unsub) unsub();
     };
-  }, [conversationId, agent?.org_id, getCachedMessages, cacheMessages]);
+  }, [conversationId, agent?.org_id, getCachedMessages, cacheMessages, playNotificationSound, showSystemNotification, data, lastMessageCount]);
 
   // Function to clear cache for a specific conversation
   const clearCache = useCallback((convId?: string) => {

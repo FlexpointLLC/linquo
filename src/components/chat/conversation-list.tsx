@@ -48,12 +48,7 @@ export const ConversationList = memo(function ConversationList({
     }
     return false;
   });
-  const [notifGranted, setNotifGranted] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      return Notification.permission === 'granted';
-    }
-    return false;
-  });
+  // Track notification permission implicitly via Notification.permission; no separate state needed
 
   // Initialize AudioContext after first user interaction (autoplay policies)
   useEffect(() => {
@@ -61,7 +56,6 @@ export const ConversationList = memo(function ConversationList({
     // Track current notification permission
     try {
       if ('Notification' in window) {
-        setNotifGranted(Notification.permission === 'granted');
         // If granted, ensure button remains hidden
         if (Notification.permission === 'granted') {
           try { localStorage.setItem('linquo-sound-enabled', 'true'); } catch {}
@@ -90,7 +84,7 @@ export const ConversationList = memo(function ConversationList({
       window.removeEventListener('pointerdown', onInteract as EventListener);
       window.removeEventListener('keydown', onInteract as EventListener);
     };
-  }, []);
+  }, [soundEnabled]);
 
   // Politely ask for Notification permission on first load (best effort)
   useEffect(() => {
@@ -98,7 +92,10 @@ export const ConversationList = memo(function ConversationList({
     try {
       if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission().then((perm) => {
-          setNotifGranted(perm === 'granted');
+          if (perm === 'granted') {
+            try { localStorage.setItem('linquo-sound-enabled', 'true'); } catch {}
+            setSoundEnabled(true);
+          }
         }).catch(() => {});
       }
     } catch {}
@@ -162,8 +159,7 @@ export const ConversationList = memo(function ConversationList({
         try { localStorage.setItem('linquo-sound-enabled', 'true'); } catch {}
       }
       if ('Notification' in window) {
-        const perm = await Notification.requestPermission();
-        setNotifGranted(perm === 'granted');
+        await Notification.requestPermission();
       }
     } catch {}
   }, [playBeep]);

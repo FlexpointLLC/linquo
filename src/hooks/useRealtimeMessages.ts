@@ -215,7 +215,7 @@ export function useRealtimeMessages(conversationId: string | null) {
       console.error("❌ Failed to create realtime connection:", error);
       setError("Failed to establish realtime connection");
     }
-  }, [conversationId]);
+  }, [conversationId, playNotificationSound]);
 
   // Send message function
   const sendMessage = useCallback(async (
