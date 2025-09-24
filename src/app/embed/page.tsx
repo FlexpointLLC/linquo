@@ -226,9 +226,9 @@ function EmbedContent() {
   }
 
   return (
-    <div className="h-full w-full bg-white text-gray-900 flex flex-col">
+    <div className="h-full w-full bg-white text-gray-900 flex flex-col max-h-[100vh]">
       {/* Header */}
-      <div className="bg-white bg-opacity-80 backdrop-blur-sm border-b border-gray-200 p-3 flex items-center justify-between flex-shrink-0">
+      <div className="bg-white bg-opacity-80 backdrop-blur-sm border-b border-gray-200 p-2 sm:p-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <button 
             className="text-gray-600 hover:text-gray-800 cursor-pointer"
@@ -286,7 +286,7 @@ function EmbedContent() {
       </div>
 
       {/* Content area with messages */}
-      <div className="overflow-y-auto p-4 pb-6" style={{ height: '564px' }}>
+      <div className="overflow-y-auto p-3 sm:p-4 pb-4 sm:pb-6 h-[50vh] xs:h-[55vh] sm:h-[60vh] md:h-[65vh] lg:h-[564px]">
         <div className="space-y-4">
                  {/* Hardcoded welcome messages */}
                  <div className="flex items-start gap-3">
@@ -381,7 +381,7 @@ function EmbedContent() {
              </div>
       
       {/* Message input box */}
-      <div className="flex-shrink-0 border-t border-gray-200 bg-white bg-opacity-80 backdrop-blur-sm p-3 sticky bottom-0">
+      <div className="flex-shrink-0 border-t border-gray-200 bg-white bg-opacity-80 backdrop-blur-sm p-2 sm:p-3 sticky bottom-0">
         <div className="relative">
                  <input
                    type="text"
@@ -395,7 +395,7 @@ function EmbedContent() {
                        handleTypingStop();
                      }
                    }}
-                   className="w-full pl-10 pr-20 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent break-words overflow-wrap-anywhere"
+                   className="w-full pl-8 sm:pl-10 pr-16 sm:pr-20 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent break-words overflow-wrap-anywhere text-sm sm:text-base"
                    style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
                    onKeyDown={(e) => {
                      if (e.key === "Enter") {
@@ -534,14 +534,14 @@ function EmbedContent() {
                      }
                    }}
                    disabled={!inputValue.trim()}
-                   className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                   className={`absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors ${
                      inputValue.trim() 
                        ? 'cursor-pointer' 
                        : 'bg-gray-100 cursor-not-allowed'
                    }`}
                    style={inputValue.trim() ? { backgroundColor: brandColor } : {}}
                  >
-                   <svg className={`w-4 h-4 ${inputValue.trim() ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <svg className={`w-3 h-3 sm:w-4 sm:h-4 ${inputValue.trim() ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                    </svg>
                  </button>

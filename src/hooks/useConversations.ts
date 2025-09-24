@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { useAuth } from "@/hooks/useAuth";
 
 export type Conversation = {
@@ -48,7 +48,7 @@ export function useConversations() {
   }, []);
 
   useEffect(() => {
-    const client = createClient();
+    const client = getSupabaseBrowser();
     let unsub: (() => void) | undefined;
 
     async function load() {
@@ -371,7 +371,7 @@ export function useConversations() {
 
   // Set up real-time subscriptions separately to ensure they're always active
   useEffect(() => {
-    const client = createClient();
+    const client = getSupabaseBrowser();
     if (!client || !agent?.org_id) return;
 
     console.log("🔄 Setting up real-time subscriptions (separate effect)");
@@ -598,7 +598,7 @@ export function useConversations() {
     console.log("🔄 Refreshing customer data only");
     if (!data || data.length === 0) return;
     
-    const client = createClient();
+    const client = getSupabaseBrowser();
     if (!client) return;
     
     const customerIds = data.map(c => c.customer_id).filter(Boolean);

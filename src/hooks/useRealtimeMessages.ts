@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { realtimeService, type RealtimeMessage } from "@/lib/realtime";
 
 export type DbMessage = {
@@ -22,7 +22,7 @@ export function useRealtimeMessages(conversationId: string | null) {
 
   // Load initial messages with debouncing
   useEffect(() => {
-    const client = createClient();
+    const client = getSupabaseBrowser();
     if (!conversationId || !client) {
       setData([]);
       setLoading(false);
@@ -102,7 +102,7 @@ export function useRealtimeMessages(conversationId: string | null) {
     };
 
     // Set up fallback Postgres Changes subscription
-    const client = createClient();
+    const client = getSupabaseBrowser();
     let fallbackUnsub: (() => void) | undefined;
 
     if (client) {
@@ -167,7 +167,7 @@ export function useRealtimeMessages(conversationId: string | null) {
 
     try {
       // First, save to database
-      const client = createClient();
+      const client = getSupabaseBrowser();
       if (!client) {
         throw new Error("Supabase client not available");
       }

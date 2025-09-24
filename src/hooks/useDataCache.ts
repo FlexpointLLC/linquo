@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { requestDeduplicator } from "@/lib/request-deduplication";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -141,7 +141,7 @@ export function useDataCache() {
 
   // Load all data once when agent is available
   const loadAllData = useCallback(async () => {
-    const client = createClient();
+    const client = getSupabaseBrowser();
     if (!client || !agent?.org_id) {
       return;
     }

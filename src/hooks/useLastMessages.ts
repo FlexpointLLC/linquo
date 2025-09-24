@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { useAuth } from "@/hooks/useAuth";
 
 export type LastMessage = {
@@ -25,7 +25,7 @@ export function useLastMessages(conversationIds: string[]) {
       return;
     }
 
-    const client = createClient();
+    const client = getSupabaseBrowser();
     if (!client) {
       setError("Supabase client not available");
       setLoading(false);
