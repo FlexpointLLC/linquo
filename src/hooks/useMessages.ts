@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { PerformanceMonitor } from "@/lib/performance-utils";
 
 // Enhanced cache with LRU and pagination support
 type CacheEntry = {

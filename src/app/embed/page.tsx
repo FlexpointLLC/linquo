@@ -31,7 +31,7 @@ function EmbedContent() {
   // Handle hydration
   useEffect(() => {
     setIsHydrated(true);
-  }, []);
+  }, [createConversation]);
 
   // No resize handler needed - internal components handle their own heights
 

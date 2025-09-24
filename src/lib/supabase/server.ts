@@ -1,8 +1,19 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+
+type CookieOptions = {
+  name: string;
+  value: string;
+  maxAge?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  path?: string;
+  domain?: string;
+  sameSite?: 'strict' | 'lax' | 'none';
+};
 
 export function createClient() {
-  const cookieStore = cookies()
+  const cookieStore = cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,25 +21,23 @@ export function createClient() {
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value
+          return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            // Handle cookie errors
+            cookieStore.set({ name, value, ...options });
+          } catch {
+            // Ignore errors when running in middleware
           }
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: CookieOptions) {
           try {
-            cookieStore.delete({ name, ...options })
-          } catch (error) {
-            // Handle cookie errors
+            cookieStore.set({ name, value: '', ...options });
+          } catch {
+            // Ignore errors when running in middleware
           }
         },
       },
     }
-  )
+  );
 }
-
-

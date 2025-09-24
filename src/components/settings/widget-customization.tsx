@@ -233,7 +233,7 @@ export function WidgetCustomization() {
             <div className="flex items-center justify-between">
               <div>
                 <Label>Show Branding</Label>
-                <p className="text-sm text-muted-foreground">Display "Powered by Linquo" in widget</p>
+                <p className="text-sm text-muted-foreground">Display &quot;Powered by Linquo&quot; in widget</p>
               </div>
               <Switch
                 checked={settings.widget_show_branding}
