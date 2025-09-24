@@ -68,7 +68,7 @@
       // Create chat bubble
       var bubble = document.createElement('div');
       bubble.id = 'linquo-chat-bubble';
-      bubble.style.cssText = 'position:fixed;bottom:24px;right:24px;width:68px;height:68px;border-radius:50%;background-color:' + brandColor + ';box-shadow:0 4px 12px ' + brandColor + '40;cursor:pointer;z-index:2147483647;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;';
+      bubble.style.cssText = 'position:fixed;bottom:24px;right:24px;width:60px;height:60px;border-radius:50%;background-color:' + brandColor + ';box-shadow:0 4px 12px ' + brandColor + '40;cursor:pointer;z-index:2147483647;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;';
       
       // Creating bubble with brand color
       
@@ -98,9 +98,9 @@
       // Create widget container (initially hidden)
       var container = document.createElement('div');
       container.id = 'linquo-widget';
-      // Main Container: 400px width, 85% of screen height, max 700px
+      // Main Container: 400px width, 82% of screen height, max 700px
       var viewportHeight = window.innerHeight;
-      var containerHeight = Math.min(700, viewportHeight * 0.85); // 85% of viewport height, max 700px
+      var containerHeight = Math.min(700, viewportHeight * 0.82); // 82% of viewport height, max 700px
       
       // Container height calculated
       
@@ -158,13 +158,17 @@
           // Change icon back to custom chat SVG
           bubble.innerHTML = '';
           bubble.appendChild(chatIcon);
+        } else if (e.data.type === 'widget-new-message') {
+          try { document.title = 'New Message - Linquo'; } catch (err) {}
+        } else if (e.data.type === 'widget-clear-unread') {
+          try { document.title = 'Linquo'; } catch (err) {}
         }
       });
       
-      // Add resize listener to update container height (70% of screen)
+      // Add resize listener to update container height (82% of screen)
       window.addEventListener('resize', function() {
         var newViewportHeight = window.innerHeight;
-        var newContainerHeight = Math.min(700, newViewportHeight * 0.85); // 85% of viewport height, max 700px
+        var newContainerHeight = Math.min(700, newViewportHeight * 0.82); // 82% of viewport height, max 700px
         
         // Container resized
         

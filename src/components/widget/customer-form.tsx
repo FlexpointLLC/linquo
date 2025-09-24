@@ -176,7 +176,7 @@ export function CustomerForm({ onSubmit, loading = false }: CustomerFormProps) {
           
           {showBranding && (
             <p className="text-center text-gray-500 text-xs">
-              Powered by Linquo
+              Powered by <a href="https://linquo.app" target="_blank" rel="noopener noreferrer" className="no-underline text-black hover:text-black">Linquo</a>
             </p>
           )}
         </div>

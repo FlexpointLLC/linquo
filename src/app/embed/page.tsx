@@ -22,6 +22,10 @@ function EmbedContent() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [, setWidgetColor] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const baseTitleRef = useRef<string>('Linquo');
+  // removed unread dot logic
+  // const [hasUnread, setHasUnread] = useState(false);
+  // const lastMsgIdRef = useRef<string | null>(null);
 
   // Handle hydration
   useEffect(() => {
@@ -31,6 +35,8 @@ function EmbedContent() {
   // No resize handler needed - internal components handle their own heights
 
   // No caching - removed for better reliability
+
+  // reverted: no widget unread dot
 
   // Set site and orgId after hydration to avoid mismatch
   useEffect(() => {
@@ -69,6 +75,42 @@ function EmbedContent() {
     customer?.id || '', 
     'customer'
   );
+  // Notify parent page (widget.js) to update tab title when agent sends a new message
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!cid || !messageRows || messageRows.length === 0) {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'widget-clear-unread' }, '*');
+      }
+      return;
+    }
+    const last = messageRows[messageRows.length - 1];
+    if ((last as any)?.sender_type === 'AGENT') {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'widget-new-message' }, '*');
+      }
+    } else {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'widget-clear-unread' }, '*');
+      }
+    }
+  }, [cid, messageRows]);
+  // Widget tab title: show New Message when latest is an agent reply
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const base = baseTitleRef.current;
+    if (!cid || !messageRows || messageRows.length === 0) {
+      document.title = base;
+      return;
+    }
+    const last = messageRows[messageRows.length - 1];
+    if ((last as any)?.sender_type === 'AGENT') {
+      document.title = `New Message - ${base}`;
+    } else {
+      document.title = base;
+    }
+  }, [cid, messageRows]);
+  // reverted
   
   // Auto-scroll to bottom when new messages arrive or typing indicator changes
   useEffect(() => {
@@ -265,6 +307,7 @@ function EmbedContent() {
             </div>
           </div>
         </div>
+        {/* no widget unread dot */}
         <div className="flex items-center gap-2">
           <button className="text-gray-600 hover:text-gray-800 cursor-pointer">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -392,7 +435,7 @@ function EmbedContent() {
                    type="text"
                    placeholder="Message..."
                    value={inputValue}
-                   onChange={(e) => {
+                  onChange={(e) => {
                      setInputValue(e.target.value);
                      if (e.target.value.trim()) {
                        handleTypingStart();
@@ -400,6 +443,7 @@ function EmbedContent() {
                        handleTypingStop();
                      }
                    }}
+                  
                    className="w-full pl-8 sm:pl-10 pr-16 sm:pr-20 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent break-words overflow-wrap-anywhere text-sm sm:text-base"
                    style={{ '--tw-ring-color': brandColor } as React.CSSProperties}
                    onKeyDown={(e) => {
@@ -439,7 +483,7 @@ function EmbedContent() {
                                
                                if (updateError) {
                                  console.log("❌ Error updating conversation:", updateError);
-                               } else {
+                        } else {
                                  console.log("✅ Conversation updated successfully");
                                }
 
@@ -469,7 +513,7 @@ function EmbedContent() {
                            }
                          };
                          sendMessage();
-                         setInputValue("");
+                        setInputValue("");
                         // No caching - removed for better reliability
                        }
                      }

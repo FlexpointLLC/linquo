@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useMemo, memo } from "react";
+import { useEffect, useState, useMemo, memo, useRef, useCallback } from "react";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread, type ChatMessage } from "@/components/chat/message-thread";
 import { Composer } from "@/components/chat/composer";
@@ -109,6 +109,88 @@ export const DashboardContent = memo(function DashboardContent() {
   const { agents, customers } = useDataCache();
   const { agent } = useAuth();
   const { getCustomerDetails, loading: customerDetailsLoading } = useCustomerDetails();
+
+  // --- Notification sound when any conversation becomes unread (blue border) ---
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const canPlayRef = useRef<boolean>(false);
+  const prevUnreadMapRef = useRef<Record<string, number>>({});
+
+  // Initialize AudioContext on first user interaction to satisfy autoplay policies
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const init = async () => {
+      try {
+        const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!AC) return;
+        if (!audioCtxRef.current) audioCtxRef.current = new AC();
+        if (audioCtxRef.current.state === 'suspended') await audioCtxRef.current.resume();
+        canPlayRef.current = true;
+      } catch {}
+    };
+    const onInteract = () => { init(); };
+    window.addEventListener('pointerdown', onInteract, { once: true });
+    window.addEventListener('keydown', onInteract, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', onInteract as EventListener);
+      window.removeEventListener('keydown', onInteract as EventListener);
+    };
+  }, []);
+
+  const playNotificationBeep = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtxRef.current) {
+        if (!canPlayRef.current) return;
+        audioCtxRef.current = new AC();
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        await audioCtxRef.current.resume();
+      }
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 1200;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.24);
+    } catch {}
+  }, []);
+
+  // Watch conversations unread counts; play when any goes from 0 -> >0 (blue border appears)
+  useEffect(() => {
+    if (!conversationRows) return;
+    const prevMap = prevUnreadMapRef.current;
+    for (const conv of conversationRows) {
+      const prev = prevMap[conv.id] ?? 0;
+      const curr = conv.unread ?? 0;
+      if (prev === 0 && curr > 0) {
+        // Optional: avoid beeping for the currently open conversation; it typically won't have unread
+        if (conv.id !== activeId) {
+          playNotificationBeep();
+        }
+      }
+      prevMap[conv.id] = curr;
+    }
+    prevUnreadMapRef.current = prevMap;
+  }, [conversationRows, activeId, playNotificationBeep]);
+
+  // Update browser tab title when any conversation has unread
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const baseTitle = 'Linquo';
+    const hasUnread = (conversationRows ?? []).some(c => (c.unread || 0) > 0);
+    document.title = hasUnread ? `New Message - ${baseTitle}` : baseTitle;
+    return () => {
+      document.title = baseTitle;
+    };
+  }, [conversationRows]);
 
   // Fetch detailed customer data when info sidebar opens
   useEffect(() => {
@@ -414,8 +496,7 @@ export const DashboardContent = memo(function DashboardContent() {
                             console.log("✅ Conversation timestamp updated");
                           }
 
-                          // Show success toast
-                          toast.success("Message sent successfully");
+                          // Success UI feedback removed per request
                         } catch (error) {
                           console.log("❌ Error sending message:", error);
                           toast.error("Failed to send message");

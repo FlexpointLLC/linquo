@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { realtimeService, type RealtimeMessage } from "@/lib/realtime";
 
@@ -19,6 +19,8 @@ export function useRealtimeMessages(conversationId: string | null) {
   const [loading, setLoading] = useState(Boolean(conversationId));
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const canPlayRef = useRef<boolean>(false);
 
   // Load initial messages with debouncing
   useEffect(() => {
@@ -63,6 +65,54 @@ export function useRealtimeMessages(conversationId: string | null) {
     return () => clearTimeout(timeoutId);
   }, [conversationId]);
 
+  // Prepare single AudioContext after first user gesture
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const init = async () => {
+      try {
+        const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!AC) return;
+        if (!audioCtxRef.current) audioCtxRef.current = new AC();
+        if (audioCtxRef.current.state === 'suspended') await audioCtxRef.current.resume();
+        canPlayRef.current = true;
+      } catch {}
+    };
+    const onInteract = () => { init(); };
+    window.addEventListener('pointerdown', onInteract, { once: true });
+    window.addEventListener('keydown', onInteract, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', onInteract as EventListener);
+      window.removeEventListener('keydown', onInteract as EventListener);
+    };
+  }, []);
+
+  const playNotificationSound = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtxRef.current) {
+        if (!canPlayRef.current) return;
+        audioCtxRef.current = new AC();
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        await audioCtxRef.current.resume();
+      }
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 1200;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.24);
+    } catch {}
+  }, []);
+
   // Set up realtime connection with fallback (client-side only)
   useEffect(() => {
     // Ensure we're on the client side
@@ -78,6 +128,10 @@ export function useRealtimeMessages(conversationId: string | null) {
 
     const handleNewMessage = (message: RealtimeMessage) => {
       console.log("📨 New realtime message received:", message);
+      if (message.sender_type === 'AGENT') {
+        // Customer hears a sound when an agent replies
+        playNotificationSound();
+      }
       setData(prev => {
         if (!prev) return [message as DbMessage];
         
@@ -119,6 +173,12 @@ export function useRealtimeMessages(conversationId: string | null) {
           },
           (payload: { new: DbMessage }) => {
             console.log("📨 Fallback message received:", payload.new);
+              // Play sound for agent replies so customer hears it
+              try {
+                if (payload.new.sender_type === 'AGENT') {
+                  playNotificationSound();
+                }
+              } catch {}
             setData(prev => {
               if (!prev) return [payload.new];
               

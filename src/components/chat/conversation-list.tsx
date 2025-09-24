@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useDashboardBrandColor } from "@/contexts/dashboard-brand-color-context";
-import { useState, memo, useEffect } from "react";
+import { useState, memo, useEffect, useRef, useCallback } from "react";
 
 export type ConversationListItem = {
   id: string;
@@ -32,6 +32,141 @@ export const ConversationList = memo(function ConversationList({
 }) {
   const { brandColor } = useDashboardBrandColor();
   const [activeTab, setActiveTab] = useState<ChatTab>((section as ChatTab) || "open");
+
+  // --- Frontend audio beep when an avatar border turns blue (unread > 0) ---
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const canPlayRef = useRef<boolean>(false);
+  const prevUnreadMapRef = useRef<Record<string, number>>({});
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (localStorage.getItem('linquo-sound-enabled') === 'true') return true;
+      } catch {}
+      try {
+        if ('Notification' in window && Notification.permission === 'granted') return true;
+      } catch {}
+    }
+    return false;
+  });
+  const [notifGranted, setNotifGranted] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      return Notification.permission === 'granted';
+    }
+    return false;
+  });
+
+  // Initialize AudioContext after first user interaction (autoplay policies)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // Track current notification permission
+    try {
+      if ('Notification' in window) {
+        setNotifGranted(Notification.permission === 'granted');
+        // If granted, ensure button remains hidden
+        if (Notification.permission === 'granted') {
+          try { localStorage.setItem('linquo-sound-enabled', 'true'); } catch {}
+          setSoundEnabled(true);
+        }
+      }
+    } catch {}
+    const init = async () => {
+      try {
+        const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!AC) return;
+        if (!audioCtxRef.current) audioCtxRef.current = new AC();
+        if (audioCtxRef.current.state === 'suspended') await audioCtxRef.current.resume();
+        canPlayRef.current = true;
+        setSoundEnabled(true);
+      } catch {}
+    };
+    // Attempt immediate init if previously enabled (best effort; may remain suspended until a gesture)
+    if (soundEnabled) {
+      init();
+    }
+    const onInteract = () => { init(); };
+    window.addEventListener('pointerdown', onInteract, { once: true });
+    window.addEventListener('keydown', onInteract, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', onInteract as EventListener);
+      window.removeEventListener('keydown', onInteract as EventListener);
+    };
+  }, []);
+
+  // Politely ask for Notification permission on first load (best effort)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then((perm) => {
+          setNotifGranted(perm === 'granted');
+        }).catch(() => {});
+      }
+    } catch {}
+  }, []);
+
+  const playBeep = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtxRef.current) {
+        if (!canPlayRef.current) return;
+        audioCtxRef.current = new AC();
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        await audioCtxRef.current.resume();
+      }
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 1200;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.24);
+    } catch {}
+  }, []);
+
+  // Detect when any conversation transitions from unread 0 -> >0 and play beep
+  useEffect(() => {
+    if (!conversations || conversations.length === 0) return;
+    const prevMap = prevUnreadMapRef.current;
+    for (const conv of conversations) {
+      const prev = prevMap[conv.id] ?? 0;
+      const curr = conv.unread ?? 0;
+      if (prev === 0 && curr > 0) {
+        // Avoid beeping for the currently open conversation
+        if (!activeId || conv.id !== activeId) {
+          playBeep();
+        }
+      }
+      prevMap[conv.id] = curr;
+    }
+    prevUnreadMapRef.current = prevMap;
+  }, [conversations, activeId, playBeep]);
+
+  const enableSoundAndNotifications = useCallback(async () => {
+    try {
+      const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AC) {
+        if (!audioCtxRef.current) audioCtxRef.current = new AC();
+        if (audioCtxRef.current.state === 'suspended') await audioCtxRef.current.resume();
+        canPlayRef.current = true;
+        setSoundEnabled(true);
+        // confirmation beep
+        await playBeep();
+        try { localStorage.setItem('linquo-sound-enabled', 'true'); } catch {}
+      }
+      if ('Notification' in window) {
+        const perm = await Notification.requestPermission();
+        setNotifGranted(perm === 'granted');
+      }
+    } catch {}
+  }, [playBeep]);
 
   // Sync with section prop
   useEffect(() => {
@@ -72,6 +207,15 @@ export const ConversationList = memo(function ConversationList({
       <div className="px-3 pt-3 pb-0 border-b">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-foreground">Inbox</h2>
+          {!soundEnabled && (
+            <button
+              onClick={enableSoundAndNotifications}
+              className="text-xs px-2 py-1 rounded border border-border hover:bg-muted transition-colors cursor-pointer"
+              title="Enable notification sound"
+            >
+              Enable sound/notifications
+            </button>
+          )}
         </div>
         
         {/* Tabs */}

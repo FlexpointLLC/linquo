@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PerformanceMonitor } from "@/lib/performance-utils";
@@ -26,6 +26,88 @@ export function useMessages(conversationId: string | null) {
   const [error, setError] = useState<string | null>(null);
   const [lastMessageCount, setLastMessageCount] = useState(0);
   const { agent } = useAuth();
+
+  // Single AudioContext reused (initialized on user gesture to satisfy autoplay policies)
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const canPlayRef = useRef<boolean>(false);
+  const notifyEnabledRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const init = async () => {
+      try {
+        const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!AC) return;
+        if (!audioCtxRef.current) {
+          audioCtxRef.current = new AC();
+        }
+        if (audioCtxRef.current.state === 'suspended') {
+          await audioCtxRef.current.resume();
+        }
+        canPlayRef.current = true;
+      } catch {
+        // ignore
+      }
+    };
+
+    const onInteract = async () => {
+      await init();
+      try {
+        if ('Notification' in window) {
+          const perm = await Notification.requestPermission();
+          notifyEnabledRef.current = perm === 'granted';
+        }
+      } catch {}
+    };
+    window.addEventListener('pointerdown', onInteract, { once: true });
+    window.addEventListener('keydown', onInteract, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', onInteract as EventListener);
+      window.removeEventListener('keydown', onInteract as EventListener);
+    };
+  }, []);
+
+  // Lightweight notification sound using Web Audio API
+  const playNotificationSound = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AC = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtxRef.current) {
+        // Only create if we already have user interaction
+        if (!canPlayRef.current) return;
+        audioCtxRef.current = new AC();
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        await audioCtxRef.current.resume();
+      }
+
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 1200; // brighter beep
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.27);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const showSystemNotification = useCallback((messagePreview?: string) => {
+    try {
+      if (!('Notification' in window)) return;
+      if (!notifyEnabledRef.current) return;
+      const title = 'New message';
+      const body = (messagePreview || '').slice(0, 120);
+      new Notification(title, { body });
+    } catch {}
+  }, []);
 
   // Check cache first
   const getCachedMessages = useCallback((convId: string): DbMessage[] | null => {
@@ -134,6 +216,12 @@ export function useMessages(conversationId: string | null) {
                   read_at: payload.new.read_at ?? null
                 };
                 
+                // Play sound only for incoming customer messages
+                if (newMessage.sender_type === "CUSTOMER") {
+                  playNotificationSound();
+                  showSystemNotification(newMessage.body_text);
+                }
+
                 setData((prev) => {
                   if (!prev) return [newMessage];
                   
@@ -207,8 +295,22 @@ export function useMessages(conversationId: string | null) {
               return;
             }
             
-            if (latestMessages && (latestMessages.length > lastMessageCount || latestMessages.some(msg => msg.read_by_agent !== data?.find(d => d.id === msg.id)?.read_by_agent))) {
+            // Determine current cached length to detect new arrivals regardless of stale closures
+            const cachedLen = (messageCache.get(conversationId)?.data?.length) ?? 0;
+            const hasLenIncrease = latestMessages && latestMessages.length > cachedLen;
+            if (latestMessages && (hasLenIncrease || latestMessages.some(msg => msg.read_by_agent !== data?.find(d => d.id === msg.id)?.read_by_agent))) {
               console.log("🔄 Polling detected changes:", latestMessages.length - lastMessageCount, "new messages or read status changes");
+
+              // If there are new messages, and any of the new ones are from customer, play sound
+              if (hasLenIncrease) {
+                const delta = latestMessages.length - cachedLen;
+                const newSlice = latestMessages.slice(-Math.max(0, delta));
+                const anyCustomer = newSlice.find(m => m.sender_type === 'CUSTOMER');
+                if (anyCustomer) {
+                  playNotificationSound();
+                  showSystemNotification(anyCustomer.body_text);
+                }
+              }
               const messagesWithDefaults = latestMessages.map(msg => ({
                 ...msg,
                 read_by_agent: msg.read_by_agent ?? false,
