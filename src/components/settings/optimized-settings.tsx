@@ -18,7 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Save, User, Building2, Palette, Shield, Check, CreditCard } from "lucide-react";
+import { Loader2, Save, User, Building2, Palette, Shield, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { WidgetPreview } from "@/components/settings/widget-preview";
@@ -184,7 +184,7 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
   // Load data only once on mount
   useEffect(() => {
     loadData();
-  }, []); // Empty dependency array - only run once
+  }, [loadData]); // Include loadData dependency
 
   // Optimized save functions with proper state management
   const savePersonalInfo = useCallback(async () => {
@@ -373,7 +373,7 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
     } finally {
       setSaving(prev => ({ ...prev, password: false }));
     }
-  }, [passwordForm]);
+  }, [passwordForm, personalInfo?.email]);
 
   // Delete account function
   const handleDeleteAccount = useCallback(async () => {

@@ -6,8 +6,7 @@ export type ConnectionStatus = "connected" | "disconnected";
 
 export function useConnectionStatus() {
   const [status, setStatus] = useState<ConnectionStatus>("connected");
-  const { agent, loading, connectionStatus } = useAuth();
-  const previousStatus = useRef<ConnectionStatus>("connected");
+  const { loading, connectionStatus } = useAuth();
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Simplified connection status - just use auth status without complex logic
@@ -34,9 +33,10 @@ export function useConnectionStatus() {
 
   // Cleanup on unmount
   useEffect(() => {
+    const currentTimeout = reconnectTimeout.current;
     return () => {
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current);
+      if (currentTimeout) {
+        clearTimeout(currentTimeout);
       }
     };
   }, []);

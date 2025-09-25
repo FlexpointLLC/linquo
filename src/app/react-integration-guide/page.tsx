@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLinquoWidget } from "@/hooks/use-linquo-widget";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Copy, Check, AlertCircle, CheckCircle, XCircle } from "lucide-react";
 
 export default function ReactIntegrationGuide() {
-  const [orgId, setOrgId] = useState("ad56884b-d717-4004-87c6-089aaca40bd0");
+  const orgId = "ad56884b-d717-4004-87c6-089aaca40bd0";
   const [copied, setCopied] = useState("");
   const [widgetStatus, setWidgetStatus] = useState<"loading" | "loaded" | "error">("loading");
 
@@ -234,7 +234,7 @@ export default function App({ Component, pageProps }) {
               <CardHeader>
                 <CardTitle>Manual useEffect Approach</CardTitle>
                 <CardDescription>
-                  Direct integration using React's useEffect hook
+                  Direct integration using React&apos;s useEffect hook
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -294,7 +294,7 @@ export default function App({ Component, pageProps }) {
                     <ul className="text-blue-700 text-sm space-y-1">
                       <li>• Use app/layout.tsx for App Router</li>
                       <li>• Use pages/_app.js for Pages Router</li>
-                      <li>• Add "use client" directive when needed</li>
+                      <li>• Add &quot;use client&quot; directive when needed</li>
                       <li>• Consider loading widget only on specific pages</li>
                       <li>• Use dynamic imports for client-side only code</li>
                     </ul>

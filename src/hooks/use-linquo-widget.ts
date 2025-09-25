@@ -97,7 +97,7 @@ export function useLinquoWidget(options: LinquoWidgetOptions) {
       };
 
       // Handle script error
-      script.onerror = (event) => {
+      script.onerror = () => {
         console.error('[useLinquoWidget] Script failed to load');
         isLoadingRef.current = false;
         const error = new Error('Failed to load Linquo widget script');

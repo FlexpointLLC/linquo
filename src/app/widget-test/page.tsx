@@ -3,7 +3,7 @@
 import { useLinquoWidget } from "@/hooks/use-linquo-widget";
 
 export default function WidgetTestPage() {
-  const { isLoaded, reload, destroy } = useLinquoWidget({
+  const { isLoaded } = useLinquoWidget({
     orgId: 'ad56884b-d717-4004-87c6-089aaca40bd0',
     onLoad: () => console.log('Widget loaded successfully!'),
     onError: (error) => console.error('Widget failed to load:', error)
