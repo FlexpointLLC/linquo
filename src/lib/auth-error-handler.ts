@@ -21,7 +21,7 @@ export class AuthErrorHandler {
   /**
    * Handle auth-related errors from API calls
    */
-  async handleAuthError(error: any, context: string = 'API call') {
+  async handleAuthError(error: unknown, context: string = 'API call') {
     console.log(`[AuthErrorHandler] ${context} failed:`, error);
 
     // Check if it's an auth-related error
@@ -37,7 +37,7 @@ export class AuthErrorHandler {
   /**
    * Check if error is auth-related
    */
-  private isAuthError(error: any): boolean {
+  private isAuthError(error: unknown): boolean {
     if (!error) return false;
 
     // Check for common auth error patterns
@@ -52,8 +52,10 @@ export class AuthErrorHandler {
       'Authentication failed'
     ];
 
-    const errorMessage = error.message || error.error?.message || '';
-    const errorCode = error.code || error.status || error.statusCode;
+    // Type-safe error property access
+    const errorObj = error as Record<string, unknown>;
+    const errorMessage = this.getErrorMessage(errorObj);
+    const errorCode = this.getErrorCode(errorObj);
 
     // Check HTTP status codes
     if (errorCode === 401 || errorCode === 403) {
@@ -64,6 +66,35 @@ export class AuthErrorHandler {
     return authErrorMessages.some(msg => 
       errorMessage.toLowerCase().includes(msg.toLowerCase())
     );
+  }
+
+  /**
+   * Safely extract error message from error object
+   */
+  private getErrorMessage(errorObj: Record<string, unknown>): string {
+    if (typeof errorObj.message === 'string') {
+      return errorObj.message;
+    }
+    if (errorObj.error && typeof errorObj.error === 'object' && errorObj.error !== null) {
+      const nestedError = errorObj.error as Record<string, unknown>;
+      if (typeof nestedError.message === 'string') {
+        return nestedError.message;
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Safely extract error code from error object
+   */
+  private getErrorCode(errorObj: Record<string, unknown>): number | undefined {
+    const possibleCodes = [errorObj.code, errorObj.status, errorObj.statusCode];
+    for (const code of possibleCodes) {
+      if (typeof code === 'number') {
+        return code;
+      }
+    }
+    return undefined;
   }
 
   /**

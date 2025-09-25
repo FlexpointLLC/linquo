@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Code, Globe, Zap, FileText, Layers, Palette, Monitor, Smartphone } from "lucide-react";
+import { Copy, Check, Code, Globe, Zap, FileText, Layers, Monitor } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

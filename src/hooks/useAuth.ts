@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { setSessionOrgId } from "@/lib/session-org";
-import { authErrorHandler } from "@/lib/auth-error-handler";
+// import { authErrorHandler } from "@/lib/auth-error-handler"; // TODO: Integrate into data fetching logic
 
 export type AuthUser = {
   user: User | null;
