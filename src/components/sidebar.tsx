@@ -38,11 +38,11 @@ export function Sidebar() {
       {/* Organization Logo */}
       <div className="h-10 w-10 rounded-md flex items-center justify-center mb-3 mt-2" aria-label="Organization">
         <img 
-          src="/logo.svg" 
-          alt="Logo" 
+          src="https://cdn.jsdelivr.net/gh/FlexpointLLC/linquoassets@main/Logo.svg" 
+          alt="Linquo Logo" 
           className="h-8 w-8 object-contain"
           onError={(e) => {
-            // Fallback to text if SVG fails to load
+            // Fallback to text if CDN SVG fails to load
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';
             const fallback = target.nextElementSibling as HTMLElement;

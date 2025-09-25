@@ -12,17 +12,17 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/favicon.svg",
+        url: "https://cdn.jsdelivr.net/gh/FlexpointLLC/linquoassets@main/Logo.svg",
         type: "image/svg+xml",
       },
       {
-        url: "/logo.svg",
+        url: "/favicon.svg",
         type: "image/svg+xml",
         sizes: "32x32",
       }
     ],
-    shortcut: "/favicon.svg",
-    apple: "/logo.svg",
+    shortcut: "https://cdn.jsdelivr.net/gh/FlexpointLLC/linquoassets@main/Logo.svg",
+    apple: "https://cdn.jsdelivr.net/gh/FlexpointLLC/linquoassets@main/Logo.svg",
   },
 };
 
