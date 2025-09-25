@@ -35,11 +35,26 @@ export function Sidebar() {
 
   return (
     <aside className="border-r p-2 h-full flex flex-col items-center overflow-hidden">
-      {/* Organization Logo Placeholder */}
-      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center mb-3 mt-2" aria-label="Organization">
-        <span className="text-xs font-semibold text-muted-foreground">
-          L
-        </span>
+      {/* Organization Logo */}
+      <div className="h-10 w-10 rounded-md flex items-center justify-center mb-3 mt-2" aria-label="Organization">
+        <img 
+          src="/logo.svg" 
+          alt="Logo" 
+          className="h-8 w-8 object-contain"
+          onError={(e) => {
+            // Fallback to text if SVG fails to load
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const fallback = target.nextElementSibling as HTMLElement;
+            if (fallback) fallback.style.display = 'flex';
+          }}
+        />
+        <div 
+          className="h-10 w-10 rounded-md bg-muted items-center justify-center hidden"
+          style={{ display: 'none' }}
+        >
+          <span className="text-xs font-semibold text-muted-foreground">L</span>
+        </div>
       </div>
       
       {/* Separator between logo and navigation */}

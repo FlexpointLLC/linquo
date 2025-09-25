@@ -9,6 +9,21 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 export const metadata: Metadata = {
   title: "Linquo",
   description: "Linquo – customer messaging & support",
+  icons: {
+    icon: [
+      {
+        url: "/favicon.svg",
+        type: "image/svg+xml",
+      },
+      {
+        url: "/logo.svg",
+        type: "image/svg+xml",
+        sizes: "32x32",
+      }
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
