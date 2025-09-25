@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -19,8 +20,12 @@ export function SignupForm() {
     organizationSlug: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const { signUp, error: authError } = useAuth();
   const router = useRouter();
+
+  // Combine local and auth errors
+  const displayError = authError || localError;
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -50,7 +55,7 @@ export function SignupForm() {
 
   const handleGoogleSignup = async () => {
     setIsLoading(true);
-    setError(null);
+    setLocalError(null);
 
     try {
       const supabase = createClient();
@@ -69,7 +74,7 @@ export function SignupForm() {
         throw error;
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Google signup failed");
+      setLocalError(error instanceof Error ? error.message : "Google signup failed");
       setIsLoading(false);
     }
   };
@@ -77,11 +82,11 @@ export function SignupForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
+    setLocalError(null);
 
     // Validate organization slug
     if (!formData.organizationSlug || formData.organizationSlug.length < 3) {
-      setError("Organization URL must be at least 3 characters long");
+      setLocalError("Organization URL must be at least 3 characters long");
       setIsLoading(false);
       return;
     }
@@ -89,106 +94,35 @@ export function SignupForm() {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError("Please enter a valid email address");
+      setLocalError("Please enter a valid email address");
       setIsLoading(false);
       return;
     }
 
     try {
-      const supabase = createClient();
-      if (!supabase) {
-        throw new Error("Supabase client not available");
-      }
-
-      // 1. Sign up the user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.name,
-            name: formData.name,
-          }
-        }
-      });
-
-
-      if (authError) {
-        throw authError;
-      }
-
-      if (!authData.user) {
-        throw new Error("Failed to create user account");
-      }
-
-
-      // 1.5. Update user profile with display name
-      const { error: profileError } = await supabase.auth.updateUser({
-        data: {
-          full_name: formData.name,
-          name: formData.name,
-        }
-      });
-
-      if (profileError) {
-        // Profile update failed, but continue with signup
-      }
-
-      // 2. Create organization
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .insert({
-          name: formData.organizationName,
-          slug: formData.organizationSlug,
-          brand_color: "#3B82F6", // Default brand color for new organizations
-          widget_text_line1: "Hello there", // Default widget text line 1
-          widget_text_line2: "How can we help?", // Default widget text line 2
-          widget_icon_alignment: "right", // Default icon alignment
-          widget_show_branding: true, // Default branding setting
-          chat_header_name: "Support Team", // Default chat header name
-          chat_header_subtitle: "Typically replies within 1 min", // Default chat header subtitle
-          widget_button_text: "Start Chat", // Default button text
-        })
-        .select()
-        .single();
-
-      if (orgError) {
-        throw orgError;
-      }
-
-      // 3. Create agent record (owner)
-      const { error: agentError } = await supabase
-        .from("agents")
-        .insert({
-          display_name: formData.name,
-          email: formData.email,
-          online_status: "OFFLINE",
-          org_id: orgData.id,
-          user_id: authData.user.id,
-          role: "OWNER", // Set as owner during signup
-        })
-        .select()
-        .single();
-
-
-      if (agentError) {
-        throw agentError;
-      }
-
-
-      // 4. Show success message and redirect
-      if (!authData.user.email_confirmed_at) {
-        alert("Account created successfully! Please check your email to confirm your account before signing in.");
-      }
-      router.push("/dashboard");
-
+      // Use the enhanced useAuth signUp function which handles:
+      // - User creation
+      // - Organization creation with all widget fields  
+      // - Agent creation with proper role
+      // - Agent role assignments
+      // - Cache clearing and redirect
+      await signUp(
+        formData.name,
+        formData.email,
+        formData.password,
+        formData.organizationName,
+        formData.organizationSlug
+      );
+      
+      // Success! The useAuth hook handles the redirect and cache clearing
+      
     } catch (error) {
       if (error instanceof Error) {
-        setError(error.message);
+        setLocalError(error.message);
       } else if (typeof error === 'object' && error !== null && 'message' in error) {
-        setError(String(error.message));
+        setLocalError(String(error.message));
       } else {
-        setError("Failed to create account. Please try again.");
+        setLocalError("Failed to create account. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -277,9 +211,9 @@ export function SignupForm() {
               </p>
             </div>
 
-            {error && (
+            {displayError && (
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {error}
+                {displayError}
               </div>
             )}
 

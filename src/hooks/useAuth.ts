@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { setSessionOrgId } from "@/lib/session-org";
 
 export type AuthUser = {
   user: User | null;
@@ -37,6 +38,7 @@ export function useAuth() {
     organization: null,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
   const lastUserIdRef = useRef<string | null>(null);
 
@@ -89,6 +91,9 @@ export function useAuth() {
         return;
       }
       lastUserIdRef.current = user.id;
+      
+      console.log('[Auth] Loading user data - Step 1: Fetching org ID...');
+      
       try {
         // Check localStorage cache first
         const cacheKey = `auth_${user.id}`;
@@ -97,13 +102,22 @@ export function useAuth() {
           const { agentData, orgData, timestamp } = JSON.parse(cached);
           // Use cache if less than 5 minutes old
           if (Date.now() - timestamp < 5 * 60 * 1000) {
+            console.log('[Auth] Using cached data with org ID:', agentData?.org_id);
+            
+            // Store Org ID in sessionStorage even when using cache
+            if (agentData?.org_id) {
+              setSessionOrgId(agentData.org_id);
+              console.log('[Auth] 💾 Org ID from cache stored in session storage:', agentData.org_id);
+            }
+            
             setAuthUser({ user, agent: agentData, organization: orgData });
             setLoading(false);
             return;
           }
         }
 
-        // Get agent data with timeout
+        // PRIORITY: Get agent data to fetch org_id FIRST
+        console.log('[Auth] Fetching agent profile to get org ID...');
         const agentPromise = supabase
           .from("agents")
           .select(`
@@ -117,27 +131,56 @@ export function useAuth() {
           .eq("user_id", user.id)
           .single();
         
-        const result = await Promise.race([
-          agentPromise,
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Agent query timeout')), 1000)
-          )
-        ]);
+        let agentData, agentError;
         
-        const { data: agentData, error: agentError } = result;
+        try {
+          const result = await Promise.race([
+            agentPromise,
+            new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('Agent query timeout')), 1000)
+            )
+          ]);
+          
+          agentData = result.data;
+          agentError = result.error;
+        } catch (timeoutError) {
+          // Handle timeout or other errors
+          agentError = timeoutError instanceof Error ? timeoutError : new Error('Unknown error occurred');
+          agentData = null;
+        }
 
-        if (agentError) {
+        if (agentError || !agentData) {
+          console.error('[Auth] Failed to fetch agent profile and org ID:', agentError);
+          
           // If this is a "not found" error and we haven't retried, wait a bit and try again
-          if (agentError.code === 'PGRST116' && retryCount < 2) {
+          const errorCode = (agentError as { code?: string })?.code;
+          if (errorCode === 'PGRST116' && retryCount < 2) {
+            console.log('[Auth] Agent not found, retrying in 1 second...');
             setTimeout(() => {
               loadUserData(user, retryCount + 1);
-            }, 1000); // Reduced retry delay
+            }, 1000);
             return;
           }
           
-          // If agent doesn't exist after retries, keep the user but set agent/organization to null
+          // CRITICAL ERROR: Cannot fetch org ID - force logout with error
+          console.error('[Auth] CRITICAL: Unable to fetch organization ID - forcing logout');
+          
+          // Set specific error message
+          const errorMessage = errorCode === 'PGRST116' 
+            ? 'Your account is not associated with any organization. Please contact support.'
+            : `Authentication error: ${agentError?.message || 'Unable to fetch organization data'}`;
+          
+          setError(errorMessage);
+          
+          // Force sign out since we can't determine org access
+          const supabase = createClient();
+          if (supabase) {
+            await supabase.auth.signOut();
+          }
+          
+          // Clear auth state
           setAuthUser({
-            user,
+            user: null,
             agent: null,
             organization: null,
           });
@@ -145,24 +188,52 @@ export function useAuth() {
           return;
         }
 
-        // Get organization data separately with timeout
+        // SUCCESS: Got org ID from agent profile
+        console.log('[Auth] ✅ Org ID fetched successfully:', agentData.org_id);
+        
+        // Clear any previous errors
+        setError(null);
+        
+        // IMMEDIATELY store Org ID in sessionStorage for quick access
+        setSessionOrgId(agentData.org_id);
+        console.log('[Auth] 💾 Org ID stored in session storage:', agentData.org_id);
+        
+        console.log('[Auth] Step 2: Fetching organization details...');
+
+        // Get organization data using the org_id
         const orgPromise = supabase
           .from("organizations")
           .select("id, name, slug, brand_color, widget_text_line1, widget_text_line2, widget_icon_alignment, widget_show_branding, widget_open_on_load, chat_header_name, chat_header_subtitle, widget_button_text")
           .eq("id", agentData.org_id)
           .single();
         
-        const orgResult = await Promise.race([
-          orgPromise,
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Organization query timeout')), 1000)
-          )
-        ]);
+        let orgData, orgError;
         
-        const { data: orgData, error: orgError } = orgResult;
+        try {
+          const orgResult = await Promise.race([
+            orgPromise,
+            new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('Organization query timeout')), 1000)
+            )
+          ]);
+          
+          orgData = orgResult.data;
+          orgError = orgResult.error;
+        } catch (timeoutError) {
+          // Handle timeout or other errors
+          orgError = timeoutError instanceof Error ? timeoutError : new Error('Unknown error occurred');
+          orgData = null;
+        }
 
         if (orgError) {
-          // Keep the user and agent, but set organization to null
+          console.error('[Auth] Failed to fetch organization details:', orgError);
+          console.log('[Auth] ⚠️ Using org ID without full organization data:', agentData.org_id);
+          
+          // Still store Org ID in sessionStorage even if org details failed
+          setSessionOrgId(agentData.org_id);
+          console.log('[Auth] 💾 Org ID stored in session storage (without org details):', agentData.org_id);
+          
+          // Keep the user and agent with org_id, but set organization to null
           setAuthUser({
             user,
             agent: {
@@ -174,7 +245,10 @@ export function useAuth() {
             },
             organization: null,
           });
-        } else {
+        } else if (orgData) {
+          console.log('[Auth] ✅ Organization data loaded successfully:', orgData.name);
+          console.log('[Auth] 🏢 Complete auth data ready - Org ID:', agentData.org_id, '| Org Name:', orgData.name);
+          
           const authData = {
             user,
             agent: {
@@ -215,14 +289,23 @@ export function useAuth() {
       try {
         // Get initial session with timeout
         const sessionPromise = supabase.auth.getSession();
-        const sessionResult = await Promise.race([
-          sessionPromise,
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Session query timeout')), 2000)
-          )
-        ]);
+        let session, error;
         
-        const { data: { session }, error } = sessionResult;
+        try {
+          const sessionResult = await Promise.race([
+            sessionPromise,
+            new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('Session query timeout')), 2000)
+            )
+          ]);
+          
+          session = sessionResult.data.session;
+          error = sessionResult.error;
+        } catch (timeoutError) {
+          // Handle timeout or other errors
+          error = timeoutError instanceof Error ? timeoutError : new Error('Unknown error occurred');
+          session = null;
+        }
         
         if (error) {
           setLoading(false);
@@ -240,16 +323,49 @@ export function useAuth() {
           async (event, session) => {
             if (session?.user) {
               if (lastUserIdRef.current !== session.user.id) {
-                // Force hard refresh on new login to clear any caching issues
+                // Force clear cache + reload on new login FIRST, before any data fetching
                 if (event === 'SIGNED_IN' && lastUserIdRef.current === null) {
-                  console.log('[Auth] New login detected, performing hard refresh to clear cache...');
-                  // Clear localStorage cache
+                  console.log('[Auth] New login detected - Step 1: Clearing cache...');
+                  
+                  // STEP 1: Clear cache FIRST
                   Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith('auth_') || key.includes('cache') || key.includes('linquo')) {
+                    if (
+                      key.startsWith('auth_') || 
+                      key.includes('cache') || 
+                      key.includes('linquo') ||
+                      key.includes('supabase') ||
+                      key.includes('sb-') ||
+                      key.startsWith('nextjs') ||
+                      key.includes('conversation') ||
+                      key.includes('message') ||
+                      key.includes('customer') ||
+                      key.includes('agent')
+                    ) {
                       localStorage.removeItem(key);
                     }
                   });
-                  // Force hard refresh
+                  
+                  Object.keys(sessionStorage).forEach(key => {
+                    if (
+                      key.startsWith('auth_') || 
+                      key.includes('cache') || 
+                      key.includes('linquo') ||
+                      key.includes('supabase') ||
+                      key.includes('sb-')
+                    ) {
+                      sessionStorage.removeItem(key);
+                    }
+                  });
+                  
+                  try {
+                    const { clearCache } = await import("./useDataCache");
+                    clearCache();
+                  } catch {
+                    // Ignore import errors
+                  }
+                  
+                  console.log('[Auth] Step 2: Performing hard reload...');
+                  // STEP 2: Hard reload (this will trigger fresh data fetching automatically)
                   window.location.reload();
                   return;
                 }
@@ -291,11 +407,41 @@ export function useAuth() {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    // Clear any previous errors
+    setError(null);
+    
     const supabase = createClient();
-    if (!supabase) throw new Error("Supabase client not available");
+    if (!supabase) {
+      const errorMsg = "Authentication service unavailable";
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        // Set user-friendly error message
+        let errorMessage = "Login failed";
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please check your email and confirm your account";
+        } else if (error.message.includes("Too many requests")) {
+          errorMessage = "Too many login attempts. Please try again later";
+        } else {
+          errorMessage = error.message;
+        }
+        
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      // If we haven't already set an error, set a generic one
+      if (!error) {
+        setError("An unexpected error occurred during login");
+      }
+      throw error;
+    }
   };
 
   const signUp = async (
@@ -305,54 +451,118 @@ export function useAuth() {
     organizationName: string,
     organizationSlug: string
   ) => {
+    console.log('[SignUp] 🚀 Starting fresh signup process...');
+    
     const supabase = createClient();
-    if (!supabase) throw new Error("Supabase client not available");
-
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name },
-      },
-    });
-
-    if (authError) throw authError;
-    if (!data.user) throw new Error("User not created");
-
-    // Create organization
-    const { data: orgData, error: orgError } = await supabase
-      .from("organizations")
-      .insert({ 
-        name: organizationName, 
-        slug: organizationSlug,
-        brand_color: "#3B82F6" // Default brand color for new organizations
-      })
-      .select()
-      .single();
-
-    if (orgError) {
-      await supabase.auth.admin.deleteUser(data.user.id);
-      throw orgError;
+    if (!supabase) {
+      console.error('[SignUp] ❌ Supabase client not available');
+      throw new Error("Authentication service not available");
     }
 
-        // Create agent (owner role)
-        const { data: agentData, error: agentError } = await supabase.from("agents").insert({
-          user_id: data.user.id,
-          display_name: name,
-          email,
-          online_status: "OFFLINE",
-          org_id: orgData.id,
-        }).select().single();
+    let createdUserId: string | null = null;
+    let createdOrgId: string | null = null;
+    let createdAgentId: string | null = null;
 
-        if (agentError) {
-          await supabase.auth.admin.deleteUser(data.user.id);
-          await supabase.from("organizations").delete().eq("id", orgData.id);
-          throw agentError;
+    try {
+      // STEP 1: Create Supabase Auth User
+      console.log('[SignUp] Step 1: Creating auth user for:', email);
+      
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.toLowerCase().trim(),
+        password,
+        options: {
+          data: {
+            full_name: name.trim(),
+            display_name: name.trim(),
+          }
         }
+      });
 
-        // Create default OWNER role for the new organization
-        const { data: ownerRoleData, error: roleError } = await supabase.from("roles").insert({
-          org_id: orgData.id,
+      if (authError) {
+        console.error('[SignUp] ❌ Auth error:', authError.message);
+        throw new Error(`Failed to create account: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        console.error('[SignUp] ❌ No user data returned from auth');
+        throw new Error("Failed to create user account - no user data");
+      }
+
+      createdUserId = authData.user.id;
+      console.log('[SignUp] ✅ Auth user created successfully:', createdUserId);
+
+      // STEP 2: Create Organization with complete data
+      console.log('[SignUp] Step 2: Creating organization:', organizationName);
+      
+      const organizationData = {
+        name: organizationName.trim(),
+        slug: organizationSlug.toLowerCase().trim(),
+        brand_color: "#3B82F6",
+        widget_text_line1: "Hello there",
+        widget_text_line2: "How can we help?",
+        widget_icon_alignment: "right",
+        widget_show_branding: true,
+        widget_open_on_load: false,
+        chat_header_name: "Support Team",
+        chat_header_subtitle: "Typically replies within 1 min",
+        widget_button_text: "Start Chat"
+      };
+
+      const { data: orgData, error: orgError } = await supabase
+        .from("organizations")
+        .insert(organizationData)
+        .select("*")
+        .single();
+
+      if (orgError) {
+        console.error('[SignUp] ❌ Organization creation failed:', orgError.message);
+        throw new Error(`Failed to create organization: ${orgError.message}`);
+      }
+
+      if (!orgData) {
+        console.error('[SignUp] ❌ No organization data returned');
+        throw new Error("Failed to create organization - no data returned");
+      }
+
+      createdOrgId = orgData.id;
+      console.log('[SignUp] ✅ Organization created successfully:', createdOrgId);
+
+      // STEP 3: Create Agent Record
+      console.log('[SignUp] Step 3: Creating agent record...');
+      
+      const agentData = {
+        user_id: createdUserId,
+        display_name: name.trim(),
+        email: email.toLowerCase().trim(),
+        online_status: "OFFLINE",
+        org_id: createdOrgId,
+        role: "OWNER"
+      };
+
+      const { data: agentRecord, error: agentError } = await supabase
+        .from("agents")
+        .insert(agentData)
+        .select("*")
+        .single();
+
+      if (agentError) {
+        console.error('[SignUp] ❌ Agent creation failed:', agentError.message);
+        throw new Error(`Failed to create agent: ${agentError.message}`);
+      }
+
+      if (!agentRecord) {
+        console.error('[SignUp] ❌ No agent data returned');
+        throw new Error("Failed to create agent - no data returned");
+      }
+
+      createdAgentId = agentRecord.id;
+      console.log('[SignUp] ✅ Agent created successfully:', createdAgentId);
+
+      // STEP 4: Create Role (non-critical)
+      console.log('[SignUp] Step 4: Creating role permissions...');
+      try {
+        const roleData = {
+          org_id: createdOrgId,
           role_key: "OWNER",
           permissions: {
             "agents:read": true, "agents:write": true, "agents:delete": true,
@@ -361,45 +571,204 @@ export function useAuth() {
             "messages:read": true, "messages:write": true, "messages:delete": true,
             "settings:read": true, "settings:write": true
           }
-        }).select().single();
+        };
+
+        const { data: roleRecord, error: roleError } = await supabase
+          .from("roles")
+          .insert(roleData)
+          .select("*")
+          .single();
 
         if (roleError) {
-          await supabase.auth.admin.deleteUser(data.user.id);
-          await supabase.from("organizations").delete().eq("id", orgData.id);
-          await supabase.from("agents").delete().eq("id", agentData.id);
-          throw roleError;
-        }
+          console.warn('[SignUp] ⚠️ Role creation failed (non-critical):', roleError.message);
+        } else if (roleRecord) {
+          console.log('[SignUp] ✅ Role created successfully:', roleRecord.id);
 
-        // Assign owner role to the agent
-        await supabase.from("agent_role_assignments").insert({
-          org_id: orgData.id,
-          agent_id: agentData.id,
-          role_id: ownerRoleData.id,
-        });
+          // STEP 5: Create Role Assignment (non-critical)
+          try {
+            const assignmentData = {
+              org_id: createdOrgId,
+              agent_id: createdAgentId,
+              role_id: roleRecord.id,
+            };
+
+            const { error: assignmentError } = await supabase
+              .from("agent_role_assignments")
+              .insert(assignmentData);
+
+            if (assignmentError) {
+              console.warn('[SignUp] ⚠️ Role assignment failed (non-critical):', assignmentError.message);
+            } else {
+              console.log('[SignUp] ✅ Role assignment created successfully');
+            }
+          } catch (assignmentError) {
+            console.warn('[SignUp] ⚠️ Role assignment error (non-critical):', assignmentError);
+          }
+        }
+      } catch (roleError) {
+        console.warn('[SignUp] ⚠️ Role creation error (non-critical):', roleError);
+      }
+
+      // STEP 6: Success! Log the complete creation
+      console.log('[SignUp] 🎉 SIGNUP COMPLETED SUCCESSFULLY!');
+      console.log('[SignUp] Created records:');
+      console.log('  • User ID:', createdUserId);
+      console.log('  • Organization ID:', createdOrgId);
+      console.log('  • Agent ID:', createdAgentId);
+      console.log('  • Email:', email.toLowerCase().trim());
+      console.log('  • Organization:', organizationName.trim());
+
+      // STEP 7: Clear all caches before redirect
+      console.log('[SignUp] Step 7: Clearing all caches...');
+      try {
+        if (typeof window !== 'undefined') {
+          // Clear localStorage
+          const localStorageKeys = Object.keys(localStorage);
+          localStorageKeys.forEach(key => {
+            if (
+              key.startsWith('auth_') || 
+              key.includes('cache') || 
+              key.includes('linquo') ||
+              key.includes('supabase') ||
+              key.includes('sb-') ||
+              key.includes('conversation') ||
+              key.includes('message') ||
+              key.includes('customer') ||
+              key.includes('agent') ||
+              key.includes('organization')
+            ) {
+              localStorage.removeItem(key);
+            }
+          });
+
+          // Clear sessionStorage
+          const sessionStorageKeys = Object.keys(sessionStorage);
+          sessionStorageKeys.forEach(key => {
+            if (
+              key.startsWith('auth_') || 
+              key.includes('cache') || 
+              key.includes('linquo') ||
+              key.includes('supabase') ||
+              key.includes('sb-')
+            ) {
+              sessionStorage.removeItem(key);
+            }
+          });
+
+          console.log('[SignUp] ✅ Cache cleared successfully');
+        }
+      } catch (cacheError) {
+        console.warn('[SignUp] ⚠️ Cache clearing failed:', cacheError);
+      }
+
+      // STEP 8: Redirect with hard refresh
+      console.log('[SignUp] Step 8: Redirecting to dashboard...');
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+        window.location.reload();
+      }, 500); // Slightly longer delay to ensure all operations complete
+
+    } catch (error) {
+      console.error('[SignUp] 💥 SIGNUP FAILED - Starting cleanup...', error);
+      
+      // Cleanup any created records
+      try {
+        if (createdAgentId && createdOrgId) {
+          console.log('[SignUp] Cleaning up agent record...');
+          await supabase.from("agents").delete().eq("id", createdAgentId);
+        }
+        
+        if (createdOrgId) {
+          console.log('[SignUp] Cleaning up organization record...');
+          await supabase.from("organizations").delete().eq("id", createdOrgId);
+        }
+        
+        if (createdUserId) {
+          console.log('[SignUp] Cleaning up auth user...');
+          await supabase.auth.admin.deleteUser(createdUserId);
+        }
+        
+        console.log('[SignUp] ✅ Cleanup completed');
+      } catch (cleanupError) {
+        console.error('[SignUp] ❌ Cleanup failed:', cleanupError);
+      }
+      
+      throw error;
+    }
   };
 
   const signOut = async () => {
+    console.log('[Auth] Logout initiated - Step 1: Clearing cache...');
+    
+    // STEP 1: Clear cache FIRST - before auth signout and navigation
+    try {
+      // Clear localStorage completely
+      Object.keys(localStorage).forEach(key => {
+        if (
+          key.startsWith('auth_') || 
+          key.includes('cache') || 
+          key.includes('linquo') ||
+          key.includes('supabase') ||
+          key.includes('sb-') ||
+          key.startsWith('nextjs') ||
+          key.includes('conversation') ||
+          key.includes('message') ||
+          key.includes('customer') ||
+          key.includes('agent')
+        ) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Clear sessionStorage as well (including Org ID)
+      const orgIdBefore = sessionStorage.getItem('linquo_org_id');
+      if (orgIdBefore) {
+        console.log('[Auth] 🗑️ Removing Org ID from session storage:', orgIdBefore);
+      }
+      
+      Object.keys(sessionStorage).forEach(key => {
+        if (
+          key.startsWith('auth_') || 
+          key.includes('cache') || 
+          key.includes('linquo') ||
+          key.includes('supabase') ||
+          key.includes('sb-')
+        ) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      console.log('[Auth] ✅ Session storage cleared (Org ID removed)');
+      
+      // Clear any data cache imports
+      const { clearCache } = await import("./useDataCache");
+      clearCache();
+    } catch {
+      // Ignore import errors but still clear basic storage
+      console.warn('[Auth] Some cache clearing failed, but continuing with logout');
+    }
+    
+    console.log('[Auth] Step 2: Signing out from Supabase...');
     const supabase = createClient();
     if (supabase) {
       await supabase.auth.signOut();
     }
-    // Clear all auth data on logout
+    
+    // Clear React state
     setAuthUser({ user: null, agent: null, organization: null });
     setLoading(false);
     setConnectionStatus('disconnected');
     
-    // Clear data cache on logout
-    try {
-      const { clearCache } = await import("./useDataCache");
-      clearCache();
-    } catch {
-      // Ignore import errors
-    }
+    console.log('[Auth] Step 3: Redirecting to login and reloading...');
+    // STEP 3: Navigate + reload (this ensures completely clean login page)
+    window.location.href = '/login';
+    window.location.reload();
   };
 
   return {
     ...authUser,
     loading,
+    error,
     connectionStatus,
     signIn,
     signUp,

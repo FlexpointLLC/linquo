@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordInput } from "@/components/ui/password-input";
+import { useAuth } from "@/hooks/useAuth";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -16,51 +17,47 @@ export function LoginForm() {
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   // const [showForgotPassword, setShowForgotPassword] = useState(false);
   const router = useRouter();
+  const { signIn, error: authError, user } = useAuth();
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
+    setLocalError(null);
     setSuccess(null);
 
     try {
-      const supabase = createClient();
-
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (authError) {
-        throw authError;
-      }
-
-      if (data.user) {
-        // Redirect to dashboard
-        router.push("/dashboard");
-      } else {
-        throw new Error("Login failed - no user returned");
-      }
-
+      await signIn(formData.email, formData.password);
+      // Success - the useAuth hook will handle the redirect via AuthProvider
+      setSuccess("Login successful! Redirecting...");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Login failed");
+      setLocalError(error instanceof Error ? error.message : "Login failed");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Combine auth errors and local errors for display
+  const displayError = authError || localError;
+
   const handleForgotPassword = async () => {
     if (!formData.email) {
-      setError("Please enter your email address first");
+      setLocalError("Please enter your email address first");
       return;
     }
 
     setIsLoading(true);
-    setError(null);
+    setLocalError(null);
     setSuccess(null);
 
     try {
@@ -79,7 +76,7 @@ export function LoginForm() {
 
       setSuccess("Password reset email sent! Check your inbox.");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to send reset email");
+      setLocalError(error instanceof Error ? error.message : "Failed to send reset email");
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +84,7 @@ export function LoginForm() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    setError(null);
+    setLocalError(null);
     setSuccess(null);
 
     try {
@@ -107,7 +104,7 @@ export function LoginForm() {
         throw error;
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Google login failed");
+      setLocalError(error instanceof Error ? error.message : "Google login failed");
       setIsLoading(false);
     }
   };
@@ -159,9 +156,9 @@ export function LoginForm() {
               />
             </div>
 
-            {error && (
+            {displayError && (
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {error}
+                {displayError}
               </div>
             )}
 
