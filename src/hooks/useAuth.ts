@@ -240,6 +240,19 @@ export function useAuth() {
           async (event, session) => {
             if (session?.user) {
               if (lastUserIdRef.current !== session.user.id) {
+                // Force hard refresh on new login to clear any caching issues
+                if (event === 'SIGNED_IN' && lastUserIdRef.current === null) {
+                  console.log('[Auth] New login detected, performing hard refresh to clear cache...');
+                  // Clear localStorage cache
+                  Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('auth_') || key.includes('cache') || key.includes('linquo')) {
+                      localStorage.removeItem(key);
+                    }
+                  });
+                  // Force hard refresh
+                  window.location.reload();
+                  return;
+                }
                 await loadUserData(session.user);
               }
             } else {

@@ -15,7 +15,7 @@ export default function DemoPage() {
   // Set default organization ID for demo
   useEffect(() => {
     if (isHydrated && !orgId) {
-      setOrgId("25750931-edcf-4860-8527-12616916b377"); // Default demo org
+      setOrgId("ad56884b-d717-4004-87c6-089aaca40bd0"); // Default demo org
     }
   }, [isHydrated, orgId]);
 
@@ -109,7 +109,7 @@ export default function DemoPage() {
             <h4 className="text-yellow-600 font-semibold mb-4">🔧 Test Different Organization IDs:</h4>
             <div className="bg-yellow-100 p-3 rounded mb-4">
               <p className="text-yellow-800 text-sm">
-                <strong>Demo Organization:</strong> Flexpoint (Default)
+                <strong>Demo Organization:</strong> Flexpoint LLC (Default)
               </p>
               <p className="text-yellow-700 text-xs mt-1">
                 This is a public demo. You can test with different organization IDs below.
@@ -130,22 +130,22 @@ export default function DemoPage() {
                 <p className="text-yellow-600 text-xs font-semibold mb-2">Example Organization IDs:</p>
                 <div className="space-y-1">
                   <button 
+                    onClick={() => setOrgId("ad56884b-d717-4004-87c6-089aaca40bd0")}
+                    className="block w-full text-left text-xs text-yellow-700 hover:text-yellow-900 hover:bg-yellow-100 px-2 py-1 rounded"
+                  >
+                    • ad56884b-d717-4004-87c6-089aaca40bd0 (Flexpoint LLC - Default)
+                  </button>
+                  <button 
                     onClick={() => setOrgId("25750931-edcf-4860-8527-12616916b377")}
                     className="block w-full text-left text-xs text-yellow-700 hover:text-yellow-900 hover:bg-yellow-100 px-2 py-1 rounded"
                   >
-                    • 25750931-edcf-4860-8527-12616916b377 (Flexpoint - Default)
+                    • 25750931-edcf-4860-8527-12616916b377 (Old Demo)
                   </button>
                   <button 
                     onClick={() => setOrgId("test-org-123")}
                     className="block w-full text-left text-xs text-yellow-700 hover:text-yellow-900 hover:bg-yellow-100 px-2 py-1 rounded"
                   >
                     • test-org-123 (Test)
-                  </button>
-                  <button 
-                    onClick={() => setOrgId("demo-company-456")}
-                    className="block w-full text-left text-xs text-yellow-700 hover:text-yellow-900 hover:bg-yellow-100 px-2 py-1 rounded"
-                  >
-                    • demo-company-456 (Demo)
                   </button>
                 </div>
               </div>
