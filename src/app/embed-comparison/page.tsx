@@ -53,7 +53,7 @@ export default function EmbedComparisonPage() {
               <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
 {`<script id="linquo" 
         async="true" 
-        src="/widget.js?id=${orgId}"></script>`}
+        src="https://admin.linquo.app/widget.js?id=${orgId}"></script>`}
               </pre>
             </div>
             
@@ -87,7 +87,7 @@ export default function EmbedComparisonPage() {
               <h3 className="font-semibold text-gray-900 mb-2">Generated Embed Code:</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <code className="text-sm text-gray-800 font-mono">
-                  {`<script id="linquo" async="true" src="/widget.js?id=${orgId}"></script>`}
+                  {`<script id="linquo" async="true" src="https://admin.linquo.app/widget.js?id=${orgId}"></script>`}
                 </code>
               </div>
             </div>

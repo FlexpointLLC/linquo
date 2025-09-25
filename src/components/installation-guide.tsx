@@ -10,14 +10,12 @@ export function InstallationGuide() {
   const { organization, loading } = useAuth();
   const [copied, setCopied] = useState(false);
 
-  // Generate the embed code (same format as embed settings)
+  // Generate the embed code (Universal production URL)
   const generateEmbedCode = () => {
     if (!organization?.id) return "";
     
-    // Use current domain dynamically
-    const baseUrl = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : 'https://linquochat.vercel.app'; // Fallback for SSR
+    // Always use production URL for user embed codes
+    const baseUrl = 'https://admin.linquo.app';
     
     return `<script id="linquo" async="true" src="${baseUrl}/widget.js?id=${organization.id}"></script>`;
   };

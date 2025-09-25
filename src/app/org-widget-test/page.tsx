@@ -47,7 +47,7 @@ export default function OrgWidgetTestPage() {
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <h3 className="font-semibold text-green-900 mb-2">Embed Code Used:</h3>
             <code className="text-sm text-green-800 bg-green-100 px-2 py-1 rounded">
-              {`<script id="linquo" async="true" src="/widget.js?id=${orgId}"></script>`}
+              {`<script id="linquo" async="true" src="https://admin.linquo.app/widget.js?id=${orgId}"></script>`}
             </code>
           </div>
         </div>

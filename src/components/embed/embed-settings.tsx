@@ -12,14 +12,12 @@ export function EmbedSettings() {
 
   const orgId = organization?.id;
 
-  // Generate the embed code (Chatway style)
+  // Generate the embed code (Universal production URL)
   const generateEmbedCode = () => {
     if (!orgId) return "";
     
-    // Use current domain dynamically
-    const baseUrl = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : 'https://linquochat.vercel.app'; // Fallback for SSR
+    // Always use production URL for user embed codes
+    const baseUrl = 'https://admin.linquo.app';
     
     return `<script id="linquo" async="true" src="${baseUrl}/widget.js?id=${orgId}"></script>`;
   };
