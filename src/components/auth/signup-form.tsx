@@ -21,14 +21,88 @@ export function SignupForm() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState({
+    name: "",
+    email: "",
+    password: "",
+    organizationName: "",
+    organizationSlug: "",
+  });
   const { signUp, error: authError } = useAuth();
   const router = useRouter();
 
   // Combine local and auth errors
   const displayError = authError || localError;
 
+  // Real-time validation functions
+  const validateField = (field: string, value: string) => {
+    let error = "";
+
+    switch (field) {
+      case "name":
+        if (!value.trim()) {
+          error = "Name is required";
+        } else if (value.trim().length < 2) {
+          error = "Name must be at least 2 characters long";
+        }
+        break;
+
+      case "email":
+        if (!value.trim()) {
+          error = "Email is required";
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            error = "Please enter a valid email address";
+          }
+        }
+        break;
+
+      case "password":
+        if (!value) {
+          error = "Password is required";
+        } else {
+          const passwordErrors = [];
+          if (value.length < 8) passwordErrors.push("8+ characters");
+          if (!/[A-Z]/.test(value)) passwordErrors.push("uppercase letter");
+          if (!/[a-z]/.test(value)) passwordErrors.push("lowercase letter");
+          if (!/\d/.test(value)) passwordErrors.push("number");
+          if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)) passwordErrors.push("special character");
+          
+          if (passwordErrors.length > 0) {
+            error = `Password must include: ${passwordErrors.join(", ")}`;
+          }
+        }
+        break;
+
+      case "organizationName":
+        if (!value.trim()) {
+          error = "Organization name is required";
+        } else if (value.trim().length < 2) {
+          error = "Organization name must be at least 2 characters long";
+        }
+        break;
+
+      case "organizationSlug":
+        if (!value.trim()) {
+          error = "Organization URL is required";
+        } else if (value.length < 3) {
+          error = "Organization URL must be at least 3 characters long";
+        } else if (!/^[a-z0-9-]+$/.test(value)) {
+          error = "Organization URL can only contain lowercase letters, numbers, and hyphens";
+        }
+        break;
+    }
+
+    return error;
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Real-time validation
+    const error = validateField(field, value);
+    setFieldErrors(prev => ({ ...prev, [field]: error }));
     
     // Auto-generate organization slug from name
     if (field === "organizationName") {
@@ -40,6 +114,10 @@ export function SignupForm() {
         .replace(/^-+|-+$/g, '') // Remove leading/trailing dashes
         .trim();
       setFormData(prev => ({ ...prev, organizationSlug: slug }));
+      
+      // Validate the generated slug too
+      const slugError = validateField("organizationSlug", slug);
+      setFieldErrors(prev => ({ ...prev, organizationSlug: slugError }));
     }
     
     // Handle organization slug changes directly
@@ -50,6 +128,10 @@ export function SignupForm() {
         .replace(/-+/g, '-')
         .replace(/^-+|-+$/g, ''); // Remove leading/trailing dashes
       setFormData(prev => ({ ...prev, organizationSlug: slug }));
+      
+      // Validate the cleaned slug
+      const slugError = validateField("organizationSlug", slug);
+      setFieldErrors(prev => ({ ...prev, organizationSlug: slugError }));
     }
   };
 
@@ -84,23 +166,31 @@ export function SignupForm() {
     setIsLoading(true);
     setLocalError(null);
 
-    // Validate organization slug
-    if (!formData.organizationSlug || formData.organizationSlug.length < 3) {
-      setLocalError("Organization URL must be at least 3 characters long");
-      setIsLoading(false);
-      return;
-    }
+    // Validate all fields and set inline errors
+    const newFieldErrors = {
+      name: validateField("name", formData.name),
+      email: validateField("email", formData.email),
+      password: validateField("password", formData.password),
+      organizationName: validateField("organizationName", formData.organizationName),
+      organizationSlug: validateField("organizationSlug", formData.organizationSlug),
+    };
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setLocalError("Please enter a valid email address");
+    setFieldErrors(newFieldErrors);
+
+    // Check if any field has errors
+    const hasErrors = Object.values(newFieldErrors).some(error => error !== "");
+
+    if (hasErrors) {
+      setLocalError("Please fix the errors below before continuing.");
       setIsLoading(false);
       return;
     }
 
     try {
       // Use the enhanced useAuth signUp function which handles:
+      // - Password requirements validation
+      // - Duplicate organization slug check
+      // - Existing email validation
       // - User creation
       // - Organization creation with all widget fields  
       // - Agent creation with proper role
@@ -118,7 +208,18 @@ export function SignupForm() {
       
     } catch (error) {
       if (error instanceof Error) {
-        setLocalError(error.message);
+        // Handle specific server-side errors and map them to field errors
+        const errorMessage = error.message;
+        
+        if (errorMessage.includes("Organization URL") && errorMessage.includes("already taken")) {
+          setFieldErrors(prev => ({ ...prev, organizationSlug: errorMessage }));
+          setLocalError("Please fix the errors below.");
+        } else if (errorMessage.includes("account with email") && errorMessage.includes("already exists")) {
+          setFieldErrors(prev => ({ ...prev, email: errorMessage }));
+          setLocalError("Please fix the errors below.");
+        } else {
+          setLocalError(errorMessage);
+        }
       } else if (typeof error === 'object' && error !== null && 'message' in error) {
         setLocalError(String(error.message));
       } else {
@@ -152,7 +253,11 @@ export function SignupForm() {
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 placeholder="John Doe"
                 required
+                className={fieldErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {fieldErrors.name && (
+                <p className="text-sm text-red-600">{fieldErrors.name}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -164,7 +269,11 @@ export function SignupForm() {
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 placeholder="john@company.com"
                 required
+                className={fieldErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {fieldErrors.email && (
+                <p className="text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -176,7 +285,11 @@ export function SignupForm() {
                 placeholder="Create a strong password"
                 required
                 showValidation={true}
+                className={fieldErrors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {fieldErrors.password && (
+                <p className="text-sm text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -188,7 +301,11 @@ export function SignupForm() {
                 onChange={(e) => handleInputChange("organizationName", e.target.value)}
                 placeholder="Flexpoint LLC"
                 required
+                className={fieldErrors.organizationName ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {fieldErrors.organizationName && (
+                <p className="text-sm text-red-600">{fieldErrors.organizationName}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -204,16 +321,23 @@ export function SignupForm() {
                   required
                   pattern="[a-z0-9-]+"
                   minLength={3}
+                  className={fieldErrors.organizationSlug ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                This will be your organization&apos;s unique URL
-              </p>
+              {fieldErrors.organizationSlug ? (
+                <p className="text-sm text-red-600">{fieldErrors.organizationSlug}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  This will be your organization&apos;s unique URL
+                </p>
+              )}
             </div>
 
             {displayError && (
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {displayError}
+                <div className="whitespace-pre-line">
+                  {displayError}
+                </div>
               </div>
             )}
 

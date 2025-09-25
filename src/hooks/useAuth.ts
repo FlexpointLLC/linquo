@@ -451,7 +451,7 @@ export function useAuth() {
     organizationName: string,
     organizationSlug: string
   ) => {
-    console.log('[SignUp] 🚀 Starting fresh signup process...');
+    console.log('[SignUp] 🚀 Starting signup process with validation...');
     
     const supabase = createClient();
     if (!supabase) {
@@ -464,11 +464,82 @@ export function useAuth() {
     let createdAgentId: string | null = null;
 
     try {
-      // STEP 1: Create Supabase Auth User
-      console.log('[SignUp] Step 1: Creating auth user for:', email);
+      // VALIDATION STEP 1: Password Requirements
+      console.log('[SignUp] Validation 1: Checking password requirements...');
+      const passwordErrors = [];
+      
+      if (password.length < 8) {
+        passwordErrors.push("Password must be at least 8 characters long");
+      }
+      if (!/[A-Z]/.test(password)) {
+        passwordErrors.push("Password must contain at least one uppercase letter");
+      }
+      if (!/[a-z]/.test(password)) {
+        passwordErrors.push("Password must contain at least one lowercase letter");
+      }
+      if (!/\d/.test(password)) {
+        passwordErrors.push("Password must contain at least one number");
+      }
+      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+        passwordErrors.push("Password must contain at least one special character");
+      }
+
+      if (passwordErrors.length > 0) {
+        console.error('[SignUp] ❌ Password validation failed:', passwordErrors);
+        throw new Error(`Password requirements not met:\n• ${passwordErrors.join('\n• ')}`);
+      }
+
+      console.log('[SignUp] ✅ Password meets all requirements');
+
+      // VALIDATION STEP 2: Check for duplicate organization slug
+      console.log('[SignUp] Validation 2: Checking organization slug availability...');
+      const slugToCheck = organizationSlug.toLowerCase().trim();
+      
+      const { data: existingOrg, error: slugCheckError } = await supabase
+        .from("organizations")
+        .select("id, slug")
+        .eq("slug", slugToCheck)
+        .maybeSingle();
+
+      if (slugCheckError) {
+        console.error('[SignUp] ❌ Error checking organization slug:', slugCheckError.message);
+        throw new Error("Failed to validate organization URL. Please try again.");
+      }
+
+      if (existingOrg) {
+        console.error('[SignUp] ❌ Organization slug already exists:', slugToCheck);
+        throw new Error(`Organization URL "${slugToCheck}" is already taken. Please choose a different URL.`);
+      }
+
+      console.log('[SignUp] ✅ Organization slug is available:', slugToCheck);
+
+      // VALIDATION STEP 3: Check for existing email (before creating auth user)
+      console.log('[SignUp] Validation 3: Checking email availability...');
+      const emailToCheck = email.toLowerCase().trim();
+      
+      const { data: existingAgent, error: emailCheckError } = await supabase
+        .from("agents")
+        .select("id, email")
+        .eq("email", emailToCheck)
+        .maybeSingle();
+
+      if (emailCheckError && emailCheckError.code !== 'PGRST116') { // PGRST116 = not found, which is good
+        console.error('[SignUp] ❌ Error checking email:', emailCheckError.message);
+        throw new Error("Failed to validate email address. Please try again.");
+      }
+
+      if (existingAgent) {
+        console.error('[SignUp] ❌ Email already exists:', emailToCheck);
+        throw new Error(`An account with email "${emailToCheck}" already exists. Please use a different email or try logging in.`);
+      }
+
+      console.log('[SignUp] ✅ Email is available:', emailToCheck);
+
+      // STEP 1: Create Supabase Auth User (after all validations pass)
+      console.log('[SignUp] Step 1: Creating auth user for:', emailToCheck);
       
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email.toLowerCase().trim(),
+        email: emailToCheck,
         password,
         options: {
           data: {
@@ -480,7 +551,20 @@ export function useAuth() {
 
       if (authError) {
         console.error('[SignUp] ❌ Auth error:', authError.message);
-        throw new Error(`Failed to create account: ${authError.message}`);
+        
+        // Handle specific Supabase auth errors
+        let errorMessage = "Failed to create account";
+        if (authError.message.includes("User already registered")) {
+          errorMessage = `An account with email "${emailToCheck}" already exists. Please try logging in instead.`;
+        } else if (authError.message.includes("Password should be")) {
+          errorMessage = `Password is too weak. ${authError.message}`;
+        } else if (authError.message.includes("Invalid email")) {
+          errorMessage = "Please enter a valid email address.";
+        } else {
+          errorMessage = `Account creation failed: ${authError.message}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       if (!authData.user) {
