@@ -32,7 +32,7 @@ import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useCustomerDetails } from "@/hooks/useCustomerDetails";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight } from "lucide-react";
+import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight, ArrowLeft, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { OptimizedSettings } from "@/components/settings/optimized-settings";
@@ -50,6 +50,8 @@ export const DashboardContent = memo(function DashboardContent() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [resolvingConversationId, setResolvingConversationId] = useState<string | null>(null);
   const [isInfoSidebarOpen, setIsInfoSidebarOpen] = useState(false);
+  const [isMobileInfoModalOpen, setIsMobileInfoModalOpen] = useState(false);
+  const [showMobileMessageView, setShowMobileMessageView] = useState(false);
   const [detailedCustomerData, setDetailedCustomerData] = useState<{
     id: string;
     display_name: string;
@@ -77,6 +79,13 @@ export const DashboardContent = memo(function DashboardContent() {
     const cid = searchParams.get("cid");
     setCurrentTab(tab);
     setActiveId(cid);
+    
+    // Show mobile message view when a conversation is selected
+    if (tab === "chats" && cid) {
+      setShowMobileMessageView(true);
+    } else {
+      setShowMobileMessageView(false);
+    }
   }, [searchParams]);
 
   // Get section parameter for chat sub-tabs
@@ -92,6 +101,12 @@ export const DashboardContent = memo(function DashboardContent() {
       url.searchParams.set("cid", cid);
     }
     router.push(url.pathname + "?" + url.searchParams.toString());
+  };
+
+  const handleBackToConversations = () => {
+    console.log("🔙 Mobile back button clicked - going to conversation list");
+    // For mobile: go to conversation list with no conversation selected
+    router.push("/dashboard?tab=chats");
   };
 
   const { data: conversationRows, error: conversationError, resetUnreadCount } = useConversations();
@@ -190,9 +205,9 @@ export const DashboardContent = memo(function DashboardContent() {
     };
   }, [conversationRows]);
 
-  // Fetch detailed customer data when info sidebar opens
+  // Fetch detailed customer data when info sidebar or mobile modal opens
   useEffect(() => {
-    if (isInfoSidebarOpen && activeId) {
+    if ((isInfoSidebarOpen || isMobileInfoModalOpen) && activeId) {
       const conversation = conversationRows?.find(c => c.id === activeId);
       if (conversation?.customer_id) {
         console.log("🔍 Fetching detailed customer data for:", conversation.customer_id);
@@ -209,7 +224,7 @@ export const DashboardContent = memo(function DashboardContent() {
     } else {
       setDetailedCustomerData(null);
     }
-  }, [isInfoSidebarOpen, activeId, conversationRows, getCustomerDetails]);
+  }, [isInfoSidebarOpen, isMobileInfoModalOpen, activeId, conversationRows, getCustomerDetails]);
 
   // Refresh messages when switching conversations to ensure read status is up-to-date
   useEffect(() => {
@@ -278,13 +293,17 @@ export const DashboardContent = memo(function DashboardContent() {
 
 
 
-  // Auto-select first conversation if none is selected
+  // Auto-select first conversation if none is selected (desktop only)
   useEffect(() => {
     if (currentTab === "chats" && !activeId && conversationRows && conversationRows.length > 0) {
-      const firstConversationId = conversationRows[0].id;
-      const url = new URL(window.location.href);
-      url.searchParams.set("cid", firstConversationId);
-      router.push(url.pathname + "?" + url.searchParams.toString());
+      // Only auto-select on desktop, not on mobile
+      const isDesktop = window.innerWidth >= 768; // md breakpoint
+      if (isDesktop) {
+        const firstConversationId = conversationRows[0].id;
+        const url = new URL(window.location.href);
+        url.searchParams.set("cid", firstConversationId);
+        router.push(url.pathname + "?" + url.searchParams.toString());
+      }
     }
   }, [currentTab, activeId, conversationRows, router]);
 
@@ -304,10 +323,11 @@ export const DashboardContent = memo(function DashboardContent() {
 
       {currentTab === "chats" && (
         <div 
-          className="grid grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6"
+          className="grid grid-cols-1 md:grid-cols-[320px_1fr] h-[calc(100vh-80px)] -m-6"
           style={{ overflow: 'hidden' }}
         >
-              <ConversationList
+              <div className={`${showMobileMessageView ? 'hidden md:block' : 'block w-full md:w-auto'}`}>
+                <ConversationList
                     conversations={(conversationRows ?? []).map((c) => {
                       const lastMessage = lastMessages?.find(m => m.conversation_id === c.id);
                   
@@ -334,13 +354,27 @@ export const DashboardContent = memo(function DashboardContent() {
                   router.push(url.pathname + "?" + url.searchParams.toString());
                 }}
               />
-          <div className="flex flex-col h-[calc(100vh-80px)] bg-background pt-0 pb-0">
+              </div>
+
+          <div className={`flex flex-col h-[calc(100vh-80px)] bg-background pt-0 pb-0 ${showMobileMessageView && activeId ? 'block' : 'hidden md:block'}`}>
             {/* Conversation Header with Actions */}
             {activeId && (
               <div className="border-b p-3 bg-background flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
+                    {/* Show back button on mobile when message view is active, otherwise show avatar */}
+                    {showMobileMessageView ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleBackToConversations}
+                        className="md:hidden h-8 w-8 p-0"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
+                    ) : null}
+                    
+                    <Avatar className={`h-8 w-8 ${showMobileMessageView ? 'hidden md:block' : 'block'}`}>
                       <AvatarFallback className="text-xs bg-muted text-muted-foreground">
                         {(() => {
                           const conversation = conversationRows?.find(c => c.id === activeId);
@@ -396,9 +430,17 @@ export const DashboardContent = memo(function DashboardContent() {
                             variant="outline"
                             size="sm"
                             className="flex items-center gap-2 cursor-pointer"
-                            onClick={() => setIsInfoSidebarOpen(!isInfoSidebarOpen)}
+                            onClick={() => {
+                              // Check if mobile (screen width < 768px)
+                              const isMobile = window.innerWidth < 768;
+                              if (isMobile) {
+                                setIsMobileInfoModalOpen(!isMobileInfoModalOpen);
+                              } else {
+                                setIsInfoSidebarOpen(!isInfoSidebarOpen);
+                              }
+                            }}
                           >
-                            {isInfoSidebarOpen ? (
+                            {(isInfoSidebarOpen || isMobileInfoModalOpen) ? (
                               <>
                                 <X className="h-4 w-4" />
                                 Close
@@ -441,7 +483,10 @@ export const DashboardContent = memo(function DashboardContent() {
                       typingUsers={dashboardTypingUsers}
                     />
                   ) : (
-                    <InstallationGuide />
+                    // Show InstallationGuide only on desktop, nothing on mobile
+                    <div className="hidden md:block">
+                      <InstallationGuide />
+                    </div>
                   )}
                 </div>
                 
@@ -507,8 +552,8 @@ export const DashboardContent = memo(function DashboardContent() {
               
               {/* Info Sidebar */}
               {isInfoSidebarOpen && activeId && (
-                <div className="w-80 border-l border-border bg-background overflow-y-auto">
-                  <div className="p-4">
+                <div className="w-auto md:w-80 border-l border-border bg-background overflow-y-auto">
+                  <div className="p-4 w-auto">
                     {(() => {
                       const conversation = conversationRows?.find(c => c.id === activeId);
                       const customer = customers?.find(c => c.id === conversation?.customer_id);
@@ -656,25 +701,13 @@ export const DashboardContent = memo(function DashboardContent() {
 
                           {/* Pages Visited */}
                           <Section title="Pages Visited" icon={Globe}>
-                            {(customerData.current_url || customerData.referrer_url) ? (
-                              <>
-                                {customerData.current_url && (
-                                  <div className="space-y-2">
-                                    <div className="text-muted-foreground text-xs">Current page</div>
-                                    <a className="text-primary hover:underline text-sm block truncate" href={customerData.current_url} target="_blank" rel="noreferrer">
-                                      {customerData.current_url}
-                                    </a>
-                                  </div>
-                                )}
-                                {customerData.referrer_url && (
-                                  <div className="space-y-2">
-                                    <div className="text-muted-foreground text-xs">Referrer</div>
-                                    <a className="text-primary hover:underline text-sm block truncate" href={customerData.referrer_url} target="_blank" rel="noreferrer">
-                                      {customerData.referrer_url}
-                                    </a>
-                                  </div>
-                                )}
-                              </>
+                            {customerData.referrer_url ? (
+                              <div className="space-y-2">
+                                <div className="text-muted-foreground text-xs">Referrer</div>
+                                <a className="text-primary hover:underline text-sm block truncate" href={customerData.referrer_url} target="_blank" rel="noreferrer">
+                                  {customerData.referrer_url}
+                                </a>
+                              </div>
                             ) : (
                               <div className="text-center py-4">
                                 <Globe className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
@@ -709,6 +742,206 @@ export const DashboardContent = memo(function DashboardContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Mobile Info Modal */}
+      {isMobileInfoModalOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setIsMobileInfoModalOpen(false)}
+          />
+          
+          {/* Bottom Sheet Modal */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-lg border-t border-border max-h-[80vh] flex flex-col animate-in slide-in-from-bottom-2 duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">Customer Information</h2>
+              <button 
+                onClick={() => setIsMobileInfoModalOpen(false)}
+                className="p-2 hover:bg-muted rounded-md transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Content - Match desktop sidebar exactly */}
+            <div className="overflow-y-auto flex-1">
+              <div className="p-4 w-auto">
+            {(() => {
+              const conversation = conversationRows?.find(c => c.id === activeId);
+              const customer = customers?.find(c => c.id === conversation?.customer_id);
+              
+              if (!customer) return null;
+
+              // Show loading state while fetching detailed customer data
+              if (customerDetailsLoading && !detailedCustomerData) {
+                return (
+                  <div className="flex items-center justify-center h-32">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading customer details...</span>
+                  </div>
+                );
+              }
+
+              // Use detailed customer data if available, otherwise fall back to basic customer data
+              const customerData = detailedCustomerData || customer;
+
+              // Section helper with icons
+              const Section = ({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) => (
+                <details className="group border-b border-border/50">
+                  <summary className="flex items-center justify-between cursor-pointer list-none px-4 py-3 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 rounded-md bg-muted/50">
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">{title}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
+                  </summary>
+                  <div className="px-4 pb-4 space-y-3 text-sm">
+                    {children}
+                  </div>
+                </details>
+              );
+
+              return (
+                <div className="space-y-1">
+                  {/* Header - Match desktop sidebar exactly */}
+                  <div className="flex flex-col items-center text-center gap-3 pb-6 border-b border-border/50">
+                    <Avatar className="h-20 w-20 ring-2 ring-muted/20">
+                      <AvatarFallback className="text-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                        {customerData.display_name?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h2 className="text-xl font-bold text-foreground">{customerData.display_name}</h2>
+                      <p className="text-sm text-muted-foreground">{customerData.email}</p>
+                      <div className="flex items-center justify-center gap-2 mt-2">
+                        <div className={`w-2 h-2 rounded-full ${customerData.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                        <span className="text-xs text-muted-foreground capitalize">{customerData.status}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  {(customerData.country || customerData.region || customerData.city) && (
+                    <Section title="Location" icon={MapPin}>
+                        {customerData.city && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex-shrink-0">City</span>
+                            <span className="text-foreground font-medium text-right break-words">{customerData.city}</span>
+                          </div>
+                        )}
+                        {customerData.region && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex-shrink-0">Region</span>
+                            <span className="text-foreground font-medium text-right break-words">{customerData.region}</span>
+                          </div>
+                        )}
+                        {customerData.country && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex-shrink-0">Country</span>
+                            <span className="text-foreground font-medium text-right break-words">{customerData.country}</span>
+                          </div>
+                        )}
+                        {customerData.timezone && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex-shrink-0">Timezone</span>
+                            <span className="text-foreground font-medium text-right break-words">{customerData.timezone}</span>
+                          </div>
+                        )}
+                    </Section>
+                  )}
+
+                  {/* Device & Browser */}
+                  {(customerData.browser_name || customerData.os_name || customerData.device_type) && (
+                    <Section title="Device & Browser" icon={Monitor}>
+                        {customerData.browser_name && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex-shrink-0">Browser</span>
+                            <span className="text-foreground font-medium text-right break-words">
+                              {customerData.browser_name} {customerData.browser_version}
+                            </span>
+                          </div>
+                        )}
+                        {customerData.os_name && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex-shrink-0">Operating System</span>
+                            <span className="text-foreground font-medium text-right break-words">
+                              {customerData.os_name} {customerData.os_version}
+                            </span>
+                          </div>
+                        )}
+                        {customerData.device_type && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex-shrink-0">Device Type</span>
+                            <span className="text-foreground font-medium text-right break-words capitalize">{customerData.device_type}</span>
+                          </div>
+                        )}
+                        {customerData.language && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex-shrink-0">Language</span>
+                            <span className="text-foreground font-medium text-right break-words">{customerData.language}</span>
+                          </div>
+                        )}
+                    </Section>
+                  )}
+
+                  {/* Activity */}
+                  <Section title="Activity" icon={Activity}>
+                      {customerData.is_returning !== undefined && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex-shrink-0">Visitor Type</span>
+                          <span className="text-foreground font-medium text-right break-words">
+                            {customerData.is_returning ? 'Returning' : 'New'}
+                          </span>
+                        </div>
+                      )}
+                      {customerData.total_visits && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex-shrink-0">Total Visits</span>
+                          <span className="text-foreground font-medium text-right break-words">{customerData.total_visits}</span>
+                        </div>
+                      )}
+                      {customerData.last_visit && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground flex-shrink-0">Last Visit</span>
+                          <span className="text-foreground font-medium text-right break-words">
+                            {new Date(customerData.last_visit).toLocaleDateString()}
+                          </span>
+                        </div>
+                        )}
+                    </Section>
+
+                  {/* Website Activity */}
+                  {customerData.referrer_url && (
+                    <Section title="Website Activity" icon={Globe}>
+                        {customerData.referrer_url && (
+                          <div className="space-y-2">
+                            <div className="text-muted-foreground text-xs">Referrer</div>
+                            <a className="text-primary hover:underline text-sm block truncate" href={customerData.referrer_url} target="_blank" rel="noreferrer">
+                              {customerData.referrer_url}
+                            </a>
+                          </div>
+                        )}
+                    </Section>
+                  )}
+
+                  {/* Conversation Stats */}
+                  <Section title="Conversation Stats" icon={FileText}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground flex-shrink-0">Messages</span>
+                        <span className="text-foreground font-medium text-right break-words">{messageRows?.length || 0}</span>
+                      </div>
+                  </Section>
+                </div>
+              );
+            })()}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {currentTab === "agents" && (

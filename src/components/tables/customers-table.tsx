@@ -85,8 +85,8 @@ export function CustomersTable({ data }: { data: Customer[] }) {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div className="mb-3 md:mb-0">
             <h1 className="text-3xl font-bold text-foreground mb-2">Customers</h1>
             <p className="text-muted-foreground">
               View and manage your customer base and their conversation history
@@ -96,7 +96,7 @@ export function CustomersTable({ data }: { data: Customer[] }) {
             onClick={exportToCSV}
             variant="outline"
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 mt-3 md:mt-0"
             disabled={data.length === 0}
           >
             <Download className="h-4 w-4" />

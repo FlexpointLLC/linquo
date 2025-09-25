@@ -193,8 +193,8 @@ export function AgentsTable({ data }: { data: Agent[] }) {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div className="mb-3 md:mb-0">
           <h1 className="text-3xl font-bold text-foreground mb-2">Agents</h1>
           <p className="text-muted-foreground">
             Manage your team members and their access to the dashboard
@@ -205,7 +205,7 @@ export function AgentsTable({ data }: { data: Agent[] }) {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="mt-3 md:mt-0">
               <Plus className="h-4 w-4 mr-2" />
               Add Agent
             </Button>

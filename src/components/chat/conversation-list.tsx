@@ -198,7 +198,7 @@ export const ConversationList = memo(function ConversationList({
   const resolvedCount = conversations.filter(c => c.state === "CLOSED").length;
 
   return (
-    <div className="border-r w-80 shrink-0 bg-background h-[calc(100vh-80px)] flex flex-col">
+    <div className="border-r shrink-0 bg-background h-[calc(100vh-80px)] flex flex-col">
       {/* Header */}
       <div className="px-3 pt-3 pb-0 border-b">
         <div className="flex items-center justify-between mb-3">

@@ -506,10 +506,22 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="widget">Widget Settings</TabsTrigger>
-          <TabsTrigger value="billing">Billing</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="general" className="flex items-center justify-center gap-2">
+            <User className="h-4 w-4" />
+            <span className="hidden md:inline">General</span>
+          </TabsTrigger>
+          <TabsTrigger value="widget" className="flex items-center justify-center gap-2">
+            <Palette className="h-4 w-4" />
+            <span className="hidden md:inline">Widget Settings</span>
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="flex items-center justify-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            <span className="hidden md:inline">Billing</span>
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center justify-center gap-2">
+            <Shield className="h-4 w-4" />
+            <span className="hidden md:inline">Security</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -827,8 +839,9 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
 
               {/* Upgrade Section */}
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-6 mb-6">
-                  <div>
+                {/* Mobile Layout */}
+                <div className="md:hidden space-y-6">
+                  <div className="space-y-1">
                     <h3 className="text-lg font-semibold">Upgrade to Pro</h3>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-muted-foreground">Only</span>
@@ -837,18 +850,45 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
                     </div>
                   </div>
                   
-                  <div className="flex flex-col justify-start items-end">
-                    <Button size="lg" className="w-48" onClick={handleUpgradeClick}>
+                  <div>
+                    <Button size="lg" className="w-full" onClick={handleUpgradeClick}>
                       Upgrade Now
                     </Button>
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
                       Cancel anytime • No hidden fees
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-3 max-w-md">
-                  <h4 className="font-medium text-sm uppercase tracking-wide text-muted-foreground">What you get</h4>
+                {/* Desktop Layout */}
+                <div className="hidden md:block">
+                  <div className="grid grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <h3 className="text-lg font-semibold">Upgrade to Pro</h3>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">Only</span>
+                        <span className="text-2xl font-bold">$2</span>
+                        <span className="text-muted-foreground">/month</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col justify-start items-end">
+                      <Button size="lg" className="w-48" onClick={handleUpgradeClick}>
+                        Upgrade Now
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Cancel anytime • No hidden fees
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 max-w-md">
+                    <h4 className="font-medium text-sm uppercase tracking-wide text-muted-foreground">What you get</h4>
+                  </div>
+                </div>
+
+                <div className="space-y-3 max-w-md md:max-w-full">
+                  <h4 className="font-medium text-sm uppercase tracking-wide text-muted-foreground md:hidden">What you get</h4>
                   <div className="grid grid-cols-2 gap-x-8 gap-y-2">
                     <div className="flex items-center gap-2 text-sm">
                       <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
@@ -997,7 +1037,8 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
                 <h3 className="text-lg font-semibold">Account Security</h3>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  {/* Two-Factor Authentication - Desktop */}
+                  <div className="hidden md:flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base">Two-Factor Authentication</Label>
                       <p className="text-sm text-muted-foreground">
@@ -1011,8 +1052,23 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
                       <span className="text-xs text-muted-foreground">Coming soon</span>
                     </div>
                   </div>
+
+                  {/* Two-Factor Authentication - Mobile */}
+                  <div className="md:hidden space-y-3">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Two-Factor Authentication</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Add an extra layer of security to your account
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" disabled className="w-full">
+                      Enable 2FA
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">Coming soon</p>
+                  </div>
                   
-                  <div className="flex items-center justify-between">
+                  {/* Login Sessions - Desktop */}
+                  <div className="hidden md:flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base">Login Sessions</Label>
                       <p className="text-sm text-muted-foreground">
@@ -1026,8 +1082,23 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
                       <span className="text-xs text-muted-foreground">Coming soon</span>
                     </div>
                   </div>
+
+                  {/* Login Sessions - Mobile */}
+                  <div className="md:hidden space-y-3">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Login Sessions</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Manage your active login sessions
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" disabled className="w-full">
+                      View Sessions
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">Coming soon</p>
+                  </div>
                   
-                  <div className="flex items-center justify-between">
+                  {/* Account Deletion - Desktop */}
+                  <div className="hidden md:flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base">Account Deletion</Label>
                       <p className="text-sm text-muted-foreground">
@@ -1049,44 +1120,41 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Delete Account</DialogTitle>
-                          <DialogDescription>
-                            <div className="space-y-3">
-                              <div className="text-sm text-muted-foreground">
-                                Are you sure you want to delete your account? This action cannot be undone
-                                and all your data will be permanently deleted.
-                              </div>
-                              <div className="space-y-4">
-                                <div className="grid gap-2">
-                                  <Label htmlFor="deletePassword" className="text-sm">Enter your password</Label>
-                                  <Input
-                                    id="deletePassword"
-                                    type="password"
-                                    placeholder="Enter your password to confirm"
-                                    value={deletePassword}
-                                    onChange={(e) => setDeletePassword(e.target.value)}
-                                  />
-                                </div>
-
-                                <div className="p-4" style={{ backgroundColor: 'oklch(0.21 0 0)', borderRadius: 'calc(var(--radius) - 0px)' }}>
-                                  <div className="text-sm font-medium text-white">
-                                    Type <span className="font-mono text-red-400">DELETE</span> to confirm
-                                  </div>
-                                  <Input
-                                    className="mt-2 bg-transparent border-white/20 text-white placeholder:text-white/50"
-                                    placeholder="Type DELETE to confirm"
-                                    value={deleteConfirmation}
-                                    onChange={(e) => setDeleteConfirmation(e.target.value)}
-                                  />
-                                </div>
-                              </div>
-                              {deleteError && (
-                                <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-md">
-                                  <div className="text-sm">{deleteError}</div>
-                                </div>
-                              )}
-                            </div>
+                          <DialogDescription className="text-sm text-muted-foreground">
+                            Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.
                           </DialogDescription>
                         </DialogHeader>
+                        
+                        <div className="space-y-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="deletePassword" className="text-sm">Enter your password</Label>
+                            <Input
+                              id="deletePassword"
+                              type="password"
+                              placeholder="Enter your password to confirm"
+                              value={deletePassword}
+                              onChange={(e) => setDeletePassword(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="p-4" style={{ backgroundColor: 'oklch(0.21 0 0)', borderRadius: 'calc(var(--radius) - 0px)' }}>
+                            <div className="text-sm font-medium text-white">
+                              Type <span className="font-mono text-red-400">DELETE</span> to confirm
+                            </div>
+                            <Input
+                              className="mt-2 bg-transparent border-white/20 text-white placeholder:text-white/50"
+                              placeholder="Type DELETE to confirm"
+                              value={deleteConfirmation}
+                              onChange={(e) => setDeleteConfirmation(e.target.value)}
+                            />
+                          </div>
+                          
+                          {deleteError && (
+                            <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-md">
+                              <div className="text-sm">{deleteError}</div>
+                            </div>
+                          )}
+                        </div>
                         <DialogFooter className="gap-2 sm:gap-0">
                           <DialogClose asChild>
                             <Button variant="ghost">
@@ -1101,6 +1169,91 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
                             {deleting ? (
                               <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Deleting...
+                              </>
+                            ) : (
+                              'Delete Account'
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  {/* Account Deletion - Mobile */}
+                  <div className="md:hidden space-y-3">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Account Deletion</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Permanently delete your account and data
+                      </p>
+                    </div>
+                    <Dialog onOpenChange={(open) => {
+                      if (!open) {
+                        setDeleteConfirmation('');
+                        setDeletePassword('');
+                        setDeleteError('');
+                      }
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive" size="sm" className="w-full">
+                          Delete Account
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Delete Account</DialogTitle>
+                          <DialogDescription className="text-sm text-muted-foreground">
+                            Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <div className="space-y-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="deletePasswordMobile" className="text-sm">Enter your password</Label>
+                            <Input
+                              id="deletePasswordMobile"
+                              type="password"
+                              value={deletePassword}
+                              onChange={(e) => setDeletePassword(e.target.value)}
+                              placeholder="Enter your password"
+                            />
+                          </div>
+                          
+                          <div className="grid gap-2">
+                            <Label htmlFor="deleteConfirmationMobile" className="text-sm">Type DELETE to confirm</Label>
+                            <div className="p-3 bg-oklch(0.21_0_0) rounded-md border">
+                              <Input
+                                id="deleteConfirmationMobile"
+                                value={deleteConfirmation}
+                                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                placeholder="Type DELETE"
+                                className="bg-transparent border-0 p-0 text-white placeholder:text-gray-400 focus:ring-0"
+                              />
+                            </div>
+                          </div>
+                          
+                          {deleteError && (
+                            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                              {deleteError}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <DialogFooter className="gap-2 sm:gap-0">
+                          <DialogClose asChild>
+                            <Button variant="ghost">
+                              Cancel
+                            </Button>
+                          </DialogClose>
+                          <Button
+                            variant="destructive"
+                            disabled={deleteConfirmation !== 'DELETE' || deleting}
+                            onClick={handleDeleteAccount}
+                          >
+                            {deleting ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Deleting...
                               </>
                             ) : (

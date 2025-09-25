@@ -120,7 +120,7 @@ export function EmbedSettings() {
   if (loading) {
     return (
       <div className="h-full overflow-y-auto">
-        <div className="flex items-center justify-center min-h-full p-8">
+        <div className="flex items-center justify-center min-h-full p-6">
           <div className="max-w-4xl w-full space-y-8">
             <div className="text-center space-y-4">
               <div className="h-8 bg-muted rounded w-48 mx-auto animate-pulse"></div>
@@ -144,7 +144,7 @@ export function EmbedSettings() {
   if (!organization) {
     return (
       <div className="h-full overflow-y-auto">
-        <div className="flex items-center justify-center min-h-full p-8">
+        <div className="flex items-center justify-center min-h-full p-6">
           <div className="max-w-4xl w-full">
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6 text-center">
               <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-400 mb-2">Organization Required</h2>
@@ -158,12 +158,12 @@ export function EmbedSettings() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="flex items-center justify-center min-h-full p-8">
+      <div className="flex items-center justify-center min-h-full p-6">
         <div className="max-w-4xl w-full space-y-8">
           {/* Header */}
-          <div className="text-center space-y-2">
+          <div className="text-left space-y-2">
             <h1 className="text-3xl font-bold text-foreground">Install Linquo Widget</h1>
-            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm text-muted-foreground max-w-2xl">
               Choose your platform and get the embed code to install Linquo chat widget on <strong>{organization.name}</strong>
             </p>
           </div>
@@ -190,7 +190,50 @@ export function EmbedSettings() {
                 {/* Embed Code Card */}
                 <Card>
                   <CardHeader className="pb-4">
-                    <div className="flex items-center gap-4">
+                    {/* Mobile: Vertical Layout */}
+                    <div className="flex flex-col gap-4 md:hidden">
+                      {/* Icon and Title Row */}
+                      <div className="flex items-center gap-4">
+                        {/* Icon */}
+                        <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
+                          {platform.icon}
+                        </div>
+                        
+                        {/* Title & Description */}
+                        <div className="flex-1">
+                          <CardTitle className="text-xl mb-1">
+                            {platform.name} Integration
+                          </CardTitle>
+                          <CardDescription>
+                            {platform.description}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      
+                      {/* Copy Button Row - Mobile Only */}
+                      <Button
+                        onClick={() => handleCopy(platform.id)}
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-2 w-full"
+                        disabled={!organization?.id}
+                      >
+                        {copiedStates[platform.id] ? (
+                          <>
+                            <Check className="h-3 w-3" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Desktop: Original Horizontal Layout */}
+                    <div className="hidden md:flex items-center gap-4">
                       {/* Icon */}
                       <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
                         {platform.icon}

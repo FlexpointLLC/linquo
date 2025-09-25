@@ -19,7 +19,7 @@ const items = [
   { key: "settings", label: "Settings", icon: Settings2 },
 ];
 
-export function Sidebar() {
+export function Sidebar({ className }: { className?: string }) {
   const params = useSearchParams();
   const active = params.get("tab") ?? "chats";
   const { user, signOut } = useAuth();
@@ -33,7 +33,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="border-r p-2 h-full flex flex-col items-center overflow-hidden">
+    <aside className={cn("border-r p-2 h-full flex flex-col items-center overflow-hidden", className)}>
       {/* Organization Logo */}
       <div className="h-10 w-10 rounded-md flex items-center justify-center mb-3 mt-2" aria-label="Organization">
         <img 
