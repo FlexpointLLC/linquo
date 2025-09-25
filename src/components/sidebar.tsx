@@ -4,7 +4,6 @@ import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { MessageCircle, Users, Settings2, UserCheck, LogOut, Code2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,12 +84,8 @@ export function Sidebar() {
       <div className="mt-auto flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center justify-center rounded-md p-2 hover:bg-muted transition-colors">
-                <Avatar className="h-6 w-6">
-                  <AvatarFallback className="text-xs">
-                    {user?.email?.slice(0, 2).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
+            <button className="flex items-center justify-center rounded-lg bg-muted hover:bg-muted/80 transition-colors w-10 h-10 text-xs font-semibold text-muted-foreground">
+              {user?.email?.slice(0, 2).toUpperCase() || "U"}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
