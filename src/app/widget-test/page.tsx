@@ -1,20 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLinquoWidget } from "@/hooks/use-linquo-widget";
 
 export default function WidgetTestPage() {
-  useEffect(() => {
-    // Load the widget script
-    const script = document.createElement('script');
-    script.src = '/widget.js';
-    script.async = true;
-    document.head.appendChild(script);
-
-    return () => {
-      // Cleanup
-      document.head.removeChild(script);
-    };
-  }, []);
+  const { isLoaded, reload, destroy } = useLinquoWidget({
+    orgId: 'ad56884b-d717-4004-87c6-089aaca40bd0',
+    onLoad: () => console.log('Widget loaded successfully!'),
+    onError: (error) => console.error('Widget failed to load:', error)
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -26,6 +19,14 @@ export default function WidgetTestPage() {
           <p className="text-gray-600 mb-4">
             This page loads the Linquo chat widget. You should see a chat button in the bottom-right corner.
           </p>
+          
+          <div className="mb-4 p-3 rounded-lg bg-gray-50">
+            <p className="font-medium">Widget Status: 
+              <span className={`ml-2 px-2 py-1 rounded text-sm ${isLoaded() ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                {isLoaded() ? 'Loaded ✓' : 'Loading...'}
+              </span>
+            </p>
+          </div>
           
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h3 className="font-semibold text-blue-900 mb-2">Instructions:</h3>

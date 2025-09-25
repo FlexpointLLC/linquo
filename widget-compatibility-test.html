@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Compatibility Test - Framer/Webflow Style</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .hero {
+            padding: 60px 0;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        
+        .status-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-success { background: #4ade80; }
+        .status-loading { background: #fbbf24; animation: pulse 2s infinite; }
+        .status-error { background: #ef4444; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 50px 0;
+        }
+        
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .feature h3 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .test-log {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .footer {
+            margin-top: 60px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>🚀 Widget Compatibility Test</h1>
+            <p>Testing Linquo widget integration in Framer/Webflow-style environment</p>
+            
+            <div class="status-card">
+                <h3>Widget Status</h3>
+                <p id="widget-status">
+                    <span id="status-indicator" class="status-indicator status-loading"></span>
+                    <span id="status-text">Initializing...</span>
+                </p>
+                <p id="widget-details">Organization: ad56884b-d717-4004-87c6-089aaca40bd0</p>
+            </div>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <h3>✅ Compatibility Features</h3>
+                <ul style="text-align: left;">
+                    <li>Works in static HTML pages</li>
+                    <li>Compatible with Framer</li>
+                    <li>Compatible with Webflow</li>
+                    <li>React/Next.js ready</li>
+                    <li>Auto brand color detection</li>
+                    <li>Responsive design</li>
+                </ul>
+            </div>
+            
+            <div class="feature">
+                <h3>🔧 Test Controls</h3>
+                <button class="button" onclick="reloadWidget()">Reload Widget</button>
+                <button class="button" onclick="destroyWidget()">Destroy Widget</button>
+                <button class="button" onclick="checkStatus()">Check Status</button>
+                <button class="button" onclick="clearLog()">Clear Log</button>
+            </div>
+            
+            <div class="feature">
+                <h3>📊 Integration Methods</h3>
+                <p style="text-align: left;">
+                    <strong>Static HTML:</strong><br>
+                    <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">
+                        &lt;script id="linquo" async src="..."&gt;&lt;/script&gt;
+                    </code>
+                </p>
+                <p style="text-align: left; margin-top: 15px;">
+                    <strong>React/Next.js:</strong><br>
+                    <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">
+                        useLinquoWidget({ orgId: '...' })
+                    </code>
+                </p>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h3>📝 Test Log</h3>
+            <div id="test-log" class="test-log">
+                [INFO] Starting compatibility test...\n
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 Linquo - Widget Compatibility Test</p>
+            <p>This page simulates how the widget works in Framer, Webflow, and other platforms</p>
+        </div>
+    </div>
+
+    <!-- Linquo Widget Script - This is how users will embed it -->
+    <script id="linquo" async="true" src="http://localhost:3000/widget.js?id=ad56884b-d717-4004-87c6-089aaca40bd0"></script>
+
+    <script>
+        // Test utilities
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('test-log');
+            const color = type === 'error' ? '#ff4444' : type === 'success' ? '#44ff44' : '#00ff00';
+            logDiv.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(status, text) {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            indicator.className = `status-indicator status-${status}`;
+            statusText.textContent = text;
+            
+            log(`Status updated: ${text}`, status === 'error' ? 'error' : 'success');
+        }
+        
+        function clearLog() {
+            document.getElementById('test-log').innerHTML = '[INFO] Log cleared...\n';
+        }
+        
+        function reloadWidget() {
+            log('Reloading widget...', 'info');
+            if (window.LinquoWidget) {
+                window.LinquoWidget.reload();
+                updateStatus('loading', 'Reloading...');
+            } else {
+                log('Widget not available for reload', 'error');
+            }
+        }
+        
+        function destroyWidget() {
+            log('Destroying widget...', 'info');
+            if (window.LinquoWidget) {
+                window.LinquoWidget.destroy();
+                updateStatus('error', 'Destroyed');
+            } else {
+                log('Widget not available for destruction', 'error');
+            }
+        }
+        
+        function checkStatus() {
+            if (window.LinquoWidget) {
+                const isLoaded = window.LinquoWidget.isLoaded();
+                log(`Widget loaded: ${isLoaded}`, isLoaded ? 'success' : 'error');
+                log(`Org ID: ${window.LinquoWidget.orgId}`, 'info');
+                log(`Brand color: ${window.LinquoWidget.brandColor}`, 'info');
+                
+                if (isLoaded) {
+                    updateStatus('success', 'Widget Active');
+                } else {
+                    updateStatus('error', 'Widget Not Active');
+                }
+            } else {
+                log('LinquoWidget API not available', 'error');
+                updateStatus('error', 'API Not Available');
+            }
+        }
+        
+        // Monitor widget loading
+        let checkInterval;
+        
+        function startMonitoring() {
+            updateStatus('loading', 'Loading...');
+            log('Starting widget monitoring...', 'info');
+            
+            checkInterval = setInterval(() => {
+                if (window.LinquoWidget) {
+                    if (window.LinquoWidget.isLoaded()) {
+                        updateStatus('success', 'Widget Loaded Successfully!');
+                        log('Widget loaded and active!', 'success');
+                        clearInterval(checkInterval);
+                        
+                        // Test widget API
+                        setTimeout(() => {
+                            log(`Widget API available: ${!!window.LinquoWidget}`, 'success');
+                            log(`Org ID: ${window.LinquoWidget.orgId}`, 'info');
+                            log(`Brand color: ${window.LinquoWidget.brandColor}`, 'info');
+                            log('All compatibility tests passed!', 'success');
+                        }, 1000);
+                    }
+                }
+            }, 500);
+            
+            // Timeout after 15 seconds
+            setTimeout(() => {
+                if (checkInterval) {
+                    clearInterval(checkInterval);
+                    if (!window.LinquoWidget || !window.LinquoWidget.isLoaded()) {
+                        updateStatus('error', 'Load Timeout');
+                        log('Widget failed to load within 15 seconds', 'error');
+                    }
+                }
+            }, 15000);
+        }
+        
+        // Start monitoring when page loads
+        window.addEventListener('load', startMonitoring);
+        
+        // Log page events
+        log('Page loaded, waiting for widget...', 'info');
+        
+        // Monitor for widget script load
+        const widgetScript = document.getElementById('linquo');
+        if (widgetScript) {
+            widgetScript.onload = function() {
+                log('Widget script loaded successfully', 'success');
+            };
+            
+            widgetScript.onerror = function() {
+                log('Widget script failed to load', 'error');
+                updateStatus('error', 'Script Load Failed');
+            };
+        }
+    </script>
+</body>
+</html>

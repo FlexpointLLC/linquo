@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Next.js/React Widget Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { border-color: #4CAF50; background-color: #f8fff8; }
+        .error { border-color: #f44336; background-color: #fff8f8; }
+        .warning { border-color: #ff9800; background-color: #fff8f0; }
+        
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #005a85; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Next.js/React Widget Integration Test</h1>
+        <p>This page simulates how the Linquo widget behaves when embedded in Next.js/React applications.</p>
+        
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="test-results">
+                <p>Running tests...</p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔧 Manual Tests</h3>
+            <button onclick="testDirectScriptLoad()">Test Direct Script Load</button>
+            <button onclick="testDynamicScriptLoad()">Test Dynamic Script Load (React Style)</button>
+            <button onclick="testMultipleLoads()">Test Multiple Loads</button>
+            <button onclick="clearWidgets()">Clear All Widgets</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Console Log</h3>
+            <div id="console-log" class="log"></div>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="test-section warning">
+            <h3>⚠️ Common Issues in Next.js/React</h3>
+            <ul>
+                <li><strong>SSR Issues:</strong> Widget script runs before DOM is ready</li>
+                <li><strong>Multiple Mounts:</strong> React re-renders causing duplicate widgets</li>
+                <li><strong>Script Loading:</strong> Next.js script optimization interfering</li>
+                <li><strong>Hydration Issues:</strong> Server/client mismatch</li>
+                <li><strong>CSP Issues:</strong> Content Security Policy blocking inline scripts</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const orgId = 'ad56884b-d717-4004-87c6-089aaca40bd0';
+        const widgetUrl = `http://localhost:3000/widget.js?id=${orgId}`;
+        
+        // Log function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('console-log');
+            const color = type === 'error' ? '#f44336' : type === 'success' ? '#4CAF50' : '#0f0';
+            logDiv.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[Widget Test] ${message}`);
+        }
+        
+        function clearLog() {
+            document.getElementById('console-log').innerHTML = '';
+        }
+        
+        function updateResults(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'warning';
+            resultsDiv.innerHTML += `<div class="${className}"><strong>${type.toUpperCase()}:</strong> ${message}</div>`;
+        }
+        
+        function clearWidgets() {
+            log('Clearing all widgets...', 'info');
+            
+            // Remove all widget elements
+            const elements = [
+                'linquo-chat-bubble',
+                'linquo-widget',
+                'ic-widget-root'
+            ];
+            
+            elements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.remove();
+                    log(`Removed element: ${id}`, 'success');
+                }
+            });
+            
+            // Remove all linquo scripts
+            const scripts = document.querySelectorAll('script[src*="widget.js"], script[id="linquo"]');
+            scripts.forEach((script, index) => {
+                script.remove();
+                log(`Removed script ${index + 1}`, 'success');
+            });
+            
+            log('Widget cleanup completed', 'success');
+        }
+        
+        function testDirectScriptLoad() {
+            log('Testing direct script load...', 'info');
+            clearWidgets();
+            
+            const script = document.createElement('script');
+            script.id = 'linquo';
+            script.async = true;
+            script.src = widgetUrl;
+            
+            script.onload = function() {
+                log('Script loaded successfully!', 'success');
+                setTimeout(() => {
+                    const bubble = document.getElementById('linquo-chat-bubble');
+                    if (bubble) {
+                        log('Widget bubble found - SUCCESS!', 'success');
+                        updateResults('Direct script load: SUCCESS', 'success');
+                    } else {
+                        log('Widget bubble not found - FAILED!', 'error');
+                        updateResults('Direct script load: FAILED - No bubble created', 'error');
+                    }
+                }, 1000);
+            };
+            
+            script.onerror = function() {
+                log('Script failed to load!', 'error');
+                updateResults('Direct script load: FAILED - Script error', 'error');
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        function testDynamicScriptLoad() {
+            log('Testing dynamic script load (React style)...', 'info');
+            clearWidgets();
+            
+            // Simulate React useEffect behavior
+            setTimeout(() => {
+                const script = document.createElement('script');
+                script.src = widgetUrl;
+                script.async = true;
+                
+                script.onload = function() {
+                    log('Dynamic script loaded!', 'success');
+                    setTimeout(() => {
+                        const bubble = document.getElementById('linquo-chat-bubble');
+                        if (bubble) {
+                            log('Dynamic widget created - SUCCESS!', 'success');
+                            updateResults('Dynamic script load: SUCCESS', 'success');
+                        } else {
+                            log('Dynamic widget failed - FAILED!', 'error');
+                            updateResults('Dynamic script load: FAILED - No bubble created', 'error');
+                        }
+                    }, 1000);
+                };
+                
+                script.onerror = function() {
+                    log('Dynamic script failed to load!', 'error');
+                    updateResults('Dynamic script load: FAILED - Script error', 'error');
+                };
+                
+                document.head.appendChild(script);
+            }, 100); // Simulate component mount delay
+        }
+        
+        function testMultipleLoads() {
+            log('Testing multiple loads (React re-render simulation)...', 'info');
+            clearWidgets();
+            
+            let loadCount = 0;
+            const maxLoads = 3;
+            
+            function loadScript() {
+                loadCount++;
+                log(`Loading script attempt ${loadCount}...`, 'info');
+                
+                const script = document.createElement('script');
+                script.src = widgetUrl;
+                script.async = true;
+                script.dataset.loadAttempt = loadCount;
+                
+                script.onload = function() {
+                    log(`Script load ${loadCount} completed`, 'info');
+                    
+                    if (loadCount < maxLoads) {
+                        setTimeout(loadScript, 500); // Simulate re-render
+                    } else {
+                        // Check final state
+                        setTimeout(() => {
+                            const bubbles = document.querySelectorAll('#linquo-chat-bubble');
+                            const widgets = document.querySelectorAll('#linquo-widget');
+                            
+                            if (bubbles.length === 1 && widgets.length === 1) {
+                                log('Multiple loads handled correctly - SUCCESS!', 'success');
+                                updateResults('Multiple loads: SUCCESS - No duplicates', 'success');
+                            } else {
+                                log(`Multiple loads created duplicates - FAILED! (${bubbles.length} bubbles, ${widgets.length} widgets)`, 'error');
+                                updateResults(`Multiple loads: FAILED - ${bubbles.length} bubbles, ${widgets.length} widgets`, 'error');
+                            }
+                        }, 1000);
+                    }
+                };
+                
+                script.onerror = function() {
+                    log(`Script load ${loadCount} failed!`, 'error');
+                    updateResults(`Multiple loads: FAILED - Script ${loadCount} error`, 'error');
+                };
+                
+                document.head.appendChild(script);
+            }
+            
+            loadScript();
+        }
+        
+        // Run initial tests
+        window.addEventListener('load', function() {
+            log('Page loaded, starting tests...', 'info');
+            
+            // Test 1: Check if widget.js is accessible
+            fetch(widgetUrl)
+                .then(response => {
+                    if (response.ok) {
+                        log('Widget.js is accessible via fetch', 'success');
+                        updateResults('Widget.js accessibility: SUCCESS', 'success');
+                    } else {
+                        log(`Widget.js fetch failed: ${response.status}`, 'error');
+                        updateResults(`Widget.js accessibility: FAILED (${response.status})`, 'error');
+                    }
+                })
+                .catch(error => {
+                    log(`Widget.js fetch error: ${error.message}`, 'error');
+                    updateResults(`Widget.js accessibility: FAILED (${error.message})`, 'error');
+                });
+            
+            // Test 2: Check document.currentScript support
+            if (document.currentScript) {
+                log('document.currentScript is supported', 'success');
+                updateResults('document.currentScript support: YES', 'success');
+            } else {
+                log('document.currentScript is NOT supported', 'error');
+                updateResults('document.currentScript support: NO (This may cause issues)', 'error');
+            }
+            
+            // Test 3: Check if running in iframe
+            if (window.self !== window.top) {
+                log('Running inside iframe', 'warning');
+                updateResults('Iframe context: YES (May affect widget behavior)', 'warning');
+            } else {
+                log('Running in main window', 'success');
+                updateResults('Iframe context: NO', 'success');
+            }
+        });
+    </script>
+</body>
+</html>
