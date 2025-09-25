@@ -93,6 +93,13 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  const handleUpgradeClick = () => {
+    toast.info("🚀 Upgrade feature coming soon!", {
+      description: "We're working on bringing you premium features and billing management.",
+      duration: 3000,
+    });
+  };
+
   // Handle tab state from URL parameters
   useEffect(() => {
     const section = searchParams.get('section');
@@ -831,7 +838,7 @@ export const OptimizedSettings = memo(function OptimizedSettings() {
                   </div>
                   
                   <div className="flex flex-col justify-start items-end">
-                    <Button size="lg" className="w-48">
+                    <Button size="lg" className="w-48" onClick={handleUpgradeClick}>
                       Upgrade Now
                     </Button>
                     <p className="text-xs text-muted-foreground mt-2">

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { ConnectionBadge } from "@/components/connection-badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { toast } from "sonner";
 
 const tabTitles: Record<string, string> = {
   chats: "Conversations",
@@ -19,6 +20,13 @@ export function DashboardHeader() {
   const currentTab = searchParams.get("tab") ?? "chats";
   const title = tabTitles[currentTab] || "Dashboard";
 
+  const handleNotificationClick = () => {
+    toast.info("🔔 Notifications feature coming soon!", {
+      description: "We're working hard to bring you real-time notifications.",
+      duration: 3000,
+    });
+  };
+
   return (
     <header className="flex items-center gap-3 p-4 border-b flex-shrink-0">
       <h1 className="text-xl font-semibold">{title}</h1>
@@ -26,7 +34,7 @@ export function DashboardHeader() {
       <div className="hidden md:flex items-center gap-2 ml-auto">
         <Input placeholder="Search..." className="w-64" />
         <ThemeToggle />
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="outline" onClick={handleNotificationClick}>
           <Bell className="h-4 w-4" />
         </Button>
       </div>

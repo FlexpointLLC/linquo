@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { MessageSquare, Users2, Settings, UserCog, LogOut, Code } from "lucide-react";
+import { MessageCircle, Users, Settings2, UserCheck, LogOut, Code2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -13,11 +13,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const items = [
-  { key: "chats", label: "Chats", icon: MessageSquare },
-  { key: "agents", label: "Agents", icon: UserCog },
-  { key: "customers", label: "Customers", icon: Users2 },
-  { key: "embed", label: "Embed", icon: Code },
-  { key: "settings", label: "Settings", icon: Settings },
+  { key: "chats", label: "Chats", icon: MessageCircle },
+  { key: "agents", label: "Agents", icon: UserCheck },
+  { key: "customers", label: "Customers", icon: Users },
+  { key: "embed", label: "Embed", icon: Code2 },
+  { key: "settings", label: "Settings", icon: Settings2 },
 ];
 
 export function Sidebar() {
@@ -36,14 +36,17 @@ export function Sidebar() {
   return (
     <aside className="border-r p-2 h-full flex flex-col items-center overflow-hidden">
       {/* Organization Logo Placeholder */}
-      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center mb-3" aria-label="Organization">
+      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center mb-3 mt-2" aria-label="Organization">
         <span className="text-xs font-semibold text-muted-foreground">
           L
         </span>
       </div>
       
+      {/* Separator between logo and navigation */}
+      <div className="w-8 h-px bg-border mb-3"></div>
+      
       {/* Navigation Items */}
-      <nav className="flex flex-col gap-2 w-full flex-1 min-h-0">
+      <nav className="flex flex-col gap-3 w-full flex-1 min-h-0">
         {items.map(({ key, label, icon: Icon }) => (
           <Link
             key={key}
@@ -55,7 +58,10 @@ export function Sidebar() {
             aria-label={label}
             title={label}
           >
-            <Icon className="h-5 w-5" />
+            <Icon className={cn(
+              "h-5 w-5 transition-opacity",
+              active === key ? "text-foreground opacity-100" : "text-muted-foreground opacity-70"
+            )} />
           </Link>
         ))}
       </nav>

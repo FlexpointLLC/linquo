@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { setSessionOrgId } from "@/lib/session-org";
+import { authErrorHandler } from "@/lib/auth-error-handler";
 
 export type AuthUser = {
   user: User | null;

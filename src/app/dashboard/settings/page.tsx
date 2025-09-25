@@ -49,6 +49,13 @@ export default function SettingsPage() {
   const [isSavingWidget, setIsSavingWidget] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const handleUpgradeClick = () => {
+    toast.info("🚀 Upgrade feature coming soon!", {
+      description: "We're working on bringing you premium features and billing management.",
+      duration: 3000,
+    });
+  };
+
   // Handle tab state from URL parameters
   useEffect(() => {
     const section = searchParams.get('section');
@@ -611,7 +618,7 @@ export default function SettingsPage() {
                     Advanced analytics
                   </li>
                 </ul>
-                <Button className="w-full">
+                <Button className="w-full" onClick={handleUpgradeClick}>
                   Upgrade to Pro
                 </Button>
               </CardContent>
