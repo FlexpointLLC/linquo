@@ -91,11 +91,8 @@
     retryCount = retryCount || 0;
     var maxRetries = 3;
     
-    // Determine base URL dynamically
+    // Always use production URL for API calls to ensure reliability
     var baseUrl = 'https://admin.linquo.app';
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-      baseUrl = 'http://localhost:3000';
-    }
     
     console.log('[Linquo Widget] Fetching brand color for org:', orgId, 'from:', baseUrl);
     
@@ -240,11 +237,8 @@
       // Create iframe
       var iframe = document.createElement('iframe');
       
-      // Determine base URL
+      // Always use production URL for embed iframe to ensure it works
       var baseUrl = 'https://admin.linquo.app';
-      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-        baseUrl = 'http://localhost:3000';
-      }
       
       var siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
       iframe.src = baseUrl + '/embed?org=' + encodeURIComponent(orgId) + '&site=' + encodeURIComponent(siteUrl) + '&color=' + encodeURIComponent(brandColor);
