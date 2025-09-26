@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Copy, Check, Code, Globe, Zap, FileText, Layers, Monitor } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -142,13 +142,45 @@ export function EmbedSettings() {
 
   // Show organization required message
   if (!organization) {
+    // Auto-clear session when organization is missing (indicating stale auth)
+    useEffect(() => {
+      const autoClearSession = async () => {
+        console.log('[AutoClearSession] Organization missing - clearing stale auth session via backend API...');
+        try {
+          const response = await fetch('/api/auth/signout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (response.ok) {
+            localStorage.clear();
+            sessionStorage.clear();
+            console.log('[AutoClearSession] Backend signout successful, redirecting to login...');
+            // Small delay to show the message briefly before redirect
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 1500);
+          } else {
+            console.error('[AutoClearSession] Backend signout failed:', response.statusText);
+          }
+        } catch (error) {
+          console.error('[AutoClearSession] Error calling backend signout:', error);
+        }
+      };
+
+      // Trigger auto-clear after component mounts
+      autoClearSession();
+    }, []);
+
     return (
       <div className="h-full overflow-y-auto">
         <div className="flex items-center justify-center min-h-full p-6">
           <div className="max-w-4xl w-full">
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6 text-center">
-              <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-400 mb-2">Organization Required</h2>
-              <p className="text-yellow-700 dark:text-yellow-300">You need to be part of an organization to generate embed codes.</p>
+              <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-400 mb-2">Session Issue Detected</h2>
+              <p className="text-yellow-700 dark:text-yellow-300 mb-4">Clearing stale session and redirecting to login...</p>
+              <div className="flex justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-600"></div>
+              </div>
             </div>
           </div>
         </div>
