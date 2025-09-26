@@ -32,7 +32,7 @@ import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useCustomerDetails } from "@/hooks/useCustomerDetails";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight, ArrowLeft, Users } from "lucide-react";
+import { Check, RotateCcw, Loader2, Info, X, MapPin, Monitor, Activity, Globe, FileText, ChevronRight, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { OptimizedSettings } from "@/components/settings/optimized-settings";

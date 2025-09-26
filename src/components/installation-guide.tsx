@@ -63,10 +63,9 @@ export function InstallationGuide() {
     );
   }
 
-  // Show organization required message
-  if (!organization) {
-    // Auto-clear session when organization is missing (indicating stale auth)
-    useEffect(() => {
+  // Auto-clear session when organization is missing (indicating stale auth)
+  useEffect(() => {
+    if (!loading && !organization) {
       const autoClearSession = async () => {
         console.log('[AutoClearSession] Organization missing - clearing stale auth session via backend API...');
         try {
@@ -92,8 +91,11 @@ export function InstallationGuide() {
 
       // Trigger auto-clear after component mounts
       autoClearSession();
-    }, []);
+    }
+  }, [loading, organization]);
 
+  // Show organization required message
+  if (!organization) {
     return (
       <div className="h-full overflow-y-auto">
         <div className="flex items-center justify-center min-h-full p-8">
