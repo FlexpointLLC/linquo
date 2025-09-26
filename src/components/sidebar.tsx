@@ -90,7 +90,7 @@ export function Sidebar({ className }: { className?: string }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <div className="px-2 py-1.5">
-              <p className="text-sm font-medium">{user?.email || "User"}</p>
+              <p className="text-sm font-medium">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User"}</p>
               <p className="text-xs text-muted-foreground">{user?.email || ""}</p>
             </div>
             <DropdownMenuItem onClick={handleLogout} className="text-red-600">
