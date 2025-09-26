@@ -10,6 +10,37 @@ export function InstallationGuide() {
   const { organization, loading } = useAuth();
   const [copied, setCopied] = useState(false);
 
+  // Auto-clear session when organization is missing (indicating stale auth)
+  useEffect(() => {
+    if (!loading && !organization) {
+      const autoClearSession = async () => {
+        console.log('[AutoClearSession] Organization missing - clearing stale auth session via backend API...');
+        try {
+          const response = await fetch('/api/auth/signout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (response.ok) {
+            localStorage.clear();
+            sessionStorage.clear();
+            console.log('[AutoClearSession] Backend signout successful, redirecting to login...');
+            // Small delay to show the message briefly before redirect
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 1500);
+          } else {
+            console.error('[AutoClearSession] Backend signout failed:', response.statusText);
+          }
+        } catch (error) {
+          console.error('[AutoClearSession] Error calling backend signout:', error);
+        }
+      };
+
+      // Trigger auto-clear after component mounts
+      autoClearSession();
+    }
+  }, [loading, organization]);
+
   // Generate the embed code (Universal production URL)
   const generateEmbedCode = () => {
     if (!organization?.id) return "";
@@ -62,37 +93,6 @@ export function InstallationGuide() {
       </div>
     );
   }
-
-  // Auto-clear session when organization is missing (indicating stale auth)
-  useEffect(() => {
-    if (!loading && !organization) {
-      const autoClearSession = async () => {
-        console.log('[AutoClearSession] Organization missing - clearing stale auth session via backend API...');
-        try {
-          const response = await fetch('/api/auth/signout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          });
-          if (response.ok) {
-            localStorage.clear();
-            sessionStorage.clear();
-            console.log('[AutoClearSession] Backend signout successful, redirecting to login...');
-            // Small delay to show the message briefly before redirect
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 1500);
-          } else {
-            console.error('[AutoClearSession] Backend signout failed:', response.statusText);
-          }
-        } catch (error) {
-          console.error('[AutoClearSession] Error calling backend signout:', error);
-        }
-      };
-
-      // Trigger auto-clear after component mounts
-      autoClearSession();
-    }
-  }, [loading, organization]);
 
   // Show organization required message
   if (!organization) {
